@@ -333,7 +333,7 @@ async function viewHome() {
             <div class="announcement-icon"><i class="fa-solid fa-graduation-cap"></i></div>
             <h2 style="margin-bottom:0.5rem;font-weight:700;">UPMath — Nơi bạn tìm thấy cảm hứng học Toán</h2>
             <p class="announcement-text">
-                Nền tảng học tập dành riêng cho sinh viên học phần <strong>COMP1800 — Cơ sở Toán học trong CNTT</strong> tại UIT.
+                Nền tảng học tập dành riêng cho sinh viên học phần <strong>COMP1800 — Cơ sở Toán học trong CNTT</strong> tại HCMUE.
                 Soạn đề toán bằng mã <strong>LaTeX</strong>, đăng lời giải và thảo luận cùng cộng đồng.
             </p>
         </div>
