@@ -127,7 +127,9 @@ document.head.appendChild(_fadeStyle);
 
 // ─── 1. MONGODB API CLIENT ────────────────────────────────────────────────────
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = window.location.origin.includes("localhost") || window.location.origin.includes("127.0.0.1")
+    ? 'http://localhost:3000/api'
+    : 'https://upmath.onrender.com/api';
 
 const api = {
     async _req(method, path, body) {
