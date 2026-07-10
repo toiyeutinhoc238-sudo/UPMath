@@ -184,19 +184,41 @@ const api = {
 // ─── 2. THEMING ───────────────────────────────────────────────────────────────
 
 const themeBtn = document.getElementById("theme-toggle");
+const loginThemeBtn = document.getElementById("login-theme-toggle");
 const bodyEl = document.body;
 const savedTheme = localStorage.getItem("upmath_theme") || "dark-theme";
+
+// Apply the saved theme immediately
 bodyEl.className = savedTheme;
-if (themeBtn) {
-    const icon = themeBtn.querySelector("i");
-    if (icon && savedTheme === "light-theme") icon.className = "fa-solid fa-moon";
-    themeBtn.addEventListener("click", () => {
-        const isDark = bodyEl.classList.contains("dark-theme");
-        bodyEl.className = isDark ? "light-theme" : "dark-theme";
-        localStorage.setItem("upmath_theme", bodyEl.className);
-        if (icon) icon.className = isDark ? "fa-solid fa-moon" : "fa-solid fa-sun";
-    });
+
+// Function to update the icons of all theme buttons based on active theme
+function updateThemeIcons(theme) {
+    const isDark = theme === "dark-theme";
+    const newIconClass = isDark ? "fa-solid fa-sun" : "fa-solid fa-moon";
+    
+    if (themeBtn) {
+        const icon = themeBtn.querySelector("i");
+        if (icon) icon.className = newIconClass;
+    }
+    if (loginThemeBtn) {
+        const icon = loginThemeBtn.querySelector("i");
+        if (icon) icon.className = newIconClass;
+    }
 }
+
+// Initial icon setup
+updateThemeIcons(savedTheme);
+
+function toggleTheme() {
+    const isDark = bodyEl.classList.contains("dark-theme");
+    const nextTheme = isDark ? "light-theme" : "dark-theme";
+    bodyEl.className = nextTheme;
+    localStorage.setItem("upmath_theme", nextTheme);
+    updateThemeIcons(nextTheme);
+}
+
+if (themeBtn) themeBtn.addEventListener("click", toggleTheme);
+if (loginThemeBtn) loginThemeBtn.addEventListener("click", toggleTheme);
 
 // ─── 3. HELPERS ───────────────────────────────────────────────────────────────
 
