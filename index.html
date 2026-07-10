@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPMath - Nơi bạn tìm thấy cảm hứng học Toán</title>
+    <meta name="description"
+        content="UPMath - Nền tảng học tập Giải tích và Đại số tuyến tính dành cho sinh viên môn COMP1800 tại UIT. Giải bài tập, soạn đề toán bằng LaTeX, thảo luận và chia sẻ lời giải cùng cộng đồng.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- KaTeX CSS for LaTeX rendering -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+
+    <!-- KaTeX JS for LaTeX rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async></script>
+
+    <!-- App CSS -->
+    <link rel="stylesheet" href="style.css?v=7">
+</head>
+
+<body class="dark-theme">
+
+    <!-- ======= LOGIN OVERLAY ======= -->
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-bg-orbs">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+        </div>
+        <div class="login-card">
+            <div class="login-logo">
+                <div class="login-logo-icon"><i class="fa-solid fa-square-root-variable"></i></div>
+                <span class="login-logo-text">UP<span>Math</span></span>
+            </div>
+            <h1 class="login-title">Chào mừng trở lại!</h1>
+            <p class="login-subtitle">
+                Nền tảng học tập <strong>COMP1800</strong> &mdash; Cơ sở Toán học trong CNTT.<br>
+                Đăng nhập để bắt đầu giải toán, chia sẻ lời giải và thảo luận cùng cộng đồng.
+            </p>
+
+            <div class="login-math-preview" id="login-math-preview">
+                <span class="math-chip">$\displaystyle\lim_{n\to\infty} S_n = 1$</span>
+                <span class="math-chip">$\det(A) \neq 0$</span>
+                <span class="math-chip">$\displaystyle\int_0^1 x^3\,dx = \tfrac{1}{4}$</span>
+            </div>
+
+            <!-- Google Sign-In -->
+            <div class="google-btn-wrapper">
+                <div id="g_id_onload"
+                    data-client_id="114290400611-fnma9n755iluuniauu1563p0viioobkr.apps.googleusercontent.com"
+                    data-callback="handleGoogleCredential" data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin" data-type="standard" data-size="large" data-theme="filled_black"
+                    data-text="signin_with" data-shape="pill" data-logo_alignment="left" data-width="320">
+                </div>
+            </div>
+
+            <p class="login-note">
+                <i class="fa-solid fa-shield-halved"></i>
+                Chúng tôi chỉ lưu tên, email và ảnh đại diện Google của bạn &mdash; cục bộ trên trình duyệt.
+            </p>
+
+            <div class="login-subjects">
+                <div class="login-subject-pill login-calculus"><i class="fa-solid fa-wave-square"></i> Giải tích</div>
+                <div class="login-subject-pill login-algebra"><i class="fa-solid fa-table-cells"></i> Đại số</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======= MAIN APP ======= -->
+    <div class="app-container" id="app-container" style="display: none;">
+
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <a href="#home">
+                    <div class="logo-icon"><i class="fa-solid fa-square-root-variable"></i></div>
+                    <span class="logo-text">UP<span>Math</span></span>
+                </a>
+            </div>
+
+            <nav class="app-nav">
+                <a href="#home" class="nav-item active" data-route="home"><i class="fa-solid fa-house"></i> Trang
+                    chủ</a>
+                <a href="#exercises" class="nav-item" data-route="exercises"><i
+                        class="fa-solid fa-book-open-reader"></i> Bài tập</a>
+                <a href="#discussions" class="nav-item" data-route="discussions"><i class="fa-solid fa-comments"></i>
+                    Thảo luận</a>
+                <a href="#contests" class="nav-item" data-route="contests"><i class="fa-solid fa-trophy"></i> Kỳ thi</a>
+                <a href="#leaderboard" class="nav-item" data-route="leaderboard"><i
+                        class="fa-solid fa-chart-simple"></i> Bảng xếp hạng</a>
+            </nav>
+
+            <div class="header-actions">
+                <button id="theme-toggle" class="action-btn" title="Chuyển đổi Giao diện">
+                    <i class="fa-solid fa-sun"></i>
+                </button>
+
+                <a href="#create-problem" class="btn btn-primary btn-sm btn-create-problem">
+                    <i class="fa-solid fa-plus"></i> Đăng đề bài
+                </a>
+
+                <!-- User profile dropdown -->
+                <div class="user-profile-menu" id="user-profile-menu" onclick="toggleUserDropdown()">
+                    <div class="avatar" id="header-avatar">
+                        <img src="" alt="User Avatar" id="header-avatar-img">
+                    </div>
+                    <div class="user-info">
+                        <span class="username" id="header-username">Người dùng</span>
+                        <span class="rank" id="header-rank">Đồng</span>
+                    </div>
+                    <!-- Dropdown menu -->
+                    <div class="user-dropdown" id="user-dropdown">
+                        <div class="dropdown-user-info">
+                            <img src="" alt="Avatar" id="dropdown-avatar-img" class="dropdown-avatar">
+                            <div>
+                                <div class="dropdown-name" id="dropdown-name">Người dùng</div>
+                                <div class="dropdown-email" id="dropdown-email">user@gmail.com</div>
+                            </div>
+                        </div>
+                        <hr class="dropdown-divider">
+                        <button class="dropdown-item" id="admin-panel-btn" style="display: none;"
+                            onclick="event.stopPropagation(); window.location.hash='#admin'; toggleUserDropdown()">
+                            <i class="fa-solid fa-lock"></i> Quản trị hệ thống
+                        </button>
+                        <button class="dropdown-item"
+                            onclick="event.stopPropagation(); window.location.hash='#profile'; toggleUserDropdown()">
+                            <i class="fa-solid fa-user"></i> Hồ sơ cá nhân
+                        </button>
+                        <button class="dropdown-item dropdown-logout" onclick="event.stopPropagation(); logoutGoogle()">
+                            <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Wrapper -->
+        <div class="main-wrapper">
+
+            <!-- Left Sidebar -->
+            <aside class="sidebar-left">
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title"><i class="fa-solid fa-clock-rotate-left"></i> Bài tập mới nhất</h3>
+                    <div class="sidebar-list" id="new-problems-list">
+                        <!-- Dynamic list of new problems will be injected here -->
+                    </div>
+                </div>
+
+                <div class="sidebar-card filter-card">
+                    <h3 class="sidebar-title"><i class="fa-solid fa-book-open"></i> Phân loại môn học</h3>
+                    <div class="tag-filters">
+                        <button class="filter-tag-btn active" data-category="all">Tất cả</button>
+                        <button class="filter-tag-btn" data-category="calculus">Giải tích</button>
+                        <button class="filter-tag-btn" data-category="algebra">Đại số</button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="main-content" id="app-content">
+                <!-- Dynamically loaded page templates go here -->
+            </main>
+
+            <!-- Right Sidebar -->
+            <aside class="sidebar-right">
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title color-contest"><i class="fa-solid fa-calendar-days"></i> Kỳ thi sắp diễn ra
+                    </h3>
+                    <div class="sidebar-list" id="upcoming-contests-list">
+                        <!-- Dynamic contests will be injected here -->
+                    </div>
+                </div>
+
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title color-discussion"><i class="fa-solid fa-comments"></i> Thảo luận mới</h3>
+                    <div class="sidebar-list" id="new-discussions-list">
+                        <!-- Dynamic discussions will be injected here -->
+                    </div>
+                </div>
+
+                <div class="sidebar-card stats-card">
+                    <h3 class="sidebar-title"><i class="fa-solid fa-chart-line"></i> Hoạt động cộng đồng</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-val" id="total-problems-count">8</span>
+                            <span class="stat-lbl">Đề toán</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-val" id="total-solutions-count">3</span>
+                            <span class="stat-lbl">Lời giải</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-val" id="total-members-count">5</span>
+                            <span class="stat-lbl">Thành viên</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+        </div>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>&copy; 2026 <strong>UPMath</strong> &mdash; Nền tảng học tập COMP1800 tại UIT. Được phát triển với <i
+                    class="fa-solid fa-heart" style="color: var(--accent-red);"></i> dành cho sinh viên yêu Toán &mdash;
+                <span style="color: var(--accent-blue);">Giải Tích &amp; Đại Số Tuyến Tính</span>.
+            </p>
+        </footer>
+
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- App JS Scripts -->
+    <script defer src="app.js?v=7"></script>
+
+</body>
+
+</html>
