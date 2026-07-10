@@ -997,7 +997,7 @@ async function viewProfile() {
         ]);
 
         const fbAvatar = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(me.username)}`;
-        
+
         mainContent.innerHTML = `
             <div class="page-header">
                 <h2 class="page-title"><i class="fa-solid fa-user-gear"></i> Hồ Sơ <span>Cá Nhân</span></h2>
@@ -1043,9 +1043,9 @@ async function viewProfile() {
                         <i class="fa-solid fa-book-open" style="color: var(--accent-blue); margin-right: 0.5rem;"></i> Đề bài đã đăng (${problems.length})
                     </h3>
                     <div style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 400px; overflow-y: auto; padding-right: 0.25rem;">
-                        ${problems.length === 0 
-                            ? `<p style="color: var(--text-muted); text-align: center; padding: 2rem 0; font-size: 0.9rem;">Bạn chưa đăng đề bài nào.</p>` 
-                            : problems.map(p => `
+                        ${problems.length === 0
+                ? `<p style="color: var(--text-muted); text-align: center; padding: 2rem 0; font-size: 0.9rem;">Bạn chưa đăng đề bài nào.</p>`
+                : problems.map(p => `
                                 <div style="padding: 0.85rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
                                     <div style="flex: 1; min-width: 0;">
                                         <a href="#problem/${p._id}" style="font-weight: 600; font-size: 0.9rem; text-decoration: none; color: var(--text-color); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 0.25rem;">
@@ -1060,7 +1060,7 @@ async function viewProfile() {
                                     </a>
                                 </div>
                             `).join("")
-                        }
+            }
                     </div>
                 </div>
 
@@ -1070,9 +1070,9 @@ async function viewProfile() {
                         <i class="fa-solid fa-lightbulb" style="color: #f59e0b; margin-right: 0.5rem;"></i> Lời giải đã đăng (${solutions.length})
                     </h3>
                     <div style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 400px; overflow-y: auto; padding-right: 0.25rem;">
-                        ${solutions.length === 0 
-                            ? `<p style="color: var(--text-muted); text-align: center; padding: 2rem 0; font-size: 0.9rem;">Bạn chưa đăng lời giải nào.</p>` 
-                            : solutions.map(s => `
+                        ${solutions.length === 0
+                ? `<p style="color: var(--text-muted); text-align: center; padding: 2rem 0; font-size: 0.9rem;">Bạn chưa đăng lời giải nào.</p>`
+                : solutions.map(s => `
                                 <div style="padding: 0.85rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
                                     <div style="flex: 1; min-width: 0;">
                                         <div style="font-weight: 500; font-size: 0.88rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 0.25rem;">
@@ -1089,7 +1089,7 @@ async function viewProfile() {
                                     </a>
                                 </div>
                             `).join("")
-                        }
+            }
                     </div>
                 </div>
             </div>
@@ -1137,9 +1137,9 @@ async function viewAdmin() {
                     <div class="card">
                         <h3 style="margin-bottom: 1rem; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Danh sách kỳ thi</h3>
                         <div style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 450px; overflow-y: auto;">
-                            ${contests.length === 0 
-                                ? `<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Chưa có kỳ thi nào.</p>`
-                                : contests.map(c => `
+                            ${contests.length === 0
+                ? `<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Chưa có kỳ thi nào.</p>`
+                : contests.map(c => `
                                     <div style="padding: 0.85rem; background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
                                         <div>
                                             <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">${c.title}</div>
@@ -1158,7 +1158,7 @@ async function viewAdmin() {
                                         </div>
                                     </div>
                                 `).join("")
-                            }
+            }
                         </div>
                     </div>
 
@@ -1199,9 +1199,9 @@ async function viewAdmin() {
                 <div class="card">
                     <h3 style="margin-bottom: 1rem; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Quản lý kho bài tập</h3>
                     <div style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 500px; overflow-y: auto;">
-                        ${problems.length === 0 
-                            ? `<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Chưa có bài tập nào.</p>`
-                            : problems.map(p => `
+                        ${problems.length === 0
+                ? `<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Chưa có bài tập nào.</p>`
+                : problems.map(p => `
                                 <div style="padding: 0.85rem; background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
                                     <div style="min-width: 0; flex: 1;">
                                         <a href="#problem/${p._id}" style="font-weight: 600; text-decoration: none; color: var(--text-color); font-size: 0.95rem; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 0.25rem;">
@@ -1218,7 +1218,7 @@ async function viewAdmin() {
                                     </button>
                                 </div>
                             `).join("")
-                        }
+            }
                     </div>
                 </div>
             </div>
