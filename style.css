@@ -4,7 +4,7 @@
 
 /* Design Tokens & Variables */
 :root {
-    --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-sans: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
 
     /* Theme transitions */
@@ -1552,5 +1552,199 @@ input, textarea, select, button {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+/* ==========================================================================
+   Added Styles: Quill Editor, Image Upload & Like/Dislike System
+   ========================================================================== */
+
+/* Input modes toggle buttons */
+.input-modes {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.input-modes .mode-btn {
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.input-modes .mode-btn.active {
+    background: var(--accent-blue);
+    color: #ffffff;
+    border-color: transparent;
+}
+
+/* Image Upload Drag & Drop Zone */
+.image-upload-zone {
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    background: var(--bg-input);
+    transition: all 0.2s ease-in-out;
+}
+
+.image-upload-zone:hover {
+    border-color: var(--accent-blue);
+    background: var(--bg-surface-hover);
+}
+
+.image-upload-zone i {
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+    transition: color 0.2s;
+}
+
+.image-upload-zone:hover i {
+    color: var(--accent-blue);
+}
+
+.image-upload-zone p {
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    color: var(--text-primary);
+}
+
+.image-upload-zone span {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+/* Quill Editor custom styling (Light & Dark theme) */
+.ql-toolbar.ql-snow {
+    border: 1px solid var(--border-color) !important;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    background-color: var(--bg-surface-solid);
+    transition: var(--theme-transition);
+}
+
+.ql-container.ql-snow {
+    border: 1px solid var(--border-color) !important;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    font-family: var(--font-sans) !important;
+    background-color: var(--bg-input);
+    min-height: 200px;
+    transition: var(--theme-transition);
+}
+
+.ql-editor {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-primary);
+}
+
+.ql-editor.ql-blank::before {
+    color: var(--text-muted) !important;
+    font-style: normal;
+}
+
+/* Quill Dark Theme Overrides */
+.dark-theme .ql-toolbar.ql-snow .ql-stroke {
+    stroke: var(--text-secondary);
+}
+
+.dark-theme .ql-toolbar.ql-snow .ql-fill {
+    fill: var(--text-secondary);
+}
+
+.dark-theme .ql-toolbar.ql-snow .ql-picker {
+    color: var(--text-secondary);
+}
+
+.dark-theme .ql-toolbar.ql-snow .ql-picker-options {
+    background-color: var(--bg-surface-solid);
+    border-color: var(--border-color);
+}
+
+.dark-theme .ql-toolbar.ql-snow .ql-picker-item {
+    color: var(--text-secondary);
+}
+
+.dark-theme .ql-toolbar.ql-snow .ql-picker-item:hover,
+.dark-theme .ql-toolbar.ql-snow .ql-picker-item.ql-selected {
+    color: var(--text-primary);
+}
+
+.dark-theme .ql-toolbar.ql-snow button:hover .ql-stroke,
+.dark-theme .ql-toolbar.ql-snow button.ql-active .ql-stroke {
+    stroke: var(--accent-blue);
+}
+
+.dark-theme .ql-toolbar.ql-snow button:hover .ql-fill,
+.dark-theme .ql-toolbar.ql-snow button.ql-active .ql-fill {
+    fill: var(--accent-blue);
+}
+
+/* Like/Dislike Voting UI */
+.vote-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    background: var(--bg-surface-solid);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+.vote-btn:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
+    border-color: var(--text-muted);
+}
+
+.vote-btn.active-like {
+    color: var(--accent-blue) !important;
+    border-color: rgba(var(--accent-blue-rgb), 0.5) !important;
+    background: rgba(var(--accent-blue-rgb), 0.1) !important;
+}
+
+.vote-btn.active-dislike {
+    color: var(--accent-red) !important;
+    border-color: rgba(244, 63, 94, 0.5) !important;
+    background: rgba(244, 63, 94, 0.1) !important;
+}
+
+/* Comment Votes styling */
+.comment-vote-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+}
+
+.comment-vote-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.comment-vote-btn.active-like {
+    color: var(--accent-blue) !important;
+}
+
+.comment-vote-btn.active-dislike {
+    color: var(--accent-red) !important;
 }
 

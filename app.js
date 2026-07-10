@@ -176,6 +176,9 @@ const api = {
     deleteContest: (id) => api._req('DELETE', `/contests/${id}`),
     deleteProblem: (id) => api._req('DELETE', `/problems/${id}`),
     getStats: () => api._req('GET', '/stats'),
+
+    // Likes/Dislikes
+    vote: (type, id, googleId, action) => api._req('PUT', `/${type}/${id}/${action}`, { googleId }),
 };
 
 // ─── 2. THEMING ───────────────────────────────────────────────────────────────
@@ -258,6 +261,61 @@ function avatarTag(picture, name, size = 32) {
                  style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;"
                  onerror="this.src='${fb}'">`;
 }
+
+// Image Upload & Vote system globals
+let p_uploadedImageBase64 = null;
+let s_uploadedImageBase64 = null;
+
+function handleImageFileSelect(input, type) {
+    const file = input.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        showToast("Vui lòng tải lên file hình ảnh hợp lệ!", "error");
+        return;
+    }
+
+    const reader = new FileReader();
+    const statusId = type === 'problem' ? 'p-image-upload-status' : 's-image-upload-status';
+    const previewId = type === 'problem' ? 'p-image-upload-preview' : 's-image-upload-preview';
+
+    const statusEl = document.getElementById(statusId);
+    if (statusEl) statusEl.textContent = "Đang xử lý ảnh...";
+
+    reader.onload = function(e) {
+        const base64 = e.target.result;
+        if (type === 'problem') {
+            p_uploadedImageBase64 = base64;
+        } else {
+            s_uploadedImageBase64 = base64;
+        }
+        const previewEl = document.getElementById(previewId);
+        if (previewEl) {
+            previewEl.innerHTML = `<img src="${base64}" style="max-width:100%;max-height:220px;border-radius:8px;border:1px solid var(--border-color);margin-top:0.75rem;">`;
+        }
+        if (statusEl) statusEl.textContent = "Tải ảnh thành công!";
+    };
+    reader.readAsDataURL(file);
+}
+
+async function voteItem(type, id, action) {
+    const user = getCurrentUser();
+    if (!user) {
+        showToast("Vui lòng đăng nhập để bình chọn!", "warning");
+        return;
+    }
+    try {
+        await api.vote(type, id, user.googleId, action);
+        showToast(action === 'like' ? "Đã thích! 👍" : "Đã không thích! 👎", "success");
+        await router(); // Reload view
+    } catch (err) {
+        showToast("Bình chọn thất bại: " + err.message, "error");
+    }
+}
+
+// Bind to window for global access from HTML event handlers
+window.handleImageFileSelect = handleImageFileSelect;
+window.voteItem = voteItem;
 
 // ─── 4. SIDEBARS ──────────────────────────────────────────────────────────────
 
@@ -525,6 +583,13 @@ async function viewProblemDetail(id) {
         const [problem, solutions, comments] = await Promise.all([
             api.getProblem(id), api.getSolutions(id), api.getComments('problem', id)
         ]);
+        const user = getCurrentUser();
+
+        // Check if user has liked/disliked the problem
+        const pLikes = problem.likes ? problem.likes.length : 0;
+        const pDislikes = problem.dislikes ? problem.dislikes.length : 0;
+        const hasLikedProblem = user && problem.likes && problem.likes.includes(user.googleId);
+        const hasDislikedProblem = user && problem.dislikes && problem.dislikes.includes(user.googleId);
 
         mainContent.innerHTML = `
             <div class="page-header">
@@ -551,11 +616,22 @@ async function viewProblemDetail(id) {
                         ${(problem.tags || []).map(t => `<span class="badge badge-tag">${t}</span>`).join("")}
                     </div>
                 </div>
-                <div class="problem-content">${problem.content}</div>
-                ${problem.imageUrl ? `<img src="${problem.imageUrl}" alt="Hình bài toán" style="max-width:100%;border-radius:8px;margin-top:1rem;">` : ''}
-                <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border-color);display:flex;gap:1rem;font-size:0.85rem;color:var(--text-muted);">
-                    <span><i class="fa-solid fa-star" style="color:#f59e0b;"></i> ${problem.points} điểm thưởng</span>
-                    <span><i class="fa-solid fa-lightbulb"></i> ${solutions.length} lời giải</span>
+                <div class="problem-content" style="margin-bottom: 1rem;">${problem.content}</div>
+                ${problem.imageUrl ? `<img src="${problem.imageUrl}" alt="Hình bài toán" style="max-width:100%;border-radius:8px;margin-top:1rem;margin-bottom:1rem;display:block;">` : ''}
+                
+                <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;color:var(--text-muted);flex-wrap:wrap;gap:0.75rem;">
+                    <div style="display:flex;gap:1rem;">
+                        <span><i class="fa-solid fa-star" style="color:#f59e0b;"></i> ${problem.points} điểm thưởng</span>
+                        <span><i class="fa-solid fa-lightbulb"></i> ${solutions.length} lời giải</span>
+                    </div>
+                    <div style="display:flex;gap:0.5rem;">
+                        <button class="vote-btn ${hasLikedProblem ? 'active-like' : ''}" onclick="voteItem('problems', '${problem._id}', 'like')">
+                            <i class="fa-solid fa-thumbs-up"></i> Thích <span>(${pLikes})</span>
+                        </button>
+                        <button class="vote-btn ${hasDislikedProblem ? 'active-dislike' : ''}" onclick="voteItem('problems', '${problem._id}', 'dislike')">
+                            <i class="fa-solid fa-thumbs-down"></i> Không thích <span>(${pDislikes})</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -578,20 +654,48 @@ async function viewProblemDetail(id) {
                                         <i class="fa-solid fa-thumbs-up"></i> <span>${s.votes}</span>
                                     </button>
                                 </div>
-                                <div>${s.content}</div>
-                                ${s.imageUrl ? `<img src="${s.imageUrl}" alt="Ảnh lời giải" style="max-width:100%;border-radius:8px;margin-top:0.75rem;">` : ''}
+                                <div style="margin-bottom:0.5rem; line-height:1.6;">${s.content}</div>
+                                ${s.imageUrl ? `<img src="${s.imageUrl}" alt="Ảnh lời giải" style="max-width:100%;max-height:400px;object-fit:contain;border-radius:8px;margin-top:0.75rem;display:block;">` : ''}
                             </div>`).join("")
             }
                 </div>
-                <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border-color);">
+                
+                <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border-color);">
                     <h4 style="margin-bottom:1rem;"><i class="fa-solid fa-pen-to-square"></i> Đăng lời giải của bạn</h4>
                     <form id="sol-form">
                         <div class="form-group">
-                            <label class="form-label">Nội dung lời giải (hỗ trợ LaTeX $...$ hoặc $$...$$):</label>
-                            <textarea id="sol-content" class="form-textarea" required style="min-height:180px;"
+                            <label class="form-label">Chọn phương thức nhập lời giải:</label>
+                            <div class="input-modes" id="s-input-modes">
+                                <button type="button" class="btn btn-secondary mode-btn active" data-mode="latex"><i class="fa-solid fa-code"></i> LaTeX</button>
+                                <button type="button" class="btn btn-secondary mode-btn" data-mode="word"><i class="fa-solid fa-file-word"></i> Văn bản (Word)</button>
+                                <button type="button" class="btn btn-secondary mode-btn" data-mode="image"><i class="fa-solid fa-camera"></i> Chụp / Tải ảnh</button>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group" id="s-mode-latex-container">
+                            <label class="form-label">Nội dung lời giải (LaTeX & Text):</label>
+                            <textarea id="sol-content" class="form-textarea" style="min-height:180px;"
                                 placeholder="Nhập lời giải chi tiết. Ví dụ: $$\\int_0^1 x^2 dx = \\frac{1}{3}$$"></textarea>
                         </div>
-                        <div style="display:flex;justify-content:flex-end;">
+                        
+                        <div class="form-group" id="s-mode-word-container" style="display:none;">
+                            <label class="form-label">Soạn thảo văn bản:</label>
+                            <div id="s-quill-editor" style="min-height:180px;"></div>
+                        </div>
+                        
+                        <div class="form-group" id="s-mode-image-container" style="display:none;">
+                            <label class="form-label">Tải lên hoặc chụp ảnh lời giải:</label>
+                            <div class="image-upload-zone" onclick="document.getElementById('s-image-file-input').click()">
+                                <i class="fa-solid fa-cloud-arrow-up fa-3x"></i>
+                                <p>Kéo thả ảnh hoặc click để chọn ảnh lời giải</p>
+                                <span>Chụp bài làm từ điện thoại hoặc tải ảnh chụp màn hình</span>
+                                <input type="file" id="s-image-file-input" accept="image/*" style="display: none;" onchange="handleImageFileSelect(this, 'solution')">
+                                <div id="s-image-upload-status" style="font-size: 0.82rem; color: var(--accent-blue); margin-top: 0.5rem; font-weight: 600;"></div>
+                                <div id="s-image-upload-preview"></div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex;justify-content:flex-end;margin-top:1rem;">
                             <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Đăng lời giải</button>
                         </div>
                     </form>
@@ -613,6 +717,30 @@ async function viewProblemDetail(id) {
 
         renderLaTeX(mainContent);
 
+        // Reset solution image upload variables on entry
+        s_uploadedImageBase64 = null;
+
+        // Initialize Quill Editor if snow theme is loaded
+        let sQuill = null;
+        if (window.Quill) {
+            sQuill = new Quill('#s-quill-editor', {
+                theme: 'snow',
+                placeholder: 'Soạn thảo lời giải của bạn tại đây...'
+            });
+        }
+
+        // Add event listeners for mode switcher
+        document.querySelectorAll("#s-input-modes .mode-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll("#s-input-modes .mode-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                const mode = btn.getAttribute("data-mode");
+                document.getElementById("s-mode-latex-container").style.display = mode === 'latex' ? 'block' : 'none';
+                document.getElementById("s-mode-word-container").style.display = mode === 'word' ? 'block' : 'none';
+                document.getElementById("s-mode-image-container").style.display = mode === 'image' ? 'block' : 'none';
+            });
+        });
+
         // Upvote
         document.querySelectorAll(".upvote-btn").forEach(btn => {
             btn.addEventListener("click", async () => {
@@ -630,9 +758,27 @@ async function viewProblemDetail(id) {
             e.preventDefault();
             const user = getCurrentUser();
             if (!user) { showToast("Vui lòng đăng nhập!", "error"); return; }
-            const content = document.getElementById("sol-content").value.trim();
+            
+            const activeBtn = document.querySelector("#s-input-modes .mode-btn.active");
+            const mode = activeBtn ? activeBtn.getAttribute("data-mode") : 'latex';
+            
+            let content = "";
+            let imageUrl = "";
+            
+            if (mode === 'latex') {
+                content = document.getElementById("sol-content").value.trim();
+                if (!content) { showToast("Vui lòng điền nội dung lời giải!", "warning"); return; }
+            } else if (mode === 'word') {
+                content = sQuill ? sQuill.root.innerHTML.trim() : "";
+                if (content === "<p><br></p>" || !content) { showToast("Vui lòng soạn thảo lời giải!", "warning"); return; }
+            } else if (mode === 'image') {
+                content = "[Lời giải dạng hình ảnh]";
+                imageUrl = s_uploadedImageBase64;
+                if (!imageUrl) { showToast("Vui lòng tải lên hoặc chụp ảnh lời giải!", "warning"); return; }
+            }
+
             try {
-                await api.addSolution({ problemId: id, author: user.username, authorPicture: user.picture, authorGoogleId: user.googleId, content });
+                await api.addSolution({ problemId: id, author: user.username, authorPicture: user.picture, authorGoogleId: user.googleId, content, imageUrl });
                 showToast("Đã đăng lời giải! +15 điểm 🎉", "success");
                 viewProblemDetail(id);
             } catch { showToast("Đăng lời giải thất bại!", "error"); }
@@ -655,15 +801,29 @@ async function viewProblemDetail(id) {
 }
 
 function commentHTML(c) {
+    const user = getCurrentUser();
+    const likesCount = c.likes ? c.likes.length : 0;
+    const dislikesCount = c.dislikes ? c.dislikes.length : 0;
+    const hasLiked = user && c.likes && c.likes.includes(user.googleId);
+    const hasDisliked = user && c.dislikes && c.dislikes.includes(user.googleId);
+
     return `
-        <div style="display:flex;gap:0.6rem;margin-bottom:1rem;">
+        <div style="display:flex;gap:0.6rem;margin-bottom:1rem;" class="comment-item" data-id="${c._id}">
             <div style="flex-shrink:0;">${avatarTag(c.authorPicture, c.author, 30)}</div>
             <div style="flex:1;background:rgba(255,255,255,0.03);border:1px solid var(--border-color);border-radius:0 10px 10px 10px;padding:0.6rem 0.85rem;">
                 <div style="display:flex;gap:0.4rem;align-items:center;margin-bottom:0.2rem;">
                     <strong style="font-size:0.85rem;">${c.author}</strong>
                     <span style="font-size:0.7rem;color:var(--text-muted);">${timeSince(c.createdAt)}</span>
                 </div>
-                <div style="font-size:0.87rem;">${c.content}</div>
+                <div style="font-size:0.87rem;margin-bottom:0.4rem;">${c.content}</div>
+                <div style="display:flex;gap:0.75rem;align-items:center;font-size:0.78rem;">
+                    <button class="comment-vote-btn comment-like-btn ${hasLiked ? 'active-like' : ''}" onclick="voteItem('comments', '${c._id}', 'like')">
+                        <i class="fa-solid fa-thumbs-up"></i> <span>${likesCount}</span>
+                    </button>
+                    <button class="comment-vote-btn comment-dislike-btn ${hasDisliked ? 'active-dislike' : ''}" onclick="voteItem('comments', '${c._id}', 'dislike')">
+                        <i class="fa-solid fa-thumbs-down"></i> <span>${dislikesCount}</span>
+                    </button>
+                </div>
             </div>
         </div>`;
 }
@@ -685,12 +845,22 @@ function viewCreateProblem() {
                     <input type="text" id="p-title" class="form-input" required
                            placeholder="Ví dụ: Tính $\\int_0^1 x^2 e^x dx$">
                 </div>
+                
                 <div class="form-group">
-                    <label class="form-label">Nội dung đề bài (hỗ trợ LaTeX):</label>
+                    <label class="form-label">Chọn phương thức soạn đề bài:</label>
+                    <div class="input-modes" id="p-input-modes">
+                        <button type="button" class="btn btn-secondary mode-btn active" data-mode="latex"><i class="fa-solid fa-code"></i> LaTeX</button>
+                        <button type="button" class="btn btn-secondary mode-btn" data-mode="word"><i class="fa-solid fa-file-word"></i> Văn bản (Word)</button>
+                        <button type="button" class="btn btn-secondary mode-btn" data-mode="image"><i class="fa-solid fa-camera"></i> Chụp / Tải ảnh</button>
+                    </div>
+                </div>
+
+                <div class="form-group" id="p-mode-latex-container">
+                    <label class="form-label">Nội dung đề bài (LaTeX):</label>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                         <div>
                             <label class="form-label" style="font-size:0.78rem;color:var(--text-muted);">✏️ Soạn LaTeX</label>
-                            <textarea id="p-content" class="form-textarea" required style="min-height:200px;"
+                            <textarea id="p-content" class="form-textarea" style="min-height:200px;"
                                 oninput="updateProblemPreview()"
                                 placeholder="Nhập nội dung. Ví dụ:&#10;Tính tích phân:&#10;$$I = \\int_0^{\\pi}\\sin^2(x)\\,dx$$"></textarea>
                         </div>
@@ -700,7 +870,25 @@ function viewCreateProblem() {
                         </div>
                     </div>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+
+                <div class="form-group" id="p-mode-word-container" style="display:none;">
+                    <label class="form-label">Soạn thảo văn bản đề bài:</label>
+                    <div id="p-quill-editor" style="min-height:220px;"></div>
+                </div>
+
+                <div class="form-group" id="p-mode-image-container" style="display:none;">
+                    <label class="form-label">Tải lên hoặc chụp hình ảnh đề bài:</label>
+                    <div class="image-upload-zone" onclick="document.getElementById('p-image-file-input').click()">
+                        <i class="fa-solid fa-cloud-arrow-up fa-3x"></i>
+                        <p>Kéo thả ảnh hoặc click để chọn ảnh đề bài</p>
+                        <span>Hỗ trợ PNG, JPG, JPEG</span>
+                        <input type="file" id="p-image-file-input" accept="image/*" style="display: none;" onchange="handleImageFileSelect(this, 'problem')">
+                        <div id="p-image-upload-status" style="font-size: 0.82rem; color: var(--accent-blue); margin-top: 0.5rem; font-weight: 600;"></div>
+                        <div id="p-image-upload-preview"></div>
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.5rem;">
                     <div class="form-group">
                         <label class="form-label">Môn học:</label>
                         <select id="p-category" class="form-select" required>
@@ -713,35 +901,80 @@ function viewCreateProblem() {
                         <input type="text" id="p-tags" class="form-input" placeholder="tích phân, đạo hàm, giới hạn">
                     </div>
                 </div>
-                <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:0.5rem;">
+                
+                <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1.5rem;border-top:1px solid var(--border-color);padding-top:1rem;">
                     <a href="#exercises" class="btn btn-secondary">Hủy</a>
                     <button type="submit" id="submit-prob-btn" class="btn btn-primary">
-                        <i class="fa-solid fa-paper-plane"></i> Đăng bài toán
+                        <i class="fa-solid fa-paper-plane"></i> Đăng đề bài
                     </button>
                 </div>
             </form>
         </div>`;
 
+    // Reset uploaded image variables
+    p_uploadedImageBase64 = null;
+
+    // Initialize Quill Editor
+    let pQuill = null;
+    if (window.Quill) {
+        pQuill = new Quill('#p-quill-editor', {
+            theme: 'snow',
+            placeholder: 'Soạn thảo nội dung đề bài giống Word...'
+        });
+    }
+
+    // Tab buttons event listeners
+    document.querySelectorAll("#p-input-modes .mode-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll("#p-input-modes .mode-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            const mode = btn.getAttribute("data-mode");
+            document.getElementById("p-mode-latex-container").style.display = mode === 'latex' ? 'block' : 'none';
+            document.getElementById("p-mode-word-container").style.display = mode === 'word' ? 'block' : 'none';
+            document.getElementById("p-mode-image-container").style.display = mode === 'image' ? 'block' : 'none';
+        });
+    });
+
     document.getElementById("create-prob-form")?.addEventListener("submit", async (e) => {
         e.preventDefault();
         const user = getCurrentUser();
         if (!user) { showToast("Vui lòng đăng nhập!", "error"); return; }
+        
+        const activeBtn = document.querySelector("#p-input-modes .mode-btn.active");
+        const mode = activeBtn ? activeBtn.getAttribute("data-mode") : 'latex';
+        
+        let content = "";
+        let imageUrl = "";
+        
+        if (mode === 'latex') {
+            content = document.getElementById("p-content").value.trim();
+            if (!content) { showToast("Vui lòng điền nội dung đề bài!", "warning"); return; }
+        } else if (mode === 'word') {
+            content = pQuill ? pQuill.root.innerHTML.trim() : "";
+            if (content === "<p><br></p>" || !content) { showToast("Vui lòng soạn thảo đề bài!", "warning"); return; }
+        } else if (mode === 'image') {
+            content = "[Đề bài dạng hình ảnh]";
+            imageUrl = p_uploadedImageBase64;
+            if (!imageUrl) { showToast("Vui lòng tải lên hoặc chụp ảnh đề bài!", "warning"); return; }
+        }
+
         const title = document.getElementById("p-title").value.trim();
-        const content = document.getElementById("p-content").value.trim();
         const category = document.getElementById("p-category").value;
         const tagsRaw = document.getElementById("p-tags").value;
         const tags = tagsRaw ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : [];
+        
         const btn = document.getElementById("submit-prob-btn");
         btn.disabled = true;
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang đăng...`;
+        
         try {
-            await api.addProblem({ title, content, category, tags, creator: user.username, creatorPicture: user.picture, creatorGoogleId: user.googleId, points: category === 'calculus' ? 30 : 25 });
+            await api.addProblem({ title, content, category, tags, creator: user.username, creatorPicture: user.picture, creatorGoogleId: user.googleId, points: category === 'calculus' ? 30 : 25, imageUrl });
             showToast("Đã đăng bài toán! +10 điểm 🎉", "success");
             window.location.hash = "#exercises";
         } catch (err) {
             showToast("Đăng thất bại: " + err.message, "error");
             btn.disabled = false;
-            btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Đăng bài toán`;
+            btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Đăng đề bài`;
         }
     });
 }
@@ -847,6 +1080,13 @@ async function viewDiscussionDetail(id) {
     showLoading();
     try {
         const [disc, comments] = await Promise.all([api.getDiscussion(id), api.getComments('discussion', id)]);
+        const user = getCurrentUser();
+
+        const dLikes = disc.likes ? disc.likes.length : 0;
+        const dDislikes = disc.dislikes ? disc.dislikes.length : 0;
+        const hasLikedDisc = user && disc.likes && disc.likes.includes(user.googleId);
+        const hasDislikedDisc = user && disc.dislikes && disc.dislikes.includes(user.googleId);
+
         mainContent.innerHTML = `
             <div class="page-header">
                 <div>
@@ -863,7 +1103,16 @@ async function viewDiscussionDetail(id) {
                         <div style="font-size:0.75rem;color:var(--text-muted);">${timeSince(disc.createdAt)} · ${disc.views} lượt xem</div>
                     </div>
                 </div>
-                <div>${disc.content}</div>
+                <div style="margin-bottom:1rem; line-height:1.6;">${disc.content}</div>
+                
+                <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:0.5rem;">
+                    <button class="vote-btn ${hasLikedDisc ? 'active-like' : ''}" onclick="voteItem('discussions', '${disc._id}', 'like')">
+                        <i class="fa-solid fa-thumbs-up"></i> Thích <span>(${dLikes})</span>
+                    </button>
+                    <button class="vote-btn ${hasDislikedDisc ? 'active-dislike' : ''}" onclick="voteItem('discussions', '${disc._id}', 'dislike')">
+                        <i class="fa-solid fa-thumbs-down"></i> Không thích <span>(${dDislikes})</span>
+                    </button>
+                </div>
             </div>
             <div class="card">
                 <h3 style="margin-bottom:1.25rem;"><i class="fa-solid fa-comments"></i> Phản hồi (${comments.length})</h3>

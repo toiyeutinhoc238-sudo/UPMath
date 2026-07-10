@@ -49,6 +49,8 @@ const problemSchema = new mongoose.Schema({
     creatorGoogleId: String,
     points:          { type: Number, default: 25 },
     imageUrl:        String,
+    likes:           { type: [String], default: [] },
+    dislikes:        { type: [String], default: [] },
     createdAt:       { type: Date, default: Date.now }
 });
 
@@ -72,6 +74,8 @@ const discussionSchema = new mongoose.Schema({
     category:        { type: String, default: 'Giải tích' },
     replies:         { type: Number, default: 0 },
     views:           { type: Number, default: 0 },
+    likes:           { type: [String], default: [] },
+    dislikes:        { type: [String], default: [] },
     createdAt:       { type: Date, default: Date.now }
 });
 
@@ -82,6 +86,8 @@ const commentSchema = new mongoose.Schema({
     authorPicture:   String,
     authorGoogleId:  String,
     content:         { type: String, required: true },
+    likes:           { type: [String], default: [] },
+    dislikes:        { type: [String], default: [] },
     createdAt:       { type: Date, default: Date.now }
 });
 
@@ -354,6 +360,74 @@ app.post('/api/comments', async (req, res) => {
             if (u) { u.points += 2; u.rank = calcRank(u.points); await u.save(); }
         }
         res.status(201).json(comment);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ─── LIKE / DISLIKE SYSTEM ───────────────────────────────────────────────────
+
+async function toggleLikeOrDislike(model, id, googleId, action) {
+    const item = await model.findById(id);
+    if (!item) throw new Error('Không tìm thấy bản ghi');
+
+    if (!item.likes) item.likes = [];
+    if (!item.dislikes) item.dislikes = [];
+
+    const likedIndex = item.likes.indexOf(googleId);
+    const dislikedIndex = item.dislikes.indexOf(googleId);
+
+    if (action === 'like') {
+        if (likedIndex > -1) {
+            item.likes.splice(likedIndex, 1);
+        } else {
+            item.likes.push(googleId);
+            if (dislikedIndex > -1) item.dislikes.splice(dislikedIndex, 1);
+        }
+    } else if (action === 'dislike') {
+        if (dislikedIndex > -1) {
+            item.dislikes.splice(dislikedIndex, 1);
+        } else {
+            item.dislikes.push(googleId);
+            if (likedIndex > -1) item.likes.splice(likedIndex, 1);
+        }
+    }
+
+    await item.save();
+    return item;
+}
+
+app.put('/api/:type/:id/like', async (req, res) => {
+    try {
+        const { googleId } = req.body;
+        if (!googleId) return res.status(400).json({ error: 'googleId is required' });
+        const type = req.params.type; // 'problems', 'discussions', 'comments'
+        let model;
+        if (type === 'problems') model = Problem;
+        else if (type === 'discussions') model = Discussion;
+        else if (type === 'comments') model = Comment;
+        else return res.status(400).json({ error: 'Invalid item type' });
+
+        const updated = await toggleLikeOrDislike(model, req.params.id, googleId, 'like');
+        res.json(updated);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/:type/:id/dislike', async (req, res) => {
+    try {
+        const { googleId } = req.body;
+        if (!googleId) return res.status(400).json({ error: 'googleId is required' });
+        const type = req.params.type;
+        let model;
+        if (type === 'problems') model = Problem;
+        else if (type === 'discussions') model = Discussion;
+        else if (type === 'comments') model = Comment;
+        else return res.status(400).json({ error: 'Invalid item type' });
+
+        const updated = await toggleLikeOrDislike(model, req.params.id, googleId, 'dislike');
+        res.json(updated);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
