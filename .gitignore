@@ -1,0 +1,12 @@
+node_modules/
+backend/node_modules/
+.env
+backend/.env
+*.log
+check_db.js
+read_docx_scratch.js
+read_pdf_scratch.js
+main_pdf_content.txt
+Motagiaodien_text.txt
+Motagiaodien_NewVersion_text.txt
+.nojekyll
