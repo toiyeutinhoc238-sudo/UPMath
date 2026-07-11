@@ -212,7 +212,6 @@ const api = {
     reactShout: (id, data) => api._req('PUT', `/shouts/${id}/react`, data),
     updateShout: (id, data) => api._req('PUT', `/shouts/${id}`, data),
     deleteShout: (id) => api._req('DELETE', `/shouts/${id}`),
-    chatAiTutor: (problemId, messages) => api._req('POST', '/ai-tutor', { problemId, messages }),
 
     // Users
     getUsers: () => api._req('GET', '/users'),
@@ -1312,17 +1311,18 @@ async function viewProblemDetail(id) {
 
         // Delete Problem button
         document.getElementById("delete-problem-btn")?.addEventListener("click", async () => {
-            if (!confirm("Bạn có chắc chắn muốn xóa bài toán này?")) return;
-            try {
-                await api.deleteProblem(id);
-                showToast("Đã xóa bài toán!", "success");
-                window.location.hash = "#exercises";
-            } catch (e) {
-                showToast("Xóa bài toán thất bại: " + e.message, "error");
+            if (confirm("Bạn có chắc chắn muốn xóa đề bài này cùng tất cả lời giải liên quan? Thao tác này không thể phục hồi!")) {
+                try {
+                    await api.deleteProblem(problem._id);
+                    showToast("Đã xóa đề bài thành công! 🗑️", "success");
+                    window.location.hash = "#exercises";
+                } catch (e) {
+                    showToast("Xóa đề bài thất bại: " + e.message, "error");
+                }
             }
         });
 
-        // Edit Solution button delegator
+        // Edit Solution button (inline edit)
         document.querySelectorAll(".edit-sol-btn").forEach(btn => {
             btn.addEventListener("click", () => {
                 const sId = btn.getAttribute("data-id");
@@ -1377,63 +1377,56 @@ async function viewProblemDetail(id) {
             });
         });
 
-        // Delete Solution button delegator
+        // Delete Solution button
         document.querySelectorAll(".delete-sol-btn").forEach(btn => {
             btn.addEventListener("click", async () => {
                 const sId = btn.getAttribute("data-id");
-                if (!confirm("Bạn có chắc chắn muốn xóa lời giải này?")) return;
-                try {
-                    await api.deleteSolution(sId);
-                    showToast("Đã xóa lời giải thành công!", "success");
-                    viewProblemDetail(id);
-                } catch (e) {
-                    showToast("Xóa lời giải thất bại: " + e.message, "error");
+                if (confirm("Bạn có chắc chắn muốn xóa lời giải này không?")) {
+                    try {
+                        await api.deleteSolution(sId);
+                        showToast("Đã xóa lời giải thành công! 🗑️", "success");
+                        viewProblemDetail(id);
+                    } catch (e) {
+                        showToast("Xóa lời giải thất bại: " + e.message, "error");
+                    }
                 }
             });
         });
 
-        // Submit Solution Form
+        // Add solution
         document.getElementById("sol-form")?.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const submitAction = e.submitter ? e.submitter.value : 'post';
             const user = getCurrentUser();
-            if (!user) { showToast("Vui lòng đăng nhập để nộp bài!", "error"); return; }
-
-            const modeBtn = document.querySelector("#s-input-modes .mode-btn.active");
-            const mode = modeBtn ? modeBtn.getAttribute("data-mode") : 'latex';
-
+            if (!user) { showToast("Vui lòng đăng nhập!", "error"); return; }
+            
+            const activeBtn = document.querySelector("#s-input-modes .mode-btn.active");
+            const mode = activeBtn ? activeBtn.getAttribute("data-mode") : 'latex';
+            
             let content = "";
-            let imageUrl = null;
-
+            let imageUrl = "";
+            
             if (mode === 'latex') {
                 content = document.getElementById("sol-content").value.trim();
-                if (!content) { showToast("Vui lòng nhập lời giải LaTeX!", "warning"); return; }
+                if (!content) { showToast("Vui lòng điền nội dung lời giải!", "warning"); return; }
             } else if (mode === 'word') {
-                if (sQuill) {
-                    content = sQuill.root.innerHTML.trim();
-                    if (sQuill.getText().trim().length === 0) { showToast("Vui lòng nhập lời giải văn bản!", "warning"); return; }
-                } else {
-                    showToast("Lỗi trình soạn thảo văn bản!", "error");
-                    return;
-                }
+                content = sQuill ? sQuill.root.innerHTML.trim() : "";
+                if (content === "<p><br></p>" || !content) { showToast("Vui lòng soạn thảo lời giải!", "warning"); return; }
             } else if (mode === 'image') {
+                content = "[Lời giải dạng hình ảnh]";
                 imageUrl = s_uploadedImageBase64;
-                if (!imageUrl) { showToast("Vui lòng chụp hoặc tải ảnh lời giải lên trước!", "warning"); return; }
-                content = "[Xem ảnh lời giải chi tiết đính kèm ở dưới]";
+                if (!imageUrl) { showToast("Vui lòng tải lên hoặc chụp ảnh lời giải!", "warning"); return; }
             }
 
-            const submitBtns = document.querySelectorAll("#sol-form button[type='submit']");
+            const isGrading = e.submitter?.value === 'grade';
+
+            const submitBtns = e.target.querySelectorAll("button[type='submit']");
             submitBtns.forEach(b => { b.disabled = true; });
-
-            const isGrading = submitAction === 'grade';
-            const gradeBtn = document.querySelector("#sol-form button[value='grade']");
-            const postBtn = document.querySelector("#sol-form button[value='post']");
-            const origGradeHTML = gradeBtn ? gradeBtn.innerHTML : "";
-            const origPostHTML = postBtn ? postBtn.innerHTML : "";
-
-            if (isGrading && gradeBtn) gradeBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang chấm...`;
-            if (!isGrading && postBtn) postBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang đăng...`;
-
+            const gradeBtn = e.target.querySelector("button[value='grade']");
+            const postBtn = e.target.querySelector("button[value='post']");
+            const origGradeHTML = gradeBtn ? gradeBtn.innerHTML : '';
+            const origPostHTML = postBtn ? postBtn.innerHTML : '';
+            if (isGrading && gradeBtn) gradeBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> AI đang chấm bài...`;
+            else if (postBtn) postBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang đăng...`;
             if (isGrading) showToast("AI đang tiến hành chấm bài của bạn, vui lòng đợi trong giây lát...", "info");
 
             try {
