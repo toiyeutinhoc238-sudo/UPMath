@@ -3027,11 +3027,160 @@ async function router() {
         contests: viewContests,
         leaderboard: viewLeaderboard,
         profile: viewProfile,
+        about: viewAbout,
         admin: viewAdmin
     };
 
     const fn = map[hash.substring(1)];
     if (fn) await fn(); else await viewHome();
+}
+
+async function viewAbout() {
+    setActiveNav(""); // Unset active state for standard nav items
+    if (!mainContent) return;
+
+    showLoading();
+
+    try {
+        mainContent.innerHTML = `
+        <div style="max-width: 900px; margin: 0 auto; padding: 1.5rem 0.5rem;">
+            <!-- Hero Header Section -->
+            <div style="text-align: center; padding: 3rem 1.5rem; background: linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.12) 100%); border: 1px solid rgba(99,102,241,0.2); border-radius: 16px; margin-bottom: 2rem; position: relative; overflow: hidden;">
+                <div style="position: absolute; top: -50px; left: -50px; width: 150px; height: 150px; background: rgba(99,102,241,0.15); filter: blur(50px); border-radius: 50%;"></div>
+                <div style="position: absolute; bottom: -50px; right: -50px; width: 150px; height: 150px; background: rgba(139,92,246,0.15); filter: blur(50px); border-radius: 50%;"></div>
+                
+                <img src="logo.png" alt="UPMath Logo" style="height: 80px; width: 80px; border-radius: 16px; object-fit: contain; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-bottom: 1.5rem; border: 1px solid rgba(255,255,255,0.1);">
+                
+                <h1 style="font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg, #a5b4fc, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0 0 0.5rem 0; letter-spacing: -0.5px;">UPMath</h1>
+                <p style="font-size: 1.15rem; color: #a78bfa; font-weight: 600; margin: 0 0 1.25rem 0; letter-spacing: 0.5px;">KHƠI NGUỒN CẢM HỨNG – KẾT NỐI TRI THỨC TOÁN HỌC</p>
+                <div style="max-width: 600px; margin: 0 auto; line-height: 1.7; color: var(--text-secondary); font-size: 0.95rem;">
+                    Chào các bạn, những người yêu Toán!
+                </div>
+                
+                <div style="margin-top: 1.75rem; display: flex; justify-content: center; gap: 1rem;">
+                    <a href="#exercises" class="btn btn-primary" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; padding: 0.6rem 1.5rem; font-weight: 600; border-radius: 8px;">
+                        <i class="fa-solid fa-graduation-cap"></i> Học tập ngay
+                    </a>
+                    <a href="#discussions" class="btn btn-secondary" style="padding: 0.6rem 1.5rem; border-radius: 8px;">
+                        <i class="fa-solid fa-comments"></i> Thảo luận nhóm
+                    </a>
+                </div>
+            </div>
+
+            <!-- Introduction Narrative -->
+            <div class="card" style="padding: 2rem; margin-bottom: 2rem; border-left: 4px solid #6366f1;">
+                <p style="margin-top: 0; line-height: 1.8; color: var(--text-primary); font-size: 1rem; font-style: italic;">
+                    "Chắc hẳn ai từng vật lộn với những bài toán khó đều hiểu: Hành trình chinh phục những con số, những giới hạn hay ma trận đôi khi rất gian nan. Sẽ có những lúc bạn giải mãi không ra, không biết mình sai ở bước nào, hay đơn giản là cần một người để thảo luận. Thấu hiểu những khó khăn đó, dự án UPMath đã được chúng mình ấp ủ và cho ra đời."
+                </p>
+                <p style="margin-bottom: 0; line-height: 1.8; color: var(--text-secondary); font-size: 0.95rem;">
+                    UPMath không phải là một cỗ máy giải toán tự động khô khan. Chúng mình xây dựng nền tảng này với mong muốn tạo ra một không gian học tập thực sự – nơi bạn không chỉ tìm thấy đáp án, mà còn hiểu được bản chất của vấn đề.
+                </p>
+            </div>
+
+            <!-- Features Portfolio Grid -->
+            <h2 style="font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-star" style="color: #fbbf24;"></i> Các tính năng thiết thực tại UPMath
+            </h2>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+                <!-- Feature 1 -->
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; transition: transform 0.25s ease, border-color 0.25s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='rgba(99,102,241,0.4)';" onmouseout="this.style.transform='none'; this.style.borderColor='var(--border-color)';">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem;">
+                        <div style="background: rgba(99,102,241,0.15); color: #818cf8; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                            <i class="fa-solid fa-book-open"></i>
+                        </div>
+                        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-primary);">Kho bài tập đa dạng, bài bản</h3>
+                    </div>
+                    <p style="font-size: 0.88rem; line-height: 1.6; color: var(--text-muted); margin: 0;">
+                        Tập trung vào các mảng kiến thức quan trọng như Giải tích (Calculus) và Đại số tuyến tính (Linear Algebra), hệ thống bài tập được sắp xếp khoa học giúp bạn ôn luyện từ cơ bản đến nâng cao.
+                    </p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; transition: transform 0.25s ease, border-color 0.25s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='rgba(99,102,241,0.4)';" onmouseout="this.style.transform='none'; this.style.borderColor='var(--border-color)';">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem;">
+                        <div style="background: rgba(139,92,246,0.15); color: #a78bfa; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                        </div>
+                        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-primary);">"Gia sư" chấm chữa thông minh</h3>
+                    </div>
+                    <p style="font-size: 0.88rem; line-height: 1.6; color: var(--text-muted); margin: 0;">
+                        Khi bạn nộp bài, hệ thống sẽ tự động phân tích từng bước giải của bạn, chỉ ra lỗi sai và gợi ý định hướng thân thiện để bạn dễ dàng hiểu bài và tự giải quyết.
+                    </p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; transition: transform 0.25s ease, border-color 0.25s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='rgba(99,102,241,0.4)';" onmouseout="this.style.transform='none'; this.style.borderColor='var(--border-color)';">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem;">
+                        <div style="background: rgba(236,72,153,0.15); color: #f472b6; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                            <i class="fa-solid fa-code"></i>
+                        </div>
+                        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-primary);">Hiển thị chuẩn mực LaTeX</h3>
+                    </div>
+                    <p style="font-size: 0.88rem; line-height: 1.6; color: var(--text-muted); margin: 0;">
+                        Tạm biệt những công thức lộn xộn, khó nhìn. Mọi biểu thức toán học trên nền tảng đều được tối ưu hiển thị cực kỳ sắc nét bằng chuẩn LaTeX mượt mà.
+                    </p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; transition: transform 0.25s ease, border-color 0.25s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='rgba(99,102,241,0.4)';" onmouseout="this.style.transform='none'; this.style.borderColor='var(--border-color)';">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem;">
+                        <div style="background: rgba(16,185,129,0.15); color: #34d399; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                            <i class="fa-solid fa-images"></i>
+                        </div>
+                        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-primary);">Tải ảnh & Quản lý linh hoạt</h3>
+                    </div>
+                    <p style="font-size: 0.88rem; line-height: 1.6; color: var(--text-muted); margin: 0;">
+                        Hỗ trợ người dùng đăng câu hỏi và gửi nhiều ảnh bài làm, kèm theo tính năng xem trước và gỡ bỏ ảnh trực tiếp cực kỳ trực quan và nhanh gọn.
+                    </p>
+                </div>
+
+                <!-- Feature 5 -->
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; transition: transform 0.25s ease, border-color 0.25s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='rgba(99,102,241,0.4)';" onmouseout="this.style.transform='none'; this.style.borderColor='var(--border-color)';">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem;">
+                        <div style="background: rgba(245,158,11,0.15); color: #fbbf24; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </div>
+                        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-primary);">Trợ thủ cho Giảng viên</h3>
+                    </div>
+                    <p style="font-size: 0.88rem; line-height: 1.6; color: var(--text-muted); margin: 0;">
+                        Tính năng tạo "Bài tương tự (AI)" giúp thầy cô và trợ giảng tiết kiệm tối đa thời gian biên soạn câu hỏi tự luận và đáp án đề bài tương đồng cấu trúc.
+                    </p>
+                </div>
+
+                <!-- Feature 6 -->
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; transition: transform 0.25s ease, border-color 0.25s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='rgba(99,102,241,0.4)';" onmouseout="this.style.transform='none'; this.style.borderColor='var(--border-color)';">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem;">
+                        <div style="background: rgba(59,130,246,0.15); color: #60a5fa; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                            <i class="fa-solid fa-comments"></i>
+                        </div>
+                        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-primary);">Cộng đồng học tập gắn kết</h3>
+                    </div>
+                    <p style="font-size: 0.88rem; line-height: 1.6; color: var(--text-muted); margin: 0;">
+                        Kênh thảo luận và Shoutbox trực tuyến giúp bạn hỏi bài trong thời gian thực. Đóng góp lời giải của bạn được vinh danh trên Bảng xếp hạng.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Footer Quote / Call to action -->
+            <div style="text-align: center; padding: 2rem; background: rgba(255,255,255,0.01); border: 1px dashed var(--border-color); border-radius: 12px; margin-top: 2rem;">
+                <p style="font-size: 1rem; line-height: 1.7; color: var(--text-secondary); margin-top: 0;">
+                    Toán học chưa bao giờ là những con số vô hồn nếu chúng ta biết cách tiếp cận nó. Dù bạn là một học sinh đang tìm kiếm lời giải, hay một giáo viên muốn tìm nguồn tài liệu chất lượng, UPMath luôn mở cửa chào đón bạn.
+                </p>
+                <div style="font-weight: 700; color: var(--accent-blue); font-size: 0.95rem; margin-top: 1rem;">
+                    UPMath - Nơi bạn tìm thấy niềm vui học Toán.
+                </div>
+                <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.5rem;">
+                    🌐 Hệ thống chạy thử nghiệm tại: <a href="https://upmath.onrender.com" target="_blank" style="color: var(--accent-blue); text-decoration: underline;">https://upmath.onrender.com</a>
+                </div>
+            </div>
+        </div>
+        `;
+
+        renderLaTeX(mainContent);
+    } catch (e) {
+        showError("Lỗi tải trang giới thiệu!");
+    }
 }
 
 // ─── 7. BOOT ──────────────────────────────────────────────────────────────────
