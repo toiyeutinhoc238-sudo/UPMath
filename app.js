@@ -2362,7 +2362,7 @@ async function viewLeaderboard() {
                         rowStyle += 'background:rgba(99,102,241,0.09); border-left-color:var(--accent-blue); font-weight: 600;';
                     }
 
-                    return `<tr style="${rowStyle}">`;
+                    return `<tr style="${rowStyle}">
                                        <td style="padding:0.9rem 0.75rem;font-size:${i < 3 ? '1.3rem' : '0.9rem'};font-weight:700;">${medals[i] || i + 1}</td>
                                        <td style="padding:0.9rem 0.75rem;">
                                            <div style="display:flex;align-items:center;gap:0.6rem;"><a href="#profile/${u.googleId}" style="display:inline-flex; border-radius:50%;">
