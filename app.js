@@ -423,40 +423,92 @@ function avatarTag(picture, name, size = 32) {
 }
 
 // Image Upload & Vote system globals
-let p_uploadedImageBase64 = null;
-let s_uploadedImageBase64 = null;
+let p_uploadedImages = [];
+let s_uploadedImages = [];
 
 function handleImageFileSelect(input, type) {
-    const file = input.files[0];
-    if (!file) return;
+    const files = input.files;
+    if (!files || files.length === 0) return;
 
-    if (!file.type.startsWith('image/')) {
-        showToast("Vui lòng tải lên file hình ảnh hợp lệ!", "error");
+    const statusId = type === 'problem' ? 'p-image-upload-status' : 's-image-upload-status';
+    const statusEl = document.getElementById(statusId);
+    if (statusEl) statusEl.textContent = "Đang xử lý các ảnh...";
+
+    let loadedCount = 0;
+    const currentFiles = Array.from(files);
+    
+    currentFiles.forEach(file => {
+        if (!file.type.startsWith('image/')) {
+            loadedCount++;
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const base64 = e.target.result;
+            if (type === 'problem') {
+                p_uploadedImages.push(base64);
+            } else {
+                s_uploadedImages.push(base64);
+            }
+            loadedCount++;
+            if (loadedCount === currentFiles.length) {
+                const total = type === 'problem' ? p_uploadedImages.length : s_uploadedImages.length;
+                if (statusEl) statusEl.textContent = `Tải lên thành công! Tổng số: ${total} ảnh.`;
+                renderImagePreviews(type);
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+    
+    // Reset file input value to allow selecting the same files again
+    input.value = "";
+}
+
+function renderImagePreviews(type) {
+    const previewId = type === 'problem' ? 'p-image-upload-preview' : 's-image-upload-preview';
+    const previewEl = document.getElementById(previewId);
+    if (!previewEl) return;
+
+    const list = type === 'problem' ? p_uploadedImages : s_uploadedImages;
+    
+    if (list.length === 0) {
+        previewEl.innerHTML = "";
         return;
     }
 
-    const reader = new FileReader();
-    const statusId = type === 'problem' ? 'p-image-upload-status' : 's-image-upload-status';
-    const previewId = type === 'problem' ? 'p-image-upload-preview' : 's-image-upload-preview';
+    previewEl.style.display = "flex";
+    previewEl.style.flexWrap = "wrap";
+    previewEl.style.gap = "0.75rem";
+    previewEl.style.marginTop = "0.75rem";
 
-    const statusEl = document.getElementById(statusId);
-    if (statusEl) statusEl.textContent = "Đang xử lý ảnh...";
-
-    reader.onload = function (e) {
-        const base64 = e.target.result;
-        if (type === 'problem') {
-            p_uploadedImageBase64 = base64;
-        } else {
-            s_uploadedImageBase64 = base64;
-        }
-        const previewEl = document.getElementById(previewId);
-        if (previewEl) {
-            previewEl.innerHTML = `<img src="${base64}" style="max-width:100%;max-height:220px;border-radius:8px;border:1px solid var(--border-color);margin-top:0.75rem;">`;
-        }
-        if (statusEl) statusEl.textContent = "Tải ảnh thành công!";
-    };
-    reader.readAsDataURL(file);
+    previewEl.innerHTML = list.map((base64, index) => `
+        <div style="position:relative; width:90px; height:90px; border: 1px solid var(--border-color); border-radius:8px; overflow:hidden; background:var(--bg-input);">
+            <img src="${base64}" style="width:100%; height:100%; object-fit:cover;">
+            <button type="button" onclick="removeUploadedImage('${type}', ${index})" style="position:absolute; top:4px; right:4px; background:rgba(239,68,68,0.95); color:white; border:none; border-radius:50%; width:18px; height:18px; font-size:0.6rem; display:flex; align-items:center; justify-content:center; cursor:pointer;" title="Gỡ ảnh">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    `).join("");
 }
+
+function removeUploadedImage(type, index) {
+    if (type === 'problem') {
+        p_uploadedImages.splice(index, 1);
+    } else {
+        s_uploadedImages.splice(index, 1);
+    }
+    renderImagePreviews(type);
+    
+    const statusId = type === 'problem' ? 'p-image-upload-status' : 's-image-upload-status';
+    const statusEl = document.getElementById(statusId);
+    if (statusEl) {
+        const list = type === 'problem' ? p_uploadedImages : s_uploadedImages;
+        statusEl.textContent = list.length > 0 ? `Đã cập nhật danh sách ảnh (${list.length} ảnh)` : "";
+    }
+}
+
+window.removeUploadedImage = removeUploadedImage;
 
 async function voteItem(type, id, action) {
     const user = getCurrentUser();
@@ -1001,7 +1053,11 @@ async function viewProblemDetail(id) {
                             </div>
                         </div>
                         <div class="problem-content" style="margin-bottom: 1rem;">${preprocessLaTeX(problem.content)}</div>
-                        ${problem.imageUrl ? `<img src="${problem.imageUrl}" alt="Hình bài toán" style="max-width:100%;border-radius:8px;margin-top:1rem;margin-bottom:1rem;display:block;">` : ''}
+                        ${(problem.imageUrls && problem.imageUrls.length > 0) ? `
+                            <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:1rem; margin-bottom:1rem;">
+                                ${problem.imageUrls.map(url => `<img src="${url}" alt="Hình bài toán" style="max-width:100%;border-radius:8px;display:block;">`).join("")}
+                            </div>
+                        ` : (problem.imageUrl ? `<img src="${problem.imageUrl}" alt="Hình bài toán" style="max-width:100%;border-radius:8px;margin-top:1rem;margin-bottom:1rem;display:block;">` : '')}
                         
                         ${problem.gradingRubric ? `
                             <div style="margin-top: 1.25rem; margin-bottom: 1.25rem; padding: 1rem; background: rgba(139, 92, 246, 0.05); border-left: 4px solid #8b5cf6; border-radius: 4px; font-size: 0.9rem;">
@@ -1032,6 +1088,9 @@ async function viewProblemDetail(id) {
                                 </button>
                                 <button class="vote-btn ${hasDislikedProblem ? 'active-dislike' : ''}" onclick="voteItem('problems', '${problem._id}', 'dislike')">
                                     <i class="fa-solid fa-thumbs-down"></i> Không thích <span>(${pDislikes})</span>
+                                </button>
+                                <button class="vote-btn" id="ai-similar-problem-btn" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15)); border: 1px solid rgba(99, 102, 241, 0.25); color: #818cf8;" title="AI tự tạo một bài toán tự luận tương tự đề này">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Bài tương tự (AI)
                                 </button>
                             </div>
                         </div>
@@ -1095,7 +1154,11 @@ async function viewProblemDetail(id) {
                                         </div>
                                         <div class="sol-body-container" id="sol-body-${s._id}">
                                             <div style="margin-bottom:0.5rem; line-height:1.6;">${preprocessLaTeX(s.content)}</div>
-                                            ${s.imageUrl ? `<img src="${s.imageUrl}" alt="Ảnh lời giải" style="max-width:100%;max-height:400px;object-fit:contain;border-radius:8px;margin-top:0.75rem;display:block;">` : ''}
+                                            ${(s.imageUrls && s.imageUrls.length > 0) ? `
+                                                <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:0.75rem; margin-bottom:0.75rem;">
+                                                    ${s.imageUrls.map(url => `<img src="${url}" alt="Ảnh lời giải" style="max-width:100%;max-height:400px;object-fit:contain;border-radius:8px;display:block;">`).join("")}
+                                                </div>
+                                            ` : (s.imageUrl ? `<img src="${s.imageUrl}" alt="Ảnh lời giải" style="max-width:100%;max-height:400px;object-fit:contain;border-radius:8px;margin-top:0.75rem;display:block;">` : '')}
                                             ${s.aiFeedback ? `
                                                 <div style="margin-top:0.75rem; padding:0.75rem 1rem; background:rgba(255,255,255,0.02); border:1px dashed var(--border-color); border-radius:6px; font-size:0.85rem; color:var(--text-muted);">
                                                     <div style="font-weight:600; color:var(--accent-blue); margin-bottom:0.25rem; display:flex; align-items:center; gap:0.35rem;">
@@ -1138,7 +1201,7 @@ async function viewProblemDetail(id) {
                                         <i class="fa-solid fa-cloud-arrow-up fa-3x"></i>
                                         <p>Kéo thả ảnh hoặc click để chọn ảnh lời giải</p>
                                         <span>Chụp bài làm từ điện thoại hoặc tải ảnh chụp màn hình</span>
-                                        <input type="file" id="s-image-file-input" accept="image/*" style="display: none;" onchange="handleImageFileSelect(this, 'solution')">
+                                        <input type="file" id="s-image-file-input" accept="image/*" style="display: none;" multiple onchange="handleImageFileSelect(this, 'solution')">
                                         <div id="s-image-upload-status" style="font-size: 0.82rem; color: var(--accent-blue); margin-top: 0.5rem; font-weight: 600;"></div>
                                         <div id="s-image-upload-preview"></div>
                                     </div>
@@ -1234,7 +1297,7 @@ async function viewProblemDetail(id) {
         renderLaTeX(mainContent);
 
         // Reset solution image upload variables on entry
-        s_uploadedImageBase64 = null;
+        s_uploadedImages = [];
 
         // Initialize Quill Editor if snow theme is loaded
         let sQuill = null;
@@ -1577,6 +1640,7 @@ async function viewProblemDetail(id) {
 
             let content = "";
             let imageUrl = "";
+            let imageUrls = [];
 
             if (mode === 'latex') {
                 content = document.getElementById("sol-content").value.trim();
@@ -1586,8 +1650,9 @@ async function viewProblemDetail(id) {
                 if (content === "<p><br></p>" || !content) { showToast("Vui lòng soạn thảo lời giải!", "warning"); return; }
             } else if (mode === 'image') {
                 content = "[Lời giải dạng hình ảnh]";
-                imageUrl = s_uploadedImageBase64;
-                if (!imageUrl) { showToast("Vui lòng tải lên hoặc chụp ảnh lời giải!", "warning"); return; }
+                imageUrls = s_uploadedImages;
+                imageUrl = imageUrls[0] || ""; // Fallback cho ảnh đầu tiên
+                if (imageUrls.length === 0) { showToast("Vui lòng tải lên hoặc chụp ít nhất 1 ảnh lời giải!", "warning"); return; }
             }
 
             const isGrading = e.submitter?.value === 'grade';
@@ -1603,7 +1668,7 @@ async function viewProblemDetail(id) {
             if (isGrading) showToast("AI đang tiến hành chấm bài của bạn, vui lòng đợi trong giây lát...", "info");
 
             try {
-                const solution = await api.addSolution({ problemId: id, author: user.username, authorPicture: user.picture, authorGoogleId: user.googleId, content, imageUrl, skipGrading: !isGrading });
+                const solution = await api.addSolution({ problemId: id, author: user.username, authorPicture: user.picture, authorGoogleId: user.googleId, content, imageUrl, imageUrls, skipGrading: !isGrading });
                 if (isGrading) {
                     if (solution.status === 'correct') {
                         showToast(`AI chấm: Lời giải chính xác! Bạn được cộng +${problem.points} điểm 🎉`, "success");
@@ -1861,7 +1926,7 @@ function viewCreateProblem() {
                         <i class="fa-solid fa-cloud-arrow-up fa-3x"></i>
                         <p>Kéo thả ảnh hoặc click để chọn ảnh đề bài</p>
                         <span>Hỗ trợ PNG, JPG, JPEG</span>
-                        <input type="file" id="p-image-file-input" accept="image/*" style="display: none;" onchange="handleImageFileSelect(this, 'problem')">
+                        <input type="file" id="p-image-file-input" accept="image/*" style="display: none;" multiple onchange="handleImageFileSelect(this, 'problem')">
                         <div id="p-image-upload-status" style="font-size: 0.82rem; color: var(--accent-blue); margin-top: 0.5rem; font-weight: 600;"></div>
                         <div id="p-image-upload-preview"></div>
                     </div>
@@ -1911,7 +1976,7 @@ function viewCreateProblem() {
         </div>`;
 
     // Reset uploaded image variables
-    p_uploadedImageBase64 = null;
+    p_uploadedImages = [];
 
     // Initialize Quill Editor
     let pQuill = null;
@@ -1994,6 +2059,7 @@ function viewCreateProblem() {
 
         let content = "";
         let imageUrl = "";
+        let imageUrls = [];
 
         if (mode === 'latex') {
             content = document.getElementById("p-content").value.trim();
@@ -2003,8 +2069,9 @@ function viewCreateProblem() {
             if (content === "<p><br></p>" || !content) { showToast("Vui lòng soạn thảo đề bài!", "warning"); return; }
         } else if (mode === 'image') {
             content = "[Đề bài dạng hình ảnh]";
-            imageUrl = p_uploadedImageBase64;
-            if (!imageUrl) { showToast("Vui lòng tải lên hoặc chụp ảnh đề bài!", "warning"); return; }
+            imageUrls = p_uploadedImages;
+            imageUrl = imageUrls[0] || ""; // Fallback cho ảnh thứ nhất
+            if (imageUrls.length === 0) { showToast("Vui lòng tải lên hoặc chụp ít nhất 1 ảnh đề bài!", "warning"); return; }
         }
 
         const title = document.getElementById("p-title").value.trim();
@@ -2020,7 +2087,7 @@ function viewCreateProblem() {
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang đăng...`;
 
         try {
-            await api.addProblem({ title, content, category, tags, creator: user.username, creatorPicture: user.picture, creatorGoogleId: user.googleId, points, gradingRubric, difficulty, imageUrl });
+            await api.addProblem({ title, content, category, tags, creator: user.username, creatorPicture: user.picture, creatorGoogleId: user.googleId, points, gradingRubric, difficulty, imageUrl, imageUrls });
             showToast("Đã đăng bài toán! +10 điểm 🎉", "success");
             window.location.hash = "#exercises";
         } catch (err) {
