@@ -50,6 +50,12 @@ async function handleGoogleCredential(response) {
     }
 }
 
+window.actualHandleGoogleCredential = handleGoogleCredential;
+if (window._pendingGoogleResponse) {
+    handleGoogleCredential(window._pendingGoogleResponse);
+    delete window._pendingGoogleResponse;
+}
+
 function showApp(googleUser) {
     const overlay = document.getElementById("login-overlay");
     const appContainer = document.getElementById("app-container");

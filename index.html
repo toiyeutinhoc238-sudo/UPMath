@@ -49,6 +49,16 @@
     <!-- App JS Scripts -->
     <script src="app.js?v=8" defer></script>
 
+    <!-- Google Login Callback Placeholder to prevent GSI race conditions -->
+    <script>
+        window.handleGoogleCredential = function(response) {
+            window._pendingGoogleResponse = response;
+            if (typeof window.actualHandleGoogleCredential === 'function') {
+                window.actualHandleGoogleCredential(response);
+            }
+        };
+    </script>
+
     <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" defer></script>
 
