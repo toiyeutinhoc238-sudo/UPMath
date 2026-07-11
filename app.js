@@ -1468,6 +1468,15 @@ async function viewProblemDetail(id) {
         // Render initial welcome message
         renderTutorMessages();
 
+        // Toggle show/hide AI Tutor Chatbox Widget
+        document.getElementById("tutor-floating-trigger")?.addEventListener("click", () => {
+            document.getElementById("tutor-widget-container")?.classList.add("open");
+        });
+
+        document.getElementById("close-tutor-widget-btn")?.addEventListener("click", () => {
+            document.getElementById("tutor-widget-container")?.classList.remove("open");
+        });
+
         // AI Tutor Event Listeners
         document.getElementById("ai-tutor-chat-form")?.addEventListener("submit", async (e) => {
             e.preventDefault();
