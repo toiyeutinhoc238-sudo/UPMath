@@ -1905,8 +1905,8 @@ async function viewProfile() {
                     ` : `
                         <div class="problems-grid">
                             ${pageItems.map(p => `
-                                <a href="#problem/${p._id}" class="grid-problem-link" title="${p.title}">
-                                    ${p.title}
+                                <a href="#problem/${p._id}" class="grid-problem-link" title="${p.title.replace(/"/g, '&quot;')}">
+                                    ${preprocessLaTeX(p.title)}
                                 </a>
                             `).join("")}
                         </div>
@@ -1936,6 +1936,9 @@ async function viewProfile() {
                         renderTabContent();
                     });
                 });
+
+                // Render KaTeX for titles containing LaTeX
+                renderLaTeX(container);
 
             } else if (activeTab === 'settings') {
                 container.innerHTML = `<form id="profile-settings-form" class="settings-form">
@@ -2172,7 +2175,7 @@ async function viewAdmin() {
                             : problems.map(p => `
                                 <div style="padding: 0.85rem; background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
                                     <div>
-                                        <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">${p.title}</div>
+                                        <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">${preprocessLaTeX(p.title)}</div>
                                         <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; gap: 0.75rem;">
                                             <span>Người đăng: ${p.creator}</span>
                                             <span>Phân loại: ${p.category === 'calculus' ? 'Giải tích' : 'Đại số'}</span>
@@ -2335,6 +2338,9 @@ async function viewAdmin() {
                 } catch { showToast("Lỗi khi điều chỉnh điểm!", "error"); }
             });
         });
+
+        // Render LaTeX for Admin Panel
+        renderLaTeX(mainContent);
 
     } catch (e) {
         showError("Lỗi tải trang quản trị!");
