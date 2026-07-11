@@ -1460,7 +1460,7 @@ async function viewProblemDetail(id) {
                 renderTutorMessages();
             } catch (err) {
                 typingDiv.remove();
-                problemChatMessages.push({ role: "model", content: "⚠️ Có lỗi xảy ra khi kết nối trợ lý. Vui lòng thử lại!" });
+                problemChatMessages.push({ role: "model", content: `⚠️ Lỗi kết nối trợ lý: ${err.message}` });
                 renderTutorMessages();
             }
         }
