@@ -74,39 +74,46 @@
         <button id="login-theme-toggle" class="login-theme-toggle" title="Chuyển đổi Giao diện">
             <i class="fa-solid fa-sun"></i>
         </button>
-        <div class="login-bg-orbs">
-            <div class="orb orb-1"></div>
-            <div class="orb orb-2"></div>
-            <div class="orb orb-3"></div>
-        </div>
-        <div class="login-card">
-            <div class="login-card-decor-tr"></div>
-            <div class="login-card-decor-bl"></div>
-            <div class="login-logo">
-                <img src="logo.png" alt="Logo"
-                    style="height: 38px; width: 38px; border-radius: 8px; object-fit: contain;">
-                <span class="login-logo-text">UP<span>Math</span></span>
-            </div>
-            <h1 class="login-title">Chào mừng trở lại!</h1>
-            <p class="login-subtitle">
-                Nền tảng học tập <strong>COMP1800</strong> &mdash; Cơ sở Toán học trong CNTT.<br>
-                Đăng nhập để bắt đầu giải toán, chia sẻ lời giải và thảo luận cùng cộng đồng.
-            </p>
-
-            <!-- Google Sign-In -->
-            <div class="google-btn-wrapper">
-                <div id="g_id_onload"
-                    data-client_id="114290400611-fnma9n755iluuniauu1563p0viioobkr.apps.googleusercontent.com"
-                    data-callback="handleGoogleCredential" data-auto_prompt="false">
-                </div>
-                <div class="g_id_signin" data-type="standard" data-size="large" data-theme="filled_black"
-                    data-text="signin_with" data-shape="pill" data-logo_alignment="left" data-width="320">
-                </div>
+        <div class="portal-login-container">
+            <!-- Header section: Logo and texts (centered) -->
+            <div class="portal-header">
+                <img src="logo.png" alt="Logo" class="portal-logo">
+                <div class="portal-title-primary">TRƯỜNG ĐẠI HỌC SƯ PHẠM THÀNH PHỐ HỒ CHÍ MINH</div>
+                <div class="portal-title-secondary">CỔNG THÔNG TIN HỌC TẬP UPMATH</div>
             </div>
 
-            <div class="login-subjects">
-                <div class="login-subject-pill login-calculus"><i class="fa-solid fa-wave-square"></i> Giải tích</div>
-                <div class="login-subject-pill login-algebra"><i class="fa-solid fa-table-cells"></i> Đại số</div>
+            <!-- The login card -->
+            <div class="portal-card">
+                <h1 class="portal-card-title">ĐĂNG NHẬP</h1>
+                <p class="portal-card-subtitle">Cổng đăng nhập hệ thống học tập</p>
+
+                <form id="portal-mock-form" onsubmit="handlePortalMockLogin(event)">
+                    <div class="portal-form-group">
+                        <input type="text" id="portal-username" class="portal-input" placeholder="Tên đăng nhập">
+                        <div class="portal-error-msg" id="portal-username-error" style="display: none;">Tên đăng nhập là bắt buộc</div>
+                    </div>
+                    <div class="portal-form-group" style="margin-top: 1rem;">
+                        <input type="password" id="portal-password" class="portal-input" placeholder="Mật khẩu">
+                        <div class="portal-error-msg" id="portal-password-error" style="display: none;">Mật khẩu là bắt buộc</div>
+                    </div>
+                    <button type="submit" class="portal-submit-btn">Đăng nhập</button>
+                </form>
+
+                <div class="portal-divider">
+                    <span>Hoặc</span>
+                </div>
+
+                <!-- Google Sign-In wrapper -->
+                <div class="google-btn-wrapper">
+                    <div id="g_id_onload"
+                        data-client_id="114290400611-fnma9n755iluuniauu1563p0viioobkr.apps.googleusercontent.com"
+                        data-callback="handleGoogleCredential" data-auto_prompt="false">
+                    </div>
+                    <!-- Google signin button -->
+                    <div class="g_id_signin" data-type="standard" data-size="large" data-theme="filled_blue"
+                        data-text="signin_with" data-shape="pill" data-logo_alignment="left" data-width="320">
+                    </div>
+                </div>
             </div>
         </div>
     </div>

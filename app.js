@@ -2752,3 +2752,35 @@ document.addEventListener("click", () => {
         bar.closest(".shout-msg-hover-actions")?.classList.remove("active");
     });
 });
+
+window.handlePortalMockLogin = function(e) {
+    e.preventDefault();
+    const userInp = document.getElementById("portal-username");
+    const passInp = document.getElementById("portal-password");
+    const userErr = document.getElementById("portal-username-error");
+    const passErr = document.getElementById("portal-password-error");
+    
+    let hasError = false;
+    
+    if (!userInp.value.trim()) {
+        userInp.classList.add("has-error");
+        if (userErr) userErr.style.display = "block";
+        hasError = true;
+    } else {
+        userInp.classList.remove("has-error");
+        if (userErr) userErr.style.display = "none";
+    }
+    
+    if (!passInp.value.trim()) {
+        passInp.classList.add("has-error");
+        if (passErr) passErr.style.display = "block";
+        hasError = true;
+    } else {
+        passInp.classList.remove("has-error");
+        if (passErr) passErr.style.display = "none";
+    }
+    
+    if (!hasError) {
+        showToast("Để đồng bộ học tập, vui lòng đăng nhập bằng tài khoản Google trường cấp ở nút phía dưới! 🔑", "info");
+    }
+};
