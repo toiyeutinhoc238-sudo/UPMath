@@ -316,6 +316,9 @@ function renderLaTeX(el) {
 function preprocessLaTeX(text) {
     if (!text) return "";
 
+    // Convert double-escaped backslash-n to actual newlines
+    text = text.replace(/\\n/g, "\n").replace(/\\r/g, "\r");
+
     // Convert markdown-style headings (## Heading) from AI responses
     text = text.replace(/^###\s+(.+)$/gm, '<h4 style="margin: 0.85rem 0 0.4rem; font-size: 1rem; color: var(--accent-blue); font-weight:700;">$1</h4>');
     text = text.replace(/^##\s+(.+)$/gm, '<h3 style="margin: 1rem 0 0.5rem; font-size: 1.15rem; color: var(--accent-blue); font-weight:700;">$1</h3>');
@@ -1178,11 +1181,11 @@ async function viewProblemDetail(id) {
                                                 </div>
                                             ` : (s.imageUrl ? `<img src="${s.imageUrl}" alt="Ảnh lời giải" style="max-width:100%;max-height:400px;object-fit:contain;border-radius:8px;margin-top:0.75rem;display:block;">` : '')}
                                             ${s.aiFeedback ? `
-                                                <div style="margin-top:0.75rem; padding:0.75rem 1rem; background:rgba(255,255,255,0.02); border:1px dashed var(--border-color); border-radius:6px; font-size:0.85rem; color:var(--text-muted);">
-                                                    <div style="font-weight:600; color:var(--accent-blue); margin-bottom:0.25rem; display:flex; align-items:center; gap:0.35rem;">
+                                                <div style="margin-top:0.9rem; padding:1rem 1.25rem; background:rgba(99,102,241,0.03); border:1px dashed rgba(99,102,241,0.3); border-radius:8px; font-size:0.9rem;">
+                                                    <div style="font-weight:600; color:var(--accent-blue); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.35rem; font-size:0.95rem;">
                                                         <i class="fa-solid fa-robot"></i> Đánh giá từ AI Assistant:
                                                     </div>
-                                                    <div>${preprocessLaTeX(s.aiFeedback)}</div>
+                                                    <div style="line-height: 1.7; color: var(--text-secondary); word-break: break-word;">${preprocessLaTeX(s.aiFeedback)}</div>
                                                 </div>
                                             ` : ''}
                                         </div>
