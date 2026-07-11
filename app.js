@@ -2346,7 +2346,23 @@ async function viewLeaderboard() {
                                ${users.map((u, i) => {
                     const isMe = me && me.email === u.email;
                     const displayName = u.fullName || (u.name && u.name !== 'undefined' ? u.name : '') || u.username || 'Người dùng';
-                    return `<tr style="border-bottom:1px solid var(--border-color);${isMe ? 'background:rgba(56,189,248,0.06);' : ''}">
+                    // Xác định màu nền và viền trái dựa trên thứ hạng (i: 0-indexed)
+                    let rowStyle = 'border-bottom:1px solid var(--border-color); border-left:4px solid transparent;';
+                    if (i === 0) {
+                        rowStyle += 'background:rgba(251,191,36,0.06); border-left-color:rgba(251,191,36,0.85);';
+                    } else if (i === 1) {
+                        rowStyle += 'background:rgba(148,163,184,0.06); border-left-color:rgba(148,163,184,0.85);';
+                    } else if (i === 2) {
+                        rowStyle += 'background:rgba(180,83,9,0.06); border-left-color:rgba(180,83,9,0.85);';
+                    } else if (i >= 3 && i <= 9) {
+                        rowStyle += 'background:rgba(14,165,233,0.04); border-left-color:rgba(14,165,233,0.75);';
+                    }
+
+                    if (isMe) {
+                        rowStyle += 'background:rgba(99,102,241,0.09); border-left-color:var(--accent-blue); font-weight: 600;';
+                    }
+
+                    return `<tr style="${rowStyle}">`;
                                        <td style="padding:0.9rem 0.75rem;font-size:${i < 3 ? '1.3rem' : '0.9rem'};font-weight:700;">${medals[i] || i + 1}</td>
                                        <td style="padding:0.9rem 0.75rem;">
                                            <div style="display:flex;align-items:center;gap:0.6rem;"><a href="#profile/${u.googleId}" style="display:inline-flex; border-radius:50%;">
