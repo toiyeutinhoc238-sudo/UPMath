@@ -313,8 +313,8 @@ function preprocessLaTeX(text) {
     text = lines.join("\n");
     
     // 2. Headings
-    text = text.replace(/\\subsubsection\\*?\\{([^}]+)\\}/g, '<h4 style="margin: 0.5rem 0; font-size: 1.1rem; color: var(--accent-blue); font-weight:600;">$1</h4>');
-    text = text.replace(/\\subsection\\*?\\{([^}]+)\\}/g, '<h3 style="margin: 0.75rem 0; font-size: 1.25rem; color: var(--accent-blue); font-weight:600;">$1</h3>');
+    text = text.replace(/\\subsubsection\*?\{([^}]+)\}/g, '<h4 style="margin: 0.85rem 0 0.5rem; font-size: 1.15rem; color: var(--accent-blue); font-weight:600;">$1</h4>');
+    text = text.replace(/\\subsection\*?\{([^}]+)\}/g, '<h3 style="margin: 1.1rem 0 0.65rem; font-size: 1.3rem; color: var(--accent-blue); font-weight:600;">$1</h3>');
     
     // 3. Remove unsupported formatting/spaces commands
     text = text.replace(/\\noindent/g, "");
@@ -324,9 +324,9 @@ function preprocessLaTeX(text) {
     text = text.replace(/\\end\{minipage\}/g, '</div>');
     
     // 5. Lists (enumerate & itemize)
-    text = text.replace(/\\begin\{enumerate\}/g, '<ol style="margin-left: 1.8rem; list-style-type: decimal; margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">');
+    text = text.replace(/\\begin\{enumerate\}/g, '<ol style="margin-left: 1.8rem; list-style-type: decimal; margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">');
     text = text.replace(/\\end\{enumerate\}/g, '</li></ol>');
-    text = text.replace(/\\begin\{itemize\}/g, '<ul style="margin-left: 1.8rem; list-style-type: disc; margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">');
+    text = text.replace(/\\begin\{itemize\}/g, '<ul style="margin-left: 1.8rem; list-style-type: disc; margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">');
     text = text.replace(/\\end\{itemize\}/g, '</li></ul>');
     
     let parts = text.split(/\\item/g);
@@ -1067,7 +1067,7 @@ function viewCreateProblem() {
                         </div>
                         <div>
                             <label class="form-label" style="font-size:0.78rem;color:var(--text-muted);">👁️ Xem trước</label>
-                            <div id="prob-preview" style="min-height:200px;background:var(--bg-input);border:1px solid var(--border-color);border-radius:8px;padding:0.6rem 0.75rem;overflow-y:auto;"></div>
+                            <div id="prob-preview" style="min-height:200px;background:var(--bg-input);border:1px solid var(--border-color);border-radius:8px;padding:0.8rem 1rem;overflow-y:auto;line-height:1.8;font-size:1.05rem;"></div>
                         </div>
                     </div>
                 </div>
