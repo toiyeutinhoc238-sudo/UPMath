@@ -1283,13 +1283,8 @@ Quy tắc giảng dạy:
 5. Phản hồi bằng tiếng Việt tự nhiên, ấm áp, khuyến khích`;
 
         const contents = [];
-        const firstMessageText = `HƯỚNG DẪN HỆ THỐNG:\n${systemInstruction}\n\nCuộc trò chuyện:\n`;
-
-        messages.forEach((msg, idx) => {
-            let txt = msg.content;
-            if (idx === 0) txt = firstMessageText + txt;
-
-            const parts = [{ text: txt }];
+        messages.forEach((msg) => {
+            const parts = [{ text: msg.content }];
             if (msg.image && msg.image.startsWith('data:')) {
                 const imgParts = msg.image.split(',');
                 const mimeMatches = imgParts[0].match(/:(.*?);/);
@@ -1309,8 +1304,13 @@ Quy tắc giảng dạy:
             });
         });
 
-        // ── TẦNG 1: Sinh câu trả lời ──────────────────────────────────────────
-        const response1 = await callGeminiWithRetry(apiKey, { contents });
+        // ── TẦNG 1: Sinh câu trả lời với systemInstruction tách biệt đúng chuẩn API ──
+        const response1 = await callGeminiWithRetry(apiKey, { 
+            contents,
+            systemInstruction: {
+                parts: [{ text: systemInstruction }]
+            }
+        });
 
         const data1 = await response1.json();
         if (!data1.candidates?.[0]?.content?.parts) {
