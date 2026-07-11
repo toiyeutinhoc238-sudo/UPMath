@@ -313,10 +313,6 @@ function renderLaTeX(el) {
 function preprocessLaTeX(text) {
     if (!text) return "";
 
-    // 0. Normalize literal \\n escape sequences from AI responses
-    // AI sometimes outputs literal backslash-n as \n in its text
-    text = text.replace(/\\n/g, "\n");
-
     // Convert markdown-style headings (## Heading) from AI responses
     text = text.replace(/^###\s+(.+)$/gm, '<h4 style="margin: 0.85rem 0 0.4rem; font-size: 1rem; color: var(--accent-blue); font-weight:700;">$1</h4>');
     text = text.replace(/^##\s+(.+)$/gm, '<h3 style="margin: 1rem 0 0.5rem; font-size: 1.15rem; color: var(--accent-blue); font-weight:700;">$1</h3>');
@@ -1230,7 +1226,11 @@ async function viewProblemDetail(id) {
                 }
                     </div>
                     <div class="ai-msg-content-wrap">
-                        <div class="ai-msg-bubble">${preprocessLaTeX(m.content)}</div>
+                        <div class="ai-msg-bubble">${preprocessLaTeX(
+                            m.role === 'model'
+                                ? m.content.replace(/\\n/g, '\n')  // chỉ normalize \n literal trong AI responses
+                                : m.content
+                        )}</div>
                         ${m.verified === true ? '<div class="ai-verify-badge verified"><i class="fa-solid fa-circle-check"></i> Đã kiểm tra</div>' : ''}
                         ${m.verified === false ? '<div class="ai-verify-badge corrected"><i class="fa-solid fa-triangle-exclamation"></i> Đã điều chỉnh</div>' : ''}
                     </div>
