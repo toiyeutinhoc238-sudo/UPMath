@@ -1466,26 +1466,25 @@ async function viewProblemDetail(id) {
                 }
             }
         });
-+
-+        // AI Similar Problem button
-+        document.getElementById("ai-similar-problem-btn")?.addEventListener("click", async () => {
-+            const btn = document.getElementById("ai-similar-problem-btn");
-+            const originalHTML = btn.innerHTML;
-+            btn.disabled = true;
-+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo bài tương tự...`;
-+            try {
-+                const newProb = await api.createSimilarProblem(problem._id, {
-+                    creator: user ? user.name : "Hệ thống AI",
-+                    creatorGoogleId: user ? user.googleId : null
-+                });
-+                showToast("AI đã sinh đề bài tương tự thành công! 🪄", "success");
-+                window.location.hash = `#problem/${newProb._id}`;
-+            } catch (err) {
-+                showToast("Lỗi khi sinh đề bài tương tự: " + err.message, "error");
-+                btn.disabled = false;
-+                btn.innerHTML = originalHTML;
-+            }
-+        });
+        // AI Similar Problem button
+        document.getElementById("ai-similar-problem-btn")?.addEventListener("click", async () => {
+            const btn = document.getElementById("ai-similar-problem-btn");
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo bài tương tự...`;
+            try {
+                const newProb = await api.createSimilarProblem(problem._id, {
+                    creator: user ? user.name : "Hệ thống AI",
+                    creatorGoogleId: user ? user.googleId : null
+                });
+                showToast("AI đã sinh đề bài tương tự thành công! 🪄", "success");
+                window.location.hash = `#problem/${newProb._id}`;
+            } catch (err) {
+                showToast("Lỗi khi sinh đề bài tương tự: " + err.message, "error");
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+        });
 
         // Edit Solution button (inline edit)
         document.querySelectorAll(".edit-sol-btn").forEach(btn => {
