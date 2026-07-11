@@ -560,7 +560,7 @@ ${req.body.content || "[Không có văn bản thô, chỉ có ảnh chụp bài 
 Hãy chấm điểm lời giải này và trả về kết quả ở định dạng JSON duy nhất dưới đây (không có bất cứ ký tự bao ngoài nào khác ngoài JSON, chỉ trả về JSON thô):
 {
   "isCorrect": true hoặc false,
-  "feedback": "Nhận xét chi tiết của bạn bằng tiếng Việt dưới vai trò một giảng viên chấm thi (xưng hô Thầy/Cô - em). Hãy chỉ rõ các bước sai, khen ngợi bước làm tốt, và hướng dẫn cách sửa nếu có lỗi. Tuyệt đối không xưng là AI hay chatbot. Viết các công thức toán học dưới dạng LaTeX đặt trong cặp dấu đô la $ ... $ hoặc $$ ... $$ để hiển thị đẹp mắt."
+  "feedback": "Nhận xét chi tiết của bạn bằng tiếng Việt dưới vai trò một giảng viên chấm thi (xưng hô Thầy/Cô - em). Hãy chỉ rõ các bước sai, khen ngợi bước làm tốt, và hướng dẫn cách sửa nếu có lỗi. Tuyệt đối không xưng là AI hay chatbot. Viết các công thức toán học dưới dạng LaTeX đặt trong cặp dấu đô la $ ... $ hoặc $$ ... $$ để hiển thị đẹp mắt. Lưu ý nếu học sinh sử dụng quy tắc giới hạn thì gọi đúng tên là 'L'Hôpital' hoặc 'L'Hopital', tuyệt đối không được viết là 'L'Hospital'."
 }`;
 
                 let inlineData = null;
@@ -1234,7 +1234,7 @@ ${knowledgeBase}
 
 Quy tắc giảng dạy:
 1. Gợi mở từng bước, đặt câu hỏi nhỏ định hướng - KHÔNG cho toàn bộ lời giải ngay
-2. Áp dụng đúng công thức từ cơ sở tri thức, nêu rõ đang dùng quy tắc nào
+2. Áp dụng đúng công thức từ cơ sở tri thức, nêu rõ đang dùng quy tắc nào (lưu ý viết đúng tên quy tắc là "L'Hôpital" hoặc "L'Hopital", tuyệt đối KHÔNG viết sai thành "L'Hospital").
 3. Nếu học viên làm sai, chỉ ra lỗi cụ thể và hướng dẫn sửa
 4. Viết công thức bằng LaTeX: $...$ (inline) hoặc $$...$$ (block)
 5. Phản hồi bằng tiếng Việt tự nhiên, ấm áp, khuyến khích`;
