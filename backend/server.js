@@ -116,7 +116,7 @@ const shoutSchema = new mongoose.Schema({
             {
                 googleId: String,
                 username: String,
-                type: String
+                reactionType: String
             }
         ],
         default: []
@@ -879,15 +879,16 @@ app.put('/api/shouts/:id/react', async (req, res) => {
 
         const existingIdx = shout.reactions.findIndex(r => r.googleId === googleId);
         if (existingIdx !== -1) {
-            if (shout.reactions[existingIdx].type === type) {
+            if (shout.reactions[existingIdx].reactionType === type) {
                 shout.reactions.splice(existingIdx, 1);
             } else {
-                shout.reactions[existingIdx].type = type;
+                shout.reactions[existingIdx].reactionType = type;
             }
         } else {
-            shout.reactions.push({ googleId, username, type });
+            shout.reactions.push({ googleId, username, reactionType: type });
         }
 
+        shout.markModified('reactions');
         await shout.save();
         res.json(shout);
     } catch (err) {

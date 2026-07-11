@@ -709,7 +709,7 @@ function renderShouts(shouts) {
         // Group reactions
         const grouped = {};
         (s.reactions || []).forEach(r => {
-            grouped[r.type] = (grouped[r.type] || 0) + 1;
+            grouped[r.reactionType] = (grouped[r.reactionType] || 0) + 1;
         });
 
         const hasReactions = Object.keys(grouped).length > 0;
@@ -738,7 +738,7 @@ function renderShouts(shouts) {
                 ${hasReactions ? `
                     <div class="shout-reactions-list">
                         ${Object.entries(grouped).map(([type, count]) => `
-                            <span class="reaction-badge" data-shout-id="${s._id}" data-type="${type}" title="${(s.reactions || []).filter(r => r.type === type).map(r => r.username).join(', ')}">
+                            <span class="reaction-badge" data-shout-id="${s._id}" data-type="${type}" title="${(s.reactions || []).filter(r => r.reactionType === type).map(r => r.username).join(', ')}">
                                 ${reactEmojis[type]} ${count}
                             </span>
                         `).join("")}
