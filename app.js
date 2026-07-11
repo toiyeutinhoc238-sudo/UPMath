@@ -1231,7 +1231,7 @@ async function viewProblemDetail(id) {
                                 <div style="margin-top:1.25rem;padding:1rem;background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.2);border-radius:10px;">
                                     <div style="font-size:0.8rem;color:var(--text-muted);display:flex;align-items:center;gap:0.5rem;margin-bottom:0.85rem;">
                                         <i class="fa-solid fa-circle-info" style="color:#818cf8;"></i>
-                                        <span>Chọn cách nộp bài: đăng để cộng đồng góp ý, hoặc nhờ AI Gemini chấm điểm ngay.</span>
+                                        <span>Chọn cách nộp bài: đăng để cộng đồng góp ý, hoặc nhờ hệ thống chấm điểm tự động ngay.</span>
                                     </div>
                                     <div style="display:flex;gap:0.75rem;justify-content:flex-end;flex-wrap:wrap;">
                                         <button type="submit" name="action" value="post" class="btn btn-secondary" style="display:flex;align-items:center;gap:0.4rem;">
@@ -1596,7 +1596,7 @@ async function viewProblemDetail(id) {
                     </div>
                     <div style="font-size:0.76rem;color:var(--text-muted);margin-bottom:0.5rem;display:flex;align-items:center;gap:0.35rem;">
                         <i class="fa-solid fa-circle-info"></i>
-                        <span>Ấn Lưu sẽ tự động nhờ AI Gemini chấm điểm và nhận xét lại bài làm.</span>
+                        <span>Ấn Lưu sẽ tự động chấm điểm và nhận xét lại bài làm.</span>
                     </div>
                     <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
                         <button class="btn btn-secondary btn-sm cancel-edit-btn" style="height:30px;padding:0 0.75rem;font-size:0.8rem;">Hủy</button>
@@ -1868,7 +1868,7 @@ function viewCreateProblem() {
                     <h3 style="margin:0; font-size:1.1rem; color:#818cf8; display:flex; align-items:center; gap:0.5rem;">
                         <i class="fa-solid fa-wand-magic-sparkles"></i> Trợ lý Soạn đề AI (Beta)
                     </h3>
-                    <span style="font-size:0.78rem; color:var(--text-muted);">Tự động tạo đề bài toán tự luận bằng trí tuệ nhân tạo Gemini</span>
+                    <span style="font-size:0.78rem; color:var(--text-muted);">Tự động tạo đề bài toán tự luận nhanh chóng và tiện lợi</span>
                 </div>
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:1rem; align-items:end;">
                     <div class="form-group" style="margin-bottom:0;">

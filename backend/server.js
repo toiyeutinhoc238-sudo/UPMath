@@ -1235,7 +1235,7 @@ app.post('/api/ai-tutor', async (req, res) => {
         if (!problem) return res.status(404).json({ error: 'Problem not found' });
 
         const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) return res.status(500).json({ error: 'Gemini API key is not configured' });
+        if (!apiKey) return res.status(500).json({ error: 'Khóa API của hệ thống chưa được cấu hình' });
 
         // ── CƠ SỞ TRI THỨC COMP1800 (đã được xác minh) ──────────────────────
         const knowledgeBase = `
@@ -1436,7 +1436,7 @@ app.post('/api/ai-tutor/generate-problem', async (req, res) => {
     try {
         const { category, difficulty, questionsCount } = req.body;
         const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) return res.status(500).json({ error: 'Gemini API key is not configured' });
+        if (!apiKey) return res.status(500).json({ error: 'Khóa API của hệ thống chưa được cấu hình' });
 
         const targetCat = category === 'random' ? (Math.random() > 0.5 ? 'calculus' : 'algebra') : category;
         const catName = targetCat === 'calculus' ? 'Giải tích (Calculus)' : 'Đại số tuyến tính (Linear Algebra)';
@@ -1488,7 +1488,7 @@ Chỉ trả về JSON thô, không viết thêm bất kỳ dòng text nào khác
         }
 
         const generated = JSON.parse(data.candidates[0].content.parts[0].text);
-        
+
         // Gửi kèm category và difficulty gốc để autofill
         res.json({
             title: generated.title,
@@ -1512,7 +1512,7 @@ app.post('/api/problems/:id/similar', async (req, res) => {
 
         const { creator, creatorGoogleId } = req.body;
         const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) return res.status(500).json({ error: 'Gemini API key is not configured' });
+        if (!apiKey) return res.status(500).json({ error: 'Khóa API của hệ thống chưa được cấu hình' });
 
         const prompt = `Bạn là giảng viên toán. Hãy tạo ra một đề bài toán tự luận MỚI, tương tự (cùng mức độ, cấu trúc) với bài toán sau đây, nhưng thay đổi số liệu hoặc cấu trúc hàm để thành một bài toán mới:
 Tiêu đề: ${sourceProblem.title}
