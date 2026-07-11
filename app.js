@@ -3170,9 +3170,6 @@ async function viewAbout() {
                 <div style="font-weight: 700; color: var(--accent-blue); font-size: 0.95rem; margin-top: 1rem;">
                     UPMath - Nơi bạn tìm thấy niềm vui học Toán.
                 </div>
-                <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.5rem;">
-                    🌐 Hệ thống chạy thử nghiệm tại: <a href="https://upmath.onrender.com" target="_blank" style="color: var(--accent-blue); text-decoration: underline;">https://upmath.onrender.com</a>
-                </div>
             </div>
         </div>
         `;
