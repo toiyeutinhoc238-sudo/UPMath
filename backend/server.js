@@ -9,42 +9,43 @@ const cors = require('cors');
 const path = require('path');
 const nodemailer = require('nodemailer');
 
-// ─── EMAIL TRANSPORTER CONFIGURATION ──────────────────────────────────────────
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // true cho cổng 465, false cho các cổng khác như 587
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    },
-    tls: {
-        // Tránh lỗi khi chạy trên các cloud hosting như Render
-        rejectUnauthorized: false
-    }
-});
-
+// ─── RESEND EMAIL API CONFIGURATION ──────────────────────────────────────────
 /**
- * Gửi email thông báo với fallback an toàn
+ * Gửi email thông báo qua API của Resend (sử dụng cổng HTTPS 443 không bao giờ bị chặn trên Render Free)
  * @param {string} to - email người nhận
  * @param {string} subject - tiêu đề email
  * @param {string} html - nội dung định dạng html
  */
 async function sendNotificationEmail(to, subject, html) {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-        console.warn(`[Email fallback] Thư từ gửi tới <${to}>: "${subject}". (Chưa cấu hình EMAIL_USER/EMAIL_PASS trong .env)`);
+    const apiKey = process.env.EMAIL_PASS; // Chúng ta sẽ lưu API Key của Resend vào biến EMAIL_PASS
+    if (!apiKey) {
+        console.warn(`[Email fallback] Thư từ gửi tới <${to}>: "${subject}". (Chưa cấu hình EMAIL_PASS chứa Resend API Key trong .env)`);
         return;
     }
+    
     try {
-        const info = await transporter.sendMail({
-            from: `"Hệ thống UPMath" <${process.env.EMAIL_USER}>`,
-            to,
-            subject,
-            html
+        const response = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                from: 'UPMath <onboarding@resend.dev>', // Tên hiển thị UPMath, gửi qua tên miền mặc định của Resend
+                to: [to],
+                subject: subject,
+                html: html
+            })
         });
-        console.log(`[Email] Đã gửi thành công tới ${to}. MessageId: ${info.messageId}`);
+
+        const data = await response.json();
+        if (response.ok) {
+            console.log(`[Email Resend] Đã gửi thành công tới ${to}. ID: ${data.id}`);
+        } else {
+            console.error(`[Email Resend Error] API trả về lỗi:`, JSON.stringify(data));
+        }
     } catch (err) {
-        console.error(`[Email error] Thất bại khi gửi email tới ${to}:`, err.message);
+        console.error(`[Email Resend Error] Thất bại khi kết nối tới Resend API:`, err.message);
     }
 }
 
