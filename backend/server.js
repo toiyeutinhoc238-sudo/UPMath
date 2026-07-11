@@ -9,43 +9,53 @@ const cors = require('cors');
 const path = require('path');
 const nodemailer = require('nodemailer');
 
-// ─── RESEND EMAIL API CONFIGURATION ──────────────────────────────────────────
+// ─── SENDGRID EMAIL API CONFIGURATION ─────────────────────────────────────────
 /**
- * Gửi email thông báo qua API của Resend (sử dụng cổng HTTPS 443 không bao giờ bị chặn trên Render Free)
+ * Gửi email thông báo qua API của SendGrid (sử dụng cổng HTTPS 443 không bị chặn)
  * @param {string} to - email người nhận
  * @param {string} subject - tiêu đề email
  * @param {string} html - nội dung định dạng html
  */
 async function sendNotificationEmail(to, subject, html) {
-    const apiKey = process.env.EMAIL_PASS; // Chúng ta sẽ lưu API Key của Resend vào biến EMAIL_PASS
-    if (!apiKey) {
-        console.warn(`[Email fallback] Thư từ gửi tới <${to}>: "${subject}". (Chưa cấu hình EMAIL_PASS chứa Resend API Key trong .env)`);
+    const apiKey = process.env.EMAIL_PASS; // API Key của SendGrid (SG.xxxx)
+    const fromEmail = process.env.EMAIL_USER; // Email người gửi đã được xác minh trên SendGrid
+    
+    if (!apiKey || !fromEmail) {
+        console.warn(`[Email fallback] Thư từ gửi tới <${to}>: "${subject}". (Chưa cấu hình đầy đủ EMAIL_PASS/EMAIL_USER trên Render)`);
         return;
     }
     
     try {
-        const response = await fetch('https://api.resend.com/emails', {
+        const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                from: 'UPMath <onboarding@resend.dev>', // Tên hiển thị UPMath, gửi qua tên miền mặc định của Resend
-                to: [to],
+                personalizations: [{
+                    to: [{ email: to }]
+                }],
+                from: {
+                    email: fromEmail,
+                    name: 'UPMath'
+                },
                 subject: subject,
-                html: html
+                content: [{
+                    type: 'text/html',
+                    value: html
+                }]
             })
         });
 
-        const data = await response.json();
-        if (response.ok) {
-            console.log(`[Email Resend] Đã gửi thành công tới ${to}. ID: ${data.id}`);
+        if (response.status === 202) {
+            console.log(`[Email SendGrid] Đã gửi thành công tới ${to}`);
         } else {
-            console.error(`[Email Resend Error] API trả về lỗi:`, JSON.stringify(data));
+            const errBody = await response.text();
+            console.error(`[Email SendGrid Error] API trả về status ${response.status}:`, errBody);
         }
     } catch (err) {
-        console.error(`[Email Resend Error] Thất bại khi kết nối tới Resend API:`, err.message);
+        console.error(`[Email SendGrid Error] Thất bại khi kết nối tới SendGrid API:`, err.message);
     }
 }
 
