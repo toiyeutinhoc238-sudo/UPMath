@@ -1003,6 +1003,15 @@ async function viewProblemDetail(id) {
                         <div class="problem-content" style="margin-bottom: 1rem;">${preprocessLaTeX(problem.content)}</div>
                         ${problem.imageUrl ? `<img src="${problem.imageUrl}" alt="Hình bài toán" style="max-width:100%;border-radius:8px;margin-top:1rem;margin-bottom:1rem;display:block;">` : ''}
                         
+                        ${problem.gradingRubric ? `
+                            <div style="margin-top: 1.25rem; margin-bottom: 1.25rem; padding: 1rem; background: rgba(139, 92, 246, 0.05); border-left: 4px solid #8b5cf6; border-radius: 4px; font-size: 0.9rem;">
+                                <strong style="color: #a78bfa; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                    <i class="fa-solid fa-ruler-combined"></i> Thang điểm chấm bài chi tiết:
+                                </strong>
+                                <div style="line-height: 1.6; color: var(--text-secondary); white-space: pre-wrap;">${preprocessLaTeX(problem.gradingRubric)}</div>
+                            </div>
+                        ` : ''}
+                        
                         <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;color:var(--text-muted);flex-wrap:wrap;gap:0.75rem;">
                             <div style="display:flex;gap:1rem;">
                                 <span><i class="fa-solid fa-star" style="color:#f59e0b;"></i> ${problem.points} điểm thưởng</span>
