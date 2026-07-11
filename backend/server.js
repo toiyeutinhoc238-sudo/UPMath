@@ -29,14 +29,23 @@ mongoose.connect(process.env.MONGODB_URI)
 // ─── SCHEMAS & MODELS ────────────────────────────────────────────────────────
 
 const userSchema = new mongoose.Schema({
-    googleId:  { type: String, required: true, unique: true },
-    email:     { type: String, required: true },
-    name:      { type: String, required: true },
-    picture:   String,
-    points:    { type: Number, default: 0 },
-    rank:      { type: String, default: 'Đồng' },
-    role:      { type: String, enum: ['user', 'admin'], default: 'user' },
-    joinedAt:  { type: Date, default: Date.now }
+    googleId:        { type: String, required: true, unique: true },
+    email:           { type: String, required: true },
+    name:            { type: String, required: true },
+    picture:         String,
+    points:          { type: Number, default: 0 },
+    rank:            { type: String, default: 'Đồng' },
+    role:            { type: String, enum: ['user', 'admin'], default: 'user' },
+    joinedAt:        { type: Date, default: Date.now },
+    // Custom profile fields
+    fullName:        String,
+    mssv:            String,
+    dob:             String,
+    defaultLang:     { type: String, default: 'C++14' },
+    phone:           String,
+    school:          String,
+    codenodeFolder:  String,
+    lastLogin:       { type: Date, default: Date.now }
 });
 
 const problemSchema = new mongoose.Schema({
@@ -62,7 +71,8 @@ const solutionSchema = new mongoose.Schema({
     content:         { type: String, required: true },
     votes:           { type: Number, default: 0 },
     imageUrl:        String,
-    createdAt:       { type: Date, default: Date.now }
+    createdAt:       { type: Date, default: Date.now },
+    status:          { type: String, enum: ['correct', 'incorrect', 'pending'], default: 'correct' }
 });
 
 const discussionSchema = new mongoose.Schema({
@@ -142,7 +152,7 @@ app.post('/api/users/sync', async (req, res) => {
         const role = email === 'phanphiphu04@gmail.com' ? 'admin' : 'user';
         const user = await User.findOneAndUpdate(
             { googleId },
-            { $set: { email, name, picture, role } },
+            { $set: { email, name, picture, role, lastLogin: new Date() } },
             { new: true, upsert: true, setDefaultsOnInsert: true }
         );
         res.json(user);
@@ -191,6 +201,32 @@ app.get('/api/users/:googleId/solutions', async (req, res) => {
     try {
         const solutions = await Solution.find({ authorGoogleId: req.params.googleId }).sort({ createdAt: -1 });
         res.json(solutions);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Update user profile fields
+app.put('/api/users/:googleId/profile', async (req, res) => {
+    try {
+        const { fullName, mssv, dob, defaultLang, phone, school, codenodeFolder, picture } = req.body;
+        const updateFields = {};
+        if (fullName !== undefined) updateFields.fullName = fullName;
+        if (mssv !== undefined) updateFields.mssv = mssv;
+        if (dob !== undefined) updateFields.dob = dob;
+        if (defaultLang !== undefined) updateFields.defaultLang = defaultLang;
+        if (phone !== undefined) updateFields.phone = phone;
+        if (school !== undefined) updateFields.school = school;
+        if (codenodeFolder !== undefined) updateFields.codenodeFolder = codenodeFolder;
+        if (picture !== undefined) updateFields.picture = picture;
+        
+        const user = await User.findOneAndUpdate(
+            { googleId: req.params.googleId },
+            { $set: updateFields },
+            { new: true }
+        );
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        res.json(user);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -288,6 +324,25 @@ app.put('/api/solutions/:id/upvote', async (req, res) => {
             const u = await User.findOne({ googleId: sol.authorGoogleId });
             if (u) { u.points += 5; u.rank = calcRank(u.points); await u.save(); }
         }
+        res.json(sol);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Update solution status (correct/incorrect/pending)
+app.put('/api/solutions/:id/status', async (req, res) => {
+    try {
+        const { status } = req.body;
+        if (!['correct', 'incorrect', 'pending'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid status' });
+        }
+        const sol = await Solution.findByIdAndUpdate(
+            req.params.id,
+            { $set: { status } },
+            { new: true }
+        );
+        if (!sol) return res.status(404).json({ error: 'Solution not found' });
         res.json(sol);
     } catch (err) {
         res.status(500).json({ error: err.message });

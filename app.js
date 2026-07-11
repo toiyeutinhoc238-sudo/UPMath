@@ -169,6 +169,8 @@ const api = {
     addPoints: (gid, amt) => api._req('PUT', `/users/${gid}/points`, { amount: amt }),
     getUserProblems: (gid) => api._req('GET', `/users/${gid}/problems`),
     getUserSolutions: (gid) => api._req('GET', `/users/${gid}/solutions`),
+    updateProfile: (gid, data) => api._req('PUT', `/users/${gid}/profile`, data),
+    updateSolutionStatus: (id, status) => api._req('PUT', `/solutions/${id}/status`, { status }),
 
     // Contests & Stats
     getContests: () => api._req('GET', '/contests'),
@@ -668,13 +670,40 @@ async function viewProblemDetail(id) {
                                     <div style="display:flex;align-items:center;gap:0.6rem;">
                                         ${avatarTag(s.authorPicture, s.author, 32)}
                                         <div>
-                                            <strong>${s.author}</strong>
+                                            <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                                                <strong style="font-size:0.92rem;">${s.author}</strong>
+                                                ${s.status === 'correct' ? `
+                                                    <span class="badge" style="background:rgba(16,185,129,0.1); color:#10b981; border:1px solid rgba(16,185,129,0.25); text-transform:none; font-size:0.68rem; padding:0.15rem 0.35rem; display:inline-flex; align-items:center; gap:0.25rem;">
+                                                        <i class="fa-solid fa-circle-check"></i> Đúng
+                                                    </span>
+                                                ` : s.status === 'incorrect' ? `
+                                                    <span class="badge" style="background:rgba(244,63,94,0.1); color:#f43f5e; border:1px solid rgba(244,63,94,0.25); text-transform:none; font-size:0.68rem; padding:0.15rem 0.35rem; display:inline-flex; align-items:center; gap:0.25rem;">
+                                                        <i class="fa-solid fa-circle-xmark"></i> Sai
+                                                    </span>
+                                                ` : `
+                                                    <span class="badge" style="background:rgba(251,146,60,0.1); color:#fb923c; border:1px solid rgba(251,146,60,0.25); text-transform:none; font-size:0.68rem; padding:0.15rem 0.35rem; display:inline-flex; align-items:center; gap:0.25rem;">
+                                                        <i class="fa-solid fa-circle-question"></i> Chờ duyệt
+                                                    </span>
+                                                `}
+                                            </div>
                                             <div style="font-size:0.72rem;color:var(--text-muted);">${timeSince(s.createdAt)}</div>
                                         </div>
                                     </div>
-                                    <button class="btn btn-secondary btn-sm upvote-btn" data-id="${s._id}">
-                                        <i class="fa-solid fa-thumbs-up"></i> <span>${s.votes}</span>
-                                    </button>
+                                    <div style="display:flex;align-items:center;gap:0.4rem;">
+                                        ${(user && (user.role === 'admin' || problem.creatorGoogleId === user.googleId)) ? `
+                                            <div style="display:inline-flex; gap:0.25rem; margin-right:0.25rem;">
+                                                <button class="btn btn-secondary btn-sm set-correct-btn" data-id="${s._id}" title="Đánh dấu Đúng" style="padding:0.3rem 0.45rem; height:28px; color:#10b981; min-width:auto;">
+                                                    <i class="fa-solid fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-secondary btn-sm set-incorrect-btn" data-id="${s._id}" title="Đánh dấu Sai" style="padding:0.3rem 0.45rem; height:28px; color:#f43f5e; min-width:auto;">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </button>
+                                            </div>
+                                        ` : ''}
+                                        <button class="btn btn-secondary btn-sm upvote-btn" data-id="${s._id}" style="height:28px; padding:0.3rem 0.6rem;">
+                                            <i class="fa-solid fa-thumbs-up"></i> <span>${s.votes}</span>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div style="margin-bottom:0.5rem; line-height:1.6;">${s.content}</div>
                                 ${s.imageUrl ? `<img src="${s.imageUrl}" alt="Ảnh lời giải" style="max-width:100%;max-height:400px;object-fit:contain;border-radius:8px;margin-top:0.75rem;display:block;">` : ''}
@@ -760,6 +789,34 @@ async function viewProblemDetail(id) {
                 document.getElementById("s-mode-latex-container").style.display = mode === 'latex' ? 'block' : 'none';
                 document.getElementById("s-mode-word-container").style.display = mode === 'word' ? 'block' : 'none';
                 document.getElementById("s-mode-image-container").style.display = mode === 'image' ? 'block' : 'none';
+            });
+        });
+
+        // Set solution status correct
+        document.querySelectorAll(".set-correct-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const sId = btn.getAttribute("data-id");
+                try {
+                    await api.updateSolutionStatus(sId, 'correct');
+                    showToast("Đã duyệt lời giải Đúng! ✔️", "success");
+                    viewProblemDetail(id);
+                } catch (e) {
+                    showToast("Lỗi khi duyệt lời giải: " + e.message, "error");
+                }
+            });
+        });
+
+        // Set solution status incorrect
+        document.querySelectorAll(".set-incorrect-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const sId = btn.getAttribute("data-id");
+                try {
+                    await api.updateSolutionStatus(sId, 'incorrect');
+                    showToast("Đã đánh dấu lời giải Sai! ❌", "warning");
+                    viewProblemDetail(id);
+                } catch (e) {
+                    showToast("Lỗi khi đánh dấu lời giải: " + e.message, "error");
+                }
             });
         });
 
@@ -1251,6 +1308,29 @@ async function viewLeaderboard() {
 }
 
 // ── PROFILE ──────────────────────────────────────────────────────────────────
+// ── PROFILE ──────────────────────────────────────────────────────────────────
+function getNextRankInfo(pts) {
+    const thresholds = [
+        { pts: 100, name: 'Bạc' },
+        { pts: 300, name: 'Vàng' },
+        { pts: 500, name: 'Bạch kim' },
+        { pts: 1000, name: 'Kim cương' },
+        { pts: 2000, name: 'Tinh anh' },
+        { pts: 4000, name: 'Cao thủ' },
+        { pts: 8000, name: 'Chiến thần' },
+        { pts: 15000, name: 'Thạc sĩ' },
+        { pts: 30000, name: 'Tiến sĩ' },
+        { pts: 60000, name: 'Phó Giáo sư' },
+        { pts: 100000, name: 'Giáo sư' }
+    ];
+    for (const t of thresholds) {
+        if (pts < t.pts) {
+            return { nextName: t.name, diff: t.pts - pts };
+        }
+    }
+    return { nextName: 'Tối đa', diff: 0 };
+}
+
 async function viewProfile() {
     setActiveNav(""); // Clear active nav classes
     showLoading();
@@ -1261,111 +1341,363 @@ async function viewProfile() {
             return;
         }
 
-        // Fetch user's problems and solutions
-        const [problems, solutions] = await Promise.all([
+        // Fetch user data, user problems, user solutions, and all problems
+        const [users, problems, solutions, allProblems] = await Promise.all([
+            api.getUsers(),
             api.getUserProblems(me.googleId),
-            api.getUserSolutions(me.googleId)
+            api.getUserSolutions(me.googleId),
+            api.getProblems()
         ]);
 
-        const fbAvatar = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(me.username)}`;
+        let freshMe = users.find(u => u.googleId === me.googleId) || me;
 
-        mainContent.innerHTML = `
-            <div class="page-header">
-                <h2 class="page-title"><i class="fa-solid fa-user-gear"></i> Hồ Sơ <span>Cá Nhân</span></h2>
-            </div>
-            
-            <div class="card" style="display: flex; gap: 2rem; align-items: center; padding: 2rem; margin-bottom: 2rem; flex-wrap: wrap;">
-                <div style="flex-shrink: 0; position: relative;">
-                    <img src="${me.picture || fbAvatar}" alt="Avatar" 
-                         style="width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid var(--accent-blue); box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);"
-                         onerror="this.src='${fbAvatar}'">
-                </div>
-                <div style="flex: 1; min-width: 250px;">
-                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                        <h3 style="font-size: 1.5rem; font-weight: 700; margin: 0;">${me.username}</h3>
-                        <span class="badge badge-tag" style="font-size: 0.85rem; padding: 0.35rem 0.75rem; background: rgba(56, 189, 248, 0.1); color: var(--accent-blue); border: 1px solid rgba(56, 189, 248, 0.2);">
-                            ${me.rank || "Học sinh"}
-                        </span>
-                    </div>
-                    <p style="color: var(--text-muted); margin: 0.5rem 0 1rem 0; font-size: 0.95rem;">
-                        <i class="fa-regular fa-envelope"></i> ${me.email}
-                    </p>
-                    <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
-                        <div>
-                            <div style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Điểm tích lũy</div>
-                            <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent-blue);">${(me.points || 0).toLocaleString()} <span style="font-size: 0.9rem; font-weight: 500;">điểm</span></div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Bài tập đã đăng</div>
-                            <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-muted);">${problems.length}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Lời giải đã đăng</div>
-                            <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-muted);">${solutions.length}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        // Process solved (correct) and wrong (incorrect) problems
+        const solvedSet = new Set(solutions.filter(s => s.status === 'correct').map(s => s.problemId));
+        const wrongSet = new Set(solutions.filter(s => s.status === 'incorrect').map(s => s.problemId));
+        // Remove from wrongSet if solved correctly in another attempt
+        solvedSet.forEach(id => wrongSet.delete(id));
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; flex-wrap: wrap;">
-                <!-- Left: User's Problems -->
-                <div class="card" style="padding: 1.5rem;">
-                    <h3 style="font-size: 1.15rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
-                        <i class="fa-solid fa-book-open" style="color: var(--accent-blue); margin-right: 0.5rem;"></i> Đề bài đã đăng (${problems.length})
-                    </h3>
-                    <div style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 400px; overflow-y: auto; padding-right: 0.25rem;">
-                        ${problems.length === 0
-                ? `<p style="color: var(--text-muted); text-align: center; padding: 2rem 0; font-size: 0.9rem;">Bạn chưa đăng đề bài nào.</p>`
-                : problems.map(p => `
-                                <div style="padding: 0.85rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-                                    <div style="flex: 1; min-width: 0;">
-                                        <a href="#problem/${p._id}" style="font-weight: 600; font-size: 0.9rem; text-decoration: none; color: var(--text-color); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 0.25rem;">
-                                            ${p.title}
-                                        </a>
-                                        <span class="badge ${p.category === 'calculus' ? 'badge-calculus' : 'badge-algebra'}" style="font-size: 0.7rem;">
-                                            ${p.category === 'calculus' ? 'Giải tích' : 'Đại số'}
-                                        </span>
-                                    </div>
-                                    <a href="#problem/${p._id}" class="btn btn-secondary btn-sm" style="flex-shrink: 0; padding: 0.35rem 0.6rem;">
-                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                                    </a>
+        const correctProblems = allProblems.filter(p => solvedSet.has(p._id));
+        const incorrectProblems = allProblems.filter(p => wrongSet.has(p._id));
+
+        let activeTab = 'correct';
+        let currentPage = 1;
+        const itemsPerPage = 24;
+
+        function updateLayout() {
+            const nextInfo = getNextRankInfo(freshMe.points || 0);
+            const fbAvatar = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(freshMe.username)}`;
+
+            mainContent.innerHTML = `
+                <div class="profile-layout">
+                    <aside class="profile-sidebar">
+                        <div class="card profile-info-card">
+                            <div class="profile-info-header">
+                                <h3>Profile</h3>
+                            </div>
+                            <div class="profile-info-list">
+                                <div class="profile-info-row">
+                                    <span class="info-label">Họ và tên</span>
+                                    <span class="info-value" id="sidebar-fullName">${freshMe.fullName || freshMe.name}</span>
                                 </div>
-                            `).join("")
-            }
-                    </div>
-                </div>
-
-                <!-- Right: User's Solutions -->
-                <div class="card" style="padding: 1.5rem;">
-                    <h3 style="font-size: 1.15rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
-                        <i class="fa-solid fa-lightbulb" style="color: #f59e0b; margin-right: 0.5rem;"></i> Lời giải đã đăng (${solutions.length})
-                    </h3>
-                    <div style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 400px; overflow-y: auto; padding-right: 0.25rem;">
-                        ${solutions.length === 0
-                ? `<p style="color: var(--text-muted); text-align: center; padding: 2rem 0; font-size: 0.9rem;">Bạn chưa đăng lời giải nào.</p>`
-                : solutions.map(s => `
-                                <div style="padding: 0.85rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-                                    <div style="flex: 1; min-width: 0;">
-                                        <div style="font-weight: 500; font-size: 0.88rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 0.25rem;">
-                                            ${s.content.replace(/\$/g, "")}
-                                        </div>
-                                        <div style="font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
-                                            <span><i class="fa-solid fa-thumbs-up" style="color: var(--accent-blue);"></i> ${s.votes} lượt thích</span>
-                                            <span>·</span>
-                                            <span>${timeSince(s.createdAt)}</span>
-                                        </div>
-                                    </div>
-                                    <a href="#problem/${s.problemId}" class="btn btn-secondary btn-sm" style="flex-shrink: 0; padding: 0.35rem 0.6rem;">
-                                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Xem
-                                    </a>
+                                <div class="profile-info-row">
+                                    <span class="info-label">MSSV</span>
+                                    <span class="info-value" id="sidebar-mssv">${freshMe.mssv || 'Chưa cập nhật'}</span>
                                 </div>
-                            `).join("")
-            }
-                    </div>
+                                <div class="profile-info-row">
+                                    <span class="info-label">Ngày sinh</span>
+                                    <span class="info-value" id="sidebar-dob">${freshMe.dob || 'Chưa cập nhật'}</span>
+                                </div>
+                                <div class="profile-info-row">
+                                    <span class="info-label">Ngôn ngữ mặc định</span>
+                                    <span class="info-value font-mono" id="sidebar-lang" style="font-weight:700; color:var(--text-primary);">${freshMe.defaultLang || 'C++14'}</span>
+                                </div>
+                                <div class="profile-info-row">
+                                    <span class="info-label">Điểm kinh nghiệm</span>
+                                    <span class="info-value" id="sidebar-points" style="font-weight:700; color:var(--accent-blue);">${(freshMe.points || 0).toLocaleString()}</span>
+                                </div>
+                                <div class="profile-info-row">
+                                    <span class="info-label">Cấp độ lập trình</span>
+                                    <span class="info-value" id="sidebar-rank" style="font-weight:600; color:#a855f7;">${freshMe.rank || 'Đồng'}</span>
+                                </div>
+                                <div class="profile-info-row">
+                                    <span class="info-label">Cấp độ tiếp theo</span>
+                                    <span class="info-value next-level-value" id="sidebar-nextInfo">
+                                        ${nextInfo.nextName === 'Tối đa' ? 'Tối đa' : `<span style="color:#a855f7;font-weight:600;">${nextInfo.nextName}</span><br><span style="font-size:0.75rem;color:var(--text-muted);">thiếu <strong>${nextInfo.diff}</strong> điểm</span>`}
+                                    </span>
+                                </div>
+                                <div class="profile-info-row">
+                                    <span class="info-label">Điện thoại</span>
+                                    <span class="info-value" id="sidebar-phone">${freshMe.phone || 'Chưa cập nhật'}</span>
+                                </div>
+                                <div class="profile-info-row">
+                                    <span class="info-label">Email</span>
+                                    <span class="info-value email-value" title="${freshMe.email}">${freshMe.email}</span>
+                                </div>
+                                <div class="profile-info-row">
+                                    <span class="info-label">Trường</span>
+                                    <span class="info-value" id="sidebar-school">${freshMe.school || 'ĐH Sư Phạm TPHCM'}</span>
+                                </div>
+                                <div class="profile-info-row">
+                                    <span class="info-label">Đăng ký lúc</span>
+                                    <span class="info-value">${freshMe.joinedAt ? new Date(freshMe.joinedAt).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}</span>
+                                </div>
+                                <div class="profile-info-row">
+                                    <span class="info-label">Login cuối</span>
+                                    <span class="info-value">${freshMe.lastLogin ? new Date(freshMe.lastLogin).toLocaleString('vi-VN') : 'Chưa cập nhật'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card profile-stat-box">
+                            <div class="stat-lbl">Tổng số bài làm được</div>
+                            <div class="stat-val" id="sidebar-solvedCount">${correctProblems.length} bài</div>
+                        </div>
+                        
+                        <div class="card profile-stat-box">
+                            <div class="stat-lbl">Thư mục Codenode++</div>
+                            <div class="stat-val" id="sidebar-codenode" style="font-size:1.1rem; margin-top:0.5rem;">
+                                ${freshMe.codenodeFolder ? `<a href="${freshMe.codenodeFolder}" target="_blank" class="codenode-link"><i class="fa-solid fa-folder-open"></i> Xem ở đây</a>` : '<span style="color:var(--text-muted); font-size:0.9rem;">Chưa cập nhật</span>'}
+                            </div>
+                        </div>
+                    </aside>
+                    
+                    <section class="profile-content-area">
+                        <div class="card profile-header-banner">
+                            <div class="banner-overlay">
+                                <div class="banner-avatar">
+                                    <img src="${freshMe.picture || fbAvatar}" alt="Avatar" id="profile-banner-avatar-img" onerror="this.src='${fbAvatar}'">
+                                </div>
+                                <div class="banner-user-info">
+                                    <h2 id="banner-username">${freshMe.fullName || freshMe.username}</h2>
+                                    <p><span class="badge badge-tag" id="banner-rank" style="background:rgba(56,189,248,0.15); color:var(--accent-blue);">${freshMe.rank}</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Profile Tab Navigation -->
+                        <div class="profile-tabs">
+                            <button class="profile-tab-btn active" data-tab="correct"><i class="fa-solid fa-circle-check" style="color:var(--accent-green);"></i> Bài làm đúng</button>
+                            <button class="profile-tab-btn" data-tab="incorrect"><i class="fa-solid fa-circle-xmark" style="color:var(--accent-red);"></i> Bài làm sai</button>
+                            <button class="profile-tab-btn" data-tab="settings"><i class="fa-solid fa-user-gear"></i> Cài đặt</button>
+                            <button class="profile-tab-btn" data-tab="avatar"><i class="fa-solid fa-image"></i> Đổi hình đại diện</button>
+                        </div>
+                        
+                        <!-- Profile Tab Content Container -->
+                        <div class="profile-tab-content" id="profile-tab-content-container">
+                            <!-- Dynamic tab contents -->
+                        </div>
+                    </section>
                 </div>
-            </div>
-        `;
-        renderLaTeX(mainContent);
+            `;
+
+            // Bind click events on tab buttons
+            document.querySelectorAll(".profile-tab-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    document.querySelectorAll(".profile-tab-btn").forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    activeTab = btn.getAttribute("data-tab");
+                    currentPage = 1;
+                    renderTabContent();
+                });
+            });
+
+            // Initial render
+            renderTabContent();
+        }
+
+        function renderTabContent() {
+            const container = document.getElementById("profile-tab-content-container");
+            if (!container) return;
+
+            if (activeTab === 'correct' || activeTab === 'incorrect') {
+                const list = activeTab === 'correct' ? correctProblems : incorrectProblems;
+                const totalItems = list.length;
+                const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+                
+                if (currentPage > totalPages) currentPage = totalPages;
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const pageItems = list.slice(startIndex, startIndex + itemsPerPage);
+
+                container.innerHTML = `
+                    ${totalItems === 0 ? `
+                        <div style="text-align:center; padding:3rem; color:var(--text-muted);">
+                            <i class="fa-solid ${activeTab === 'correct' ? 'fa-circle-check' : 'fa-circle-xmark'} fa-3x" style="margin-bottom:1rem; opacity:0.4;"></i>
+                            <p>Không có bài tập nào.</p>
+                        </div>
+                    ` : `
+                        <div class="problems-grid">
+                            ${pageItems.map(p => `
+                                <a href="#problem/${p._id}" class="grid-problem-link" title="${p.title}">
+                                    ${p.title}
+                                </a>
+                            `).join("")}
+                        </div>
+                        
+                        ${totalPages > 1 ? `
+                            <div class="profile-pagination">
+                                <button class="pag-btn prev-btn" ${currentPage === 1 ? 'disabled' : ''}>«</button>
+                                ${Array.from({ length: totalPages }, (_, i) => i + 1).map(p => `
+                                    <button class="pag-btn num-btn ${p === currentPage ? 'active' : ''}" data-page="${p}">${p}</button>
+                                `).join("")}
+                                <button class="pag-btn next-btn" ${currentPage === totalPages ? 'disabled' : ''}>»</button>
+                            </div>
+                        ` : ''}
+                    `}
+                `;
+
+                // Bind pagination clicks
+                container.querySelector(".prev-btn")?.addEventListener("click", () => {
+                    if (currentPage > 1) { currentPage--; renderTabContent(); }
+                });
+                container.querySelector(".next-btn")?.addEventListener("click", () => {
+                    if (currentPage < totalPages) { currentPage++; renderTabContent(); }
+                });
+                container.querySelectorAll(".num-btn").forEach(btn => {
+                    btn.addEventListener("click", () => {
+                        currentPage = parseInt(btn.getAttribute("data-page"));
+                        renderTabContent();
+                    });
+                });
+
+            } else if (activeTab === 'settings') {
+                container.innerHTML = `
+                    <form id="profile-settings-form" class="settings-form">
+                        <div class="form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                            <div class="form-group">
+                                <label class="form-label" for="edit-fullname">Họ và tên:</label>
+                                <input type="text" id="edit-fullname" class="form-input" value="${freshMe.fullName || freshMe.name || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="edit-mssv">MSSV:</label>
+                                <input type="text" id="edit-mssv" class="form-input" value="${freshMe.mssv || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="edit-dob">Ngày sinh (DD/MM/YYYY):</label>
+                                <input type="text" id="edit-dob" class="form-input" value="${freshMe.dob || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="edit-lang">Ngôn ngữ mặc định:</label>
+                                <select id="edit-lang" class="form-select" style="width:100%; background:var(--bg-input); border:1px solid var(--border-color); color:inherit; padding:0.625rem; border-radius:8px;">
+                                    <option value="C++14" ${freshMe.defaultLang === 'C++14' ? 'selected' : ''}>C++14</option>
+                                    <option value="C++17" ${freshMe.defaultLang === 'C++17' ? 'selected' : ''}>C++17</option>
+                                    <option value="C++20" ${freshMe.defaultLang === 'C++20' ? 'selected' : ''}>C++20</option>
+                                    <option value="Python3" ${freshMe.defaultLang === 'Python3' ? 'selected' : ''}>Python3</option>
+                                    <option value="Java" ${freshMe.defaultLang === 'Java' ? 'selected' : ''}>Java</option>
+                                    <option value="Pascal" ${freshMe.defaultLang === 'Pascal' ? 'selected' : ''}>Pascal</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="edit-phone">Điện thoại:</label>
+                                <input type="text" id="edit-phone" class="form-input" value="${freshMe.phone || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="edit-school">Trường học:</label>
+                                <input type="text" id="edit-school" class="form-input" value="${freshMe.school || 'ĐH Sư Phạm TPHCM'}">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top:1rem;">
+                            <label class="form-label" for="edit-codenode">Thư mục Codenode++ (Link URL):</label>
+                            <input type="url" id="edit-codenode" class="form-input" value="${freshMe.codenodeFolder || ''}" placeholder="https://example.com/folder">
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="margin-top:1.5rem;"><i class="fa-solid fa-save"></i> Lưu cài đặt</button>
+                    </form>
+                `;
+
+                // Handle submit
+                document.getElementById("profile-settings-form").addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    const fullName = document.getElementById("edit-fullname").value.trim();
+                    const mssv = document.getElementById("edit-mssv").value.trim();
+                    const dob = document.getElementById("edit-dob").value.trim();
+                    const defaultLang = document.getElementById("edit-lang").value;
+                    const phone = document.getElementById("edit-phone").value.trim();
+                    const school = document.getElementById("edit-school").value.trim();
+                    const codenodeFolder = document.getElementById("edit-codenode").value.trim();
+
+                    const btn = e.target.querySelector("button[type='submit']");
+                    btn.disabled = true;
+                    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...`;
+
+                    try {
+                        const updated = await api.updateProfile(freshMe.googleId, { fullName, mssv, dob, defaultLang, phone, school, codenodeFolder });
+                        freshMe = updated;
+                        // Update localstorage cache
+                        const localCached = getCurrentUser();
+                        if (localCached) {
+                            const merged = { ...localCached, ...updated };
+                            localStorage.setItem(GOOGLE_USER_KEY, JSON.stringify(merged));
+                            updateHeaderWithGoogle(merged);
+                        }
+                        showToast("Đã lưu thông tin cài đặt!", "success");
+                        updateLayout();
+                    } catch (err) {
+                        showToast("Không thể lưu cài đặt: " + err.message, "error");
+                        btn.disabled = false;
+                        btn.innerHTML = `<i class="fa-solid fa-save"></i> Lưu cài đặt`;
+                    }
+                });
+
+            } else if (activeTab === 'avatar') {
+                container.innerHTML = `
+                    <div class="avatar-upload-tab" style="display:flex; flex-direction:column; align-items:center; text-align:center; padding:1rem 0;">
+                        <p style="color:var(--text-secondary); margin-bottom:1.5rem;">Tải lên hoặc chụp ảnh mới để cập nhật ảnh đại diện của bạn.</p>
+                        
+                        <div class="avatar-preview-box" style="margin-bottom:1.5rem;">
+                            <img src="${freshMe.picture || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(freshMe.username)}`}" 
+                                 alt="Avatar Preview" id="avatar-tab-preview-img" 
+                                 style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:3px solid var(--accent-blue); box-shadow:var(--shadow-md);">
+                        </div>
+                        
+                        <div class="image-upload-zone" id="avatar-upload-zone" style="max-width:320px; width:100%; cursor:pointer;" onclick="document.getElementById('avatar-file-input').click()">
+                            <i class="fa-solid fa-cloud-arrow-up fa-2x" style="color:var(--text-secondary); margin-bottom:0.5rem;"></i>
+                            <p style="margin:0; font-size:0.9rem; color:var(--text-secondary);">Chọn tệp hình ảnh</p>
+                            <input type="file" id="avatar-file-input" accept="image/*" style="display: none;">
+                        </div>
+                        
+                        <div id="avatar-upload-status" style="font-size: 0.82rem; color: var(--accent-blue); margin-top: 0.75rem; font-weight: 600;"></div>
+                        
+                        <button id="save-avatar-btn" class="btn btn-primary" style="margin-top:1.5rem; width:100%; max-width:320px;" disabled>
+                            <i class="fa-solid fa-circle-check"></i> Cập nhật ảnh đại diện
+                        </button>
+                    </div>
+                `;
+
+                let selectedBase64 = null;
+                const fileInput = document.getElementById("avatar-file-input");
+                const previewImg = document.getElementById("avatar-tab-preview-img");
+                const saveBtn = document.getElementById("save-avatar-btn");
+                const statusDiv = document.getElementById("avatar-upload-status");
+
+                fileInput.addEventListener("change", () => {
+                    const file = fileInput.files[0];
+                    if (!file) return;
+
+                    if (!file.type.startsWith('image/')) {
+                        showToast("Vui lòng chọn hình ảnh hợp lệ!", "error");
+                        return;
+                    }
+
+                    statusDiv.textContent = "Đang đọc ảnh...";
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        selectedBase64 = e.target.result;
+                        previewImg.src = selectedBase64;
+                        saveBtn.disabled = false;
+                        statusDiv.textContent = "Tải ảnh lên thành công! Nhấn cập nhật để lưu.";
+                    };
+                    reader.readAsDataURL(file);
+                });
+
+                saveBtn.addEventListener("click", async () => {
+                    if (!selectedBase64) return;
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang tải...`;
+
+                    try {
+                        const updated = await api.updateProfile(freshMe.googleId, { picture: selectedBase64 });
+                        freshMe = updated;
+                        // Update local cache
+                        const localCached = getCurrentUser();
+                        if (localCached) {
+                            const merged = { ...localCached, picture: selectedBase64 };
+                            localStorage.setItem(GOOGLE_USER_KEY, JSON.stringify(merged));
+                            updateHeaderWithGoogle(merged);
+                        }
+                        showToast("Đã cập nhật ảnh đại diện thành công!", "success");
+                        updateLayout();
+                    } catch (err) {
+                        showToast("Cập nhật ảnh đại diện thất bại!", "error");
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Cập nhật ảnh đại diện`;
+                    }
+                });
+            }
+        }
+
+        // Render main layout
+        updateLayout();
+
     } catch (e) {
         showError("Không thể tải hồ sơ cá nhân!");
     }
