@@ -46,7 +46,7 @@ async function handleGoogleCredential(response) {
         console.error("Sync user error:", err);
         localStorage.setItem(GOOGLE_USER_KEY, JSON.stringify(googleUser));
         showApp(googleUser);
-        showToast(`Chào mừng! (Chế độ offline)`, "info");
+        showToast(`Chào mừng! (Ngoại tuyến)`, "info");
     }
 }
 
@@ -112,9 +112,9 @@ function logoutGoogle() {
 function renderLoginMath() {
     const bg = document.getElementById("login-math-bg");
     if (!bg) return;
-    
+
     bg.innerHTML = "";
-    
+
     const items = [
         "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
         "\\sum", "\\int", "\\pi", "\\infty", "\\sqrt{x}", "\\theta",
@@ -122,29 +122,29 @@ function renderLoginMath() {
         "A \\cup B", "x \\in \\mathbb{R}", "\\log(x)", "\\sin(x)",
         "\\vec{v}", "\\lambda", "\\approx", "\\neq", "\\frac{d}{dx}"
     ];
-    
+
     for (let i = 0; i < 35; i++) {
         const item = document.createElement("span");
         item.className = "math-bg-item";
-        
+
         const content = items[Math.floor(Math.random() * items.length)];
         item.innerHTML = `$${content}$`;
-        
+
         item.style.left = `${Math.random() * 95}%`;
         item.style.top = `${Math.random() * 95}%`;
-        
+
         const size = 0.9 + Math.random() * 1.1;
         item.style.fontSize = `${size}rem`;
-        
+
         item.style.opacity = `${0.12 + Math.random() * 0.12}`;
-        
+
         const duration = 15 + Math.random() * 20;
         item.style.animationDuration = `${duration}s`;
         item.style.animationDelay = `${-Math.random() * 20}s`;
-        
+
         bg.appendChild(item);
     }
-    
+
     if (window.renderMathInElement) {
         renderMathInElement(bg, {
             delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }],
@@ -254,7 +254,7 @@ bodyEl.className = savedTheme;
 function updateThemeIcons(theme) {
     const isDark = theme === "dark-theme";
     const newIconClass = isDark ? "fa-solid fa-sun" : "fa-solid fa-moon";
-    
+
     if (themeBtn) {
         const icon = themeBtn.querySelector("i");
         if (icon) icon.className = newIconClass;
@@ -312,7 +312,7 @@ function renderLaTeX(el) {
 
 function preprocessLaTeX(text) {
     if (!text) return "";
-    
+
     // 1. Strip comments
     let lines = text.split("\n");
     lines = lines.map(line => {
@@ -327,30 +327,30 @@ function preprocessLaTeX(text) {
         return line;
     });
     text = lines.join("\n");
-    
+
     // 2. Headings
     text = text.replace(/\\subsubsection\*?\{([^}]+)\}/g, '<h4 style="margin: 0.85rem 0 0.5rem; font-size: 1.15rem; color: var(--accent-blue); font-weight:600;">$1</h4>');
     text = text.replace(/\\subsection\*?\{([^}]+)\}/g, '<h3 style="margin: 1.1rem 0 0.65rem; font-size: 1.3rem; color: var(--accent-blue); font-weight:600;">$1</h3>');
-    
+
     // Bold & Italic (LaTeX style & Markdown style)
     text = text.replace(/\\textbf\{([^}]+)\}/g, '<strong>$1</strong>');
     text = text.replace(/\\textit\{([^}]+)\}/g, '<em>$1</em>');
     text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    
+
     // 3. Remove unsupported formatting/spaces commands
     text = text.replace(/\\noindent/g, "");
-    
+
     // 4. Minipages
     text = text.replace(/\\begin\{minipage\}(\{[^}]*\})?(\{[^}]*\})?/g, '<div style="display:inline-block; vertical-align:top; width: 100%;">');
     text = text.replace(/\\end\{minipage\}/g, '</div>');
-    
+
     // 5. Lists (enumerate & itemize)
     text = text.replace(/\\begin\{enumerate\}/g, '<ol style="margin-left: 1.8rem; list-style-type: decimal; margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">');
     text = text.replace(/\\end\{enumerate\}/g, '</li></ol>');
     text = text.replace(/\\begin\{itemize\}/g, '<ul style="margin-left: 1.8rem; list-style-type: disc; margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">');
     text = text.replace(/\\end\{itemize\}/g, '</li></ul>');
-    
+
     let parts = text.split(/\\item/g);
     if (parts.length > 1) {
         let newText = parts[0];
@@ -365,12 +365,12 @@ function preprocessLaTeX(text) {
         text = newText;
     }
     text = text.replace(/<li>\\s*<\/li>/g, "");
-    
+
     // 6. Convert newlines / double backslashes while respecting math delimiters
     let segs = text.split(/(\\$\$?)/);
     let inMath = false;
     let currentDelimiter = "";
-    
+
     for (let i = 0; i < segs.length; i++) {
         if (segs[i] === '$' || segs[i] === '$$') {
             if (inMath && segs[i] === currentDelimiter) {
@@ -386,7 +386,7 @@ function preprocessLaTeX(text) {
         }
     }
     text = segs.join("");
-    
+
     return text;
 }
 
@@ -443,7 +443,7 @@ function handleImageFileSelect(input, type) {
     const statusEl = document.getElementById(statusId);
     if (statusEl) statusEl.textContent = "Đang xử lý ảnh...";
 
-    reader.onload = function(e) {
+    reader.onload = function (e) {
         const base64 = e.target.result;
         if (type === 'problem') {
             p_uploadedImageBase64 = base64;
@@ -688,7 +688,7 @@ function problemCardHTML(p) {
                 <div class="problem-item-stats">
                     <span><i class="fa-solid fa-user"></i> ${p.creator}</span>
                     <span><i class="fa-solid fa-star"></i> ${p.points} điểm</span>
-                    ${p.difficulty ? `<span>${{'easy':'🟢 Dễ','medium':'🟡 Trung bình','hard':'🔴 Khó','extreme':'⚡ Siêu khó'}[p.difficulty] || ''}</span>` : ''}
+                    ${p.difficulty ? `<span>${{ 'easy': '🟢 Dễ', 'medium': '🟡 Trung bình', 'hard': '🔴 Khó', 'extreme': '⚡ Siêu khó' }[p.difficulty] || ''}</span>` : ''}
                     <span><i class="fa-regular fa-clock"></i> ${timeSince(p.createdAt)}</span>
                 </div>
             </div>
@@ -712,7 +712,7 @@ function renderShouts(shouts) {
 
     c.innerHTML = shouts.map(s => {
         const isOwn = me && me.googleId === s.authorGoogleId;
-        
+
         // Group reactions
         const grouped = {};
         (s.reactions || []).forEach(r => {
@@ -816,12 +816,12 @@ function renderShouts(shouts) {
             const sId = btn.getAttribute("data-shout-id");
             const author = btn.getAttribute("data-author");
             const text = decodeURIComponent(btn.getAttribute("data-text"));
-            
+
             replyToShout = { parentId: sId, parentText: text, parentAuthor: author };
             editShoutId = null; // Cancel editing when replying
-            
+
             showShoutPreview();
-            
+
             const inp = document.getElementById("shoutbox-input");
             if (inp) inp.focus();
         });
@@ -831,10 +831,10 @@ function renderShouts(shouts) {
         btn.addEventListener("click", () => {
             const sId = btn.getAttribute("data-shout-id");
             const text = decodeURIComponent(btn.getAttribute("data-text"));
-            
+
             editShoutId = sId;
             replyToShout = null; // Cancel reply when editing
-            
+
             const inp = document.getElementById("shoutbox-input");
             if (inp) {
                 inp.value = text;
@@ -1007,7 +1007,7 @@ async function viewProblemDetail(id) {
                         <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;color:var(--text-muted);flex-wrap:wrap;gap:0.75rem;">
                             <div style="display:flex;gap:1rem;">
                                 <span><i class="fa-solid fa-star" style="color:#f59e0b;"></i> ${problem.points} điểm thưởng</span>
-                                ${problem.difficulty ? `<span>${{'easy':'🟢 Dễ','medium':'🟡 Trung bình','hard':'🔴 Khó','extreme':'⚡ Siêu khó'}[problem.difficulty] || ''}</span>` : ''}
+                                ${problem.difficulty ? `<span>${{ 'easy': '🟢 Dễ', 'medium': '🟡 Trung bình', 'hard': '🔴 Khó', 'extreme': '⚡ Siêu khó' }[problem.difficulty] || ''}</span>` : ''}
                                 <span><i class="fa-solid fa-lightbulb"></i> ${solutions.length} lời giải</span>
                             </div>
                             <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
@@ -1033,8 +1033,8 @@ async function viewProblemDetail(id) {
                         <h3 style="margin-bottom:1.25rem;"><i class="fa-solid fa-lightbulb"></i> Lời giải (${solutions.length})</h3>
                         <div id="solutions-box">
                             ${solutions.length === 0
-                        ? '<p style="color:var(--text-muted);text-align:center;padding:1.5rem;">Chưa có lời giải. Hãy là người đầu tiên!</p>'
-                        : solutions.map(s => `
+                ? '<p style="color:var(--text-muted);text-align:center;padding:1.5rem;">Chưa có lời giải. Hãy là người đầu tiên!</p>'
+                : solutions.map(s => `
                                     <div class="card" style="margin-bottom:1rem;padding:1.25rem;">
                                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
                                             <div style="display:flex;align-items:center;gap:0.6rem;">
@@ -1098,7 +1098,7 @@ async function viewProblemDetail(id) {
                                             ` : ''}
                                         </div>
                                     </div>`).join("")
-                            }
+            }
                         </div>
                         
                         <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border-color);">
@@ -1108,13 +1108,13 @@ async function viewProblemDetail(id) {
                                     <label class="form-label">Chọn phương thức nhập lời giải:</label>
                                     <div class="input-modes" id="s-input-modes">
                                         <button type="button" class="btn btn-secondary mode-btn active" data-mode="latex"><i class="fa-solid fa-code"></i> LaTeX</button>
-                                        <button type="button" class="btn btn-secondary mode-btn" data-mode="word"><i class="fa-solid fa-file-word"></i> Văn bản (Word)</button>
+                                        <button type="button" class="btn btn-secondary mode-btn" data-mode="word"><i class="fa-solid fa-file-word"></i> Văn bản</button>
                                         <button type="button" class="btn btn-secondary mode-btn" data-mode="image"><i class="fa-solid fa-camera"></i> Chụp / Tải ảnh</button>
                                     </div>
                                 </div>
                                 
                                 <div class="form-group" id="s-mode-latex-container">
-                                    <label class="form-label">Nội dung lời giải (LaTeX & Text):</label>
+                                    <label class="form-label">Nội dung lời giải (LaTeX và Văn bản):</label>
                                     <textarea id="sol-content" class="form-textarea" style="min-height:180px;"
                                         placeholder="Nhập lời giải chi tiết. Ví dụ: $$\int_0^1 x^2 dx = \frac{1}{3}$$"></textarea>
                                 </div>
@@ -1158,8 +1158,8 @@ async function viewProblemDetail(id) {
                         <h3 style="margin-bottom:1.25rem;"><i class="fa-solid fa-comments"></i> Thảo luận (${comments.length})</h3>
                         <div id="prob-comments">
                             ${comments.length === 0
-                        ? '<p style="color:var(--text-muted);text-align:center;padding:1rem;">Chưa có bình luận.</p>'
-                        : comments.map(c => commentHTML(c)).join("")}
+                ? '<p style="color:var(--text-muted);text-align:center;padding:1rem;">Chưa có bình luận.</p>'
+                : comments.map(c => commentHTML(c)).join("")}
                         </div>
                         <form id="prob-comment-form" style="display:flex;gap:0.5rem;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border-color);">
                             <input type="text" id="prob-comment-input" class="form-input" placeholder="Bình luận về bài toán này..." required>
@@ -1173,7 +1173,7 @@ async function viewProblemDetail(id) {
                     <div class="ai-tutor-card">
                         <div class="ai-tutor-header">
                             <h4 class="ai-tutor-title"><i class="fa-solid fa-robot"></i> Trợ lý Học tập AI</h4>
-                            <div class="ai-tutor-tagline">Hướng dẫn từng bước (Socratic Method)</div>
+                            <div class="ai-tutor-tagline">Hướng dẫn từng bước gợi mở</div>
                         </div>
                         <div class="ai-tutor-messages" id="ai-tutor-chat-messages">
                             <!-- Messages will render here -->
@@ -1209,7 +1209,7 @@ async function viewProblemDetail(id) {
         let problemChatMessages = [
             {
                 role: "model",
-                content: `Chào **${user ? user.username.split(' ')[0] : 'bạn'}**! Mình là Trợ lý Học tập AI. Nếu bạn chưa biết hướng giải bài tập này, hoặc muốn tìm hiểu các lý thuyết, công thức liên quan, hãy chat với mình nhé. Mình sẽ hướng dẫn từng bước (Socratic Method) để bạn tự giải được bài toán này! 😉`
+                content: `Chào em! Thầy là người hướng dẫn học tập của em. Nếu em chưa biết hướng giải bài tập này, hoặc muốn tìm hiểu các lý thuyết, công thức liên quan, hãy cứ hỏi thầy nhé. Thầy sẽ hướng dẫn từng bước gợi mở để em tự tìm ra lời giải cho bài toán này! 😉`
             }
         ];
 
@@ -1220,9 +1220,9 @@ async function viewProblemDetail(id) {
                 <div class="ai-msg ${m.role === 'model' ? 'ai' : 'user'}">
                     <div class="ai-msg-avatar">
                         ${m.role === 'model'
-                            ? `<div style="background:rgba(99,102,241,0.1); width:24px; height:24px; display:flex; align-items:center; justify-content:center; border-radius:50%; color:var(--accent-blue); font-size:0.75rem;"><i class="fa-solid fa-robot"></i></div>`
-                            : `<img src="${user ? user.picture : 'https://avatar.iran.liara.run/public/1'}" alt="Avatar">`
-                        }
+                    ? `<div style="background:rgba(99,102,241,0.1); width:24px; height:24px; display:flex; align-items:center; justify-content:center; border-radius:50%; color:var(--accent-blue); font-size:0.75rem;"><i class="fa-solid fa-robot"></i></div>`
+                    : `<img src="${user ? user.picture : 'https://avatar.iran.liara.run/public/1'}" alt="Avatar">`
+                }
                     </div>
                     <div class="ai-msg-bubble">
                         ${preprocessLaTeX(m.content)}
@@ -1363,7 +1363,7 @@ async function viewProblemDetail(id) {
             btn.addEventListener("click", () => {
                 const sId = btn.getAttribute("data-id");
                 const originalContent = decodeURIComponent(btn.getAttribute("data-content"));
-                
+
                 const bodyDiv = document.getElementById(`sol-body-${sId}`);
                 if (!bodyDiv) return;
 
@@ -1434,13 +1434,13 @@ async function viewProblemDetail(id) {
             e.preventDefault();
             const user = getCurrentUser();
             if (!user) { showToast("Vui lòng đăng nhập!", "error"); return; }
-            
+
             const activeBtn = document.querySelector("#s-input-modes .mode-btn.active");
             const mode = activeBtn ? activeBtn.getAttribute("data-mode") : 'latex';
-            
+
             let content = "";
             let imageUrl = "";
-            
+
             if (mode === 'latex') {
                 content = document.getElementById("sol-content").value.trim();
                 if (!content) { showToast("Vui lòng điền nội dung lời giải!", "warning"); return; }
@@ -1551,7 +1551,7 @@ function viewEditProblem(problem) {
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Nội dung đề bài (LaTeX / văn bản):</label>
+                    <label class="form-label">Nội dung đề bài (LaTeX và văn bản):</label>
                     <textarea id="ep-content" class="form-textarea" style="min-height:200px;">${problem.content}</textarea>
                 </div>
 
@@ -1574,10 +1574,10 @@ function viewEditProblem(problem) {
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label">Cấp độ:</label>
                         <select id="ep-difficulty" class="form-select">
-                            <option value="easy" ${(problem.difficulty||'medium')==='easy'?'selected':''}>🟢 Dễ</option>
-                            <option value="medium" ${(problem.difficulty||'medium')==='medium'?'selected':''}>🟡 Trung bình</option>
-                            <option value="hard" ${(problem.difficulty||'medium')==='hard'?'selected':''}>🔴 Khó</option>
-                            <option value="extreme" ${(problem.difficulty||'medium')==='extreme'?'selected':''}>⚡ Siêu khó</option>
+                            <option value="easy" ${(problem.difficulty || 'medium') === 'easy' ? 'selected' : ''}>🟢 Dễ</option>
+                            <option value="medium" ${(problem.difficulty || 'medium') === 'medium' ? 'selected' : ''}>🟡 Trung bình</option>
+                            <option value="hard" ${(problem.difficulty || 'medium') === 'hard' ? 'selected' : ''}>🔴 Khó</option>
+                            <option value="extreme" ${(problem.difficulty || 'medium') === 'extreme' ? 'selected' : ''}>⚡ Siêu khó</option>
                         </select>
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
@@ -1650,13 +1650,13 @@ function viewCreateProblem() {
                     <label class="form-label">Chọn phương thức soạn đề bài:</label>
                     <div class="input-modes" id="p-input-modes">
                         <button type="button" class="btn btn-secondary mode-btn active" data-mode="latex"><i class="fa-solid fa-code"></i> LaTeX</button>
-                        <button type="button" class="btn btn-secondary mode-btn" data-mode="word"><i class="fa-solid fa-file-word"></i> Văn bản (Word)</button>
+                        <button type="button" class="btn btn-secondary mode-btn" data-mode="word"><i class="fa-solid fa-file-word"></i> Văn bản</button>
                         <button type="button" class="btn btn-secondary mode-btn" data-mode="image"><i class="fa-solid fa-camera"></i> Chụp / Tải ảnh</button>
                     </div>
                 </div>
 
                 <div class="form-group" id="p-mode-latex-container">
-                    <label class="form-label">Nội dung đề bài (LaTeX):</label>
+                    <label class="form-label">Nội dung đề bài (LaTeX và văn bản):</label>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                         <div>
                             <label class="form-label" style="font-size:0.78rem;color:var(--text-muted);">✏️ Soạn LaTeX</label>
@@ -1769,13 +1769,13 @@ function viewCreateProblem() {
         e.preventDefault();
         const user = getCurrentUser();
         if (!user) { showToast("Vui lòng đăng nhập!", "error"); return; }
-        
+
         const activeBtn = document.querySelector("#p-input-modes .mode-btn.active");
         const mode = activeBtn ? activeBtn.getAttribute("data-mode") : 'latex';
-        
+
         let content = "";
         let imageUrl = "";
-        
+
         if (mode === 'latex') {
             content = document.getElementById("p-content").value.trim();
             if (!content) { showToast("Vui lòng điền nội dung đề bài!", "warning"); return; }
@@ -1795,11 +1795,11 @@ function viewCreateProblem() {
         const points = parseInt(document.getElementById("p-points").value) || 10;
         const gradingRubric = document.getElementById("p-rubric").value.trim();
         const difficulty = document.getElementById("p-difficulty").value;
-        
+
         const btn = document.getElementById("submit-prob-btn");
         btn.disabled = true;
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang đăng...`;
-        
+
         try {
             await api.addProblem({ title, content, category, tags, creator: user.username, creatorPicture: user.picture, creatorGoogleId: user.googleId, points, gradingRubric, difficulty, imageUrl });
             showToast("Đã đăng bài toán! +10 điểm 🎉", "success");
@@ -2246,7 +2246,7 @@ async function viewProfile(targetGoogleId) {
                 const list = activeTab === 'correct' ? correctProblems : incorrectProblems;
                 const totalItems = list.length;
                 const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-                
+
                 if (currentPage > totalPages) currentPage = totalPages;
                 const startIndex = (currentPage - 1) * itemsPerPage;
                 const pageItems = list.slice(startIndex, startIndex + itemsPerPage);
@@ -2464,8 +2464,8 @@ async function viewAdmin() {
                         <h3 style="margin-bottom: 1rem; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Danh sách kỳ thi</h3>
                         <div style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 450px; overflow-y: auto;">
                             ${contests.length === 0
-                                ? `<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Chưa có kỳ thi nào.</p>`
-                                : contests.map(c => `
+                    ? `<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Chưa có kỳ thi nào.</p>`
+                    : contests.map(c => `
                                     <div style="padding: 0.85rem; background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
                                         <div>
                                             <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">${c.title}</div>
@@ -2484,7 +2484,7 @@ async function viewAdmin() {
                                         </div>
                                     </div>
                                 `).join("")
-                            }
+                }
                         </div>
                     </div>
 
@@ -2526,8 +2526,8 @@ async function viewAdmin() {
                     <h3 style="margin-bottom: 1rem; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Quản lý kho đề bài</h3>
                     <div style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 500px; overflow-y: auto;">
                         ${problems.length === 0
-                            ? `<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Chưa có đề bài nào.</p>`
-                            : problems.map(p => `
+                    ? `<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Chưa có đề bài nào.</p>`
+                    : problems.map(p => `
                                 <div style="padding: 0.85rem; background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
                                     <div>
                                         <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">${preprocessLaTeX(p.title)}</div>
@@ -2541,7 +2541,7 @@ async function viewAdmin() {
                                     </button>
                                 </div>
                             `).join("")
-                        }
+                }
                     </div>
                 </div>
             </div>
@@ -2607,7 +2607,7 @@ async function viewAdmin() {
             </div>
             ` : ''}
         `;
-// Add Tabs Event Listeners
+        // Add Tabs Event Listeners
         document.querySelectorAll("#admin-tabs .filter-tag-btn").forEach(btn => {
             btn.addEventListener("click", () => {
                 document.querySelectorAll("#admin-tabs .filter-tag-btn").forEach(b => b.classList.remove("active"));
