@@ -403,7 +403,15 @@ Hãy chấm điểm lời giải này và trả về kết quả ở định d�
                     body: JSON.stringify({
                         contents: [{ parts: contentsParts }],
                         generationConfig: {
-                            responseMimeType: 'application/json'
+                            responseMimeType: 'application/json',
+                            responseSchema: {
+                                type: "OBJECT",
+                                properties: {
+                                    isCorrect: { type: "BOOLEAN" },
+                                    feedback: { type: "STRING" }
+                                },
+                                required: ["isCorrect", "feedback"]
+                            }
                         }
                     })
                 });
@@ -414,9 +422,39 @@ Hãy chấm điểm lời giải này và trả về kết quả ở định d�
                     const textResult = result.candidates?.[0]?.content?.parts?.[0]?.text;
                     console.log("- Gemini Response Text:", textResult);
                     if (textResult) {
-                        const parsed = JSON.parse(textResult.trim());
-                        solution.status = parsed.isCorrect ? 'correct' : 'incorrect';
-                        solution.aiFeedback = parsed.feedback || "";
+                        let cleanedText = textResult.trim();
+                        if (cleanedText.startsWith("```json")) {
+                            cleanedText = cleanedText.substring(7);
+                        }
+                        if (cleanedText.endsWith("```")) {
+                            cleanedText = cleanedText.substring(0, cleanedText.length - 3);
+                        }
+                        cleanedText = cleanedText.trim();
+
+                        try {
+                            const parsed = JSON.parse(cleanedText);
+                            solution.status = parsed.isCorrect ? 'correct' : 'incorrect';
+                            solution.aiFeedback = parsed.feedback || "";
+                        } catch (parseErr) {
+                            console.warn("Failed standard JSON parse, attempting regex extraction...", parseErr);
+                            const isCorrectMatch = cleanedText.match(/"isCorrect"\s*:\s*(true|false)/);
+                            const feedbackMatch = cleanedText.match(/"feedback"\s*:\s*"([\s\S]*)"\s*}/);
+                            
+                            if (isCorrectMatch) {
+                                solution.status = (isCorrectMatch[1] === 'true') ? 'correct' : 'incorrect';
+                            } else {
+                                solution.status = cleanedText.toLowerCase().includes('"iscorrect": true') ? 'correct' : 'incorrect';
+                            }
+
+                            if (feedbackMatch) {
+                                solution.aiFeedback = feedbackMatch[1]
+                                    .replace(/\\"/g, '"')
+                                    .replace(/\\n/g, '\n')
+                                    .replace(/\\t/g, '\t');
+                            } else {
+                                solution.aiFeedback = cleanedText;
+                            }
+                        }
                     }
                 } else {
                     const errText = await apiResponse.text();
@@ -518,7 +556,15 @@ Hãy chấm điểm lời giải này và trả về kết quả ở định d�
                         body: JSON.stringify({
                             contents: [{ parts: contentsParts }],
                             generationConfig: {
-                                responseMimeType: 'application/json'
+                                responseMimeType: 'application/json',
+                                responseSchema: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        isCorrect: { type: "BOOLEAN" },
+                                        feedback: { type: "STRING" }
+                                    },
+                                    required: ["isCorrect", "feedback"]
+                                }
                             }
                         })
                     });
@@ -527,9 +573,39 @@ Hãy chấm điểm lời giải này và trả về kết quả ở định d�
                         const result = await apiResponse.json();
                         const textResult = result.candidates?.[0]?.content?.parts?.[0]?.text;
                         if (textResult) {
-                            const parsed = JSON.parse(textResult.trim());
-                            sol.status = parsed.isCorrect ? 'correct' : 'incorrect';
-                            sol.aiFeedback = parsed.feedback || "";
+                            let cleanedText = textResult.trim();
+                            if (cleanedText.startsWith("```json")) {
+                                cleanedText = cleanedText.substring(7);
+                            }
+                            if (cleanedText.endsWith("```")) {
+                                cleanedText = cleanedText.substring(0, cleanedText.length - 3);
+                            }
+                            cleanedText = cleanedText.trim();
+
+                            try {
+                                const parsed = JSON.parse(cleanedText);
+                                sol.status = parsed.isCorrect ? 'correct' : 'incorrect';
+                                sol.aiFeedback = parsed.feedback || "";
+                            } catch (parseErr) {
+                                console.warn("Failed standard JSON parse, attempting regex extraction...", parseErr);
+                                const isCorrectMatch = cleanedText.match(/"isCorrect"\s*:\s*(true|false)/);
+                                const feedbackMatch = cleanedText.match(/"feedback"\s*:\s*"([\s\S]*)"\s*}/);
+                                
+                                if (isCorrectMatch) {
+                                    sol.status = (isCorrectMatch[1] === 'true') ? 'correct' : 'incorrect';
+                                } else {
+                                    sol.status = cleanedText.toLowerCase().includes('"iscorrect": true') ? 'correct' : 'incorrect';
+                                }
+
+                                if (feedbackMatch) {
+                                    sol.aiFeedback = feedbackMatch[1]
+                                        .replace(/\\"/g, '"')
+                                        .replace(/\\n/g, '\n')
+                                        .replace(/\\t/g, '\t');
+                                } else {
+                                    sol.aiFeedback = cleanedText;
+                                }
+                            }
                         }
                     } else {
                         sol.status = 'pending';
