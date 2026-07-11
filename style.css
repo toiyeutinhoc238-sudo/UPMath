@@ -619,6 +619,7 @@ input, textarea, select, button {
 
 .shoutbox-input-area {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
     padding-top: 0.75rem;
     border-top: 1px solid var(--border-color);
@@ -2333,6 +2334,8 @@ input, textarea, select, button {
 /* Reply preview styles */
 .shout-reply-preview {
     display: flex;
+    flex: 0 0 100%;
+    width: 100%;
     justify-content: space-between;
     align-items: center;
     background: rgba(99, 102, 241, 0.08);
@@ -2363,6 +2366,8 @@ input, textarea, select, button {
 /* Edit preview styles */
 .shout-edit-preview {
     display: flex;
+    flex: 0 0 100%;
+    width: 100%;
     justify-content: space-between;
     align-items: center;
     background: rgba(234, 179, 8, 0.08);

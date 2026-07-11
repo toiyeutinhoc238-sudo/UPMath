@@ -814,6 +814,9 @@ function renderShouts(shouts) {
             editShoutId = null; // Cancel editing when replying
             
             showShoutPreview();
+            
+            const inp = document.getElementById("shoutbox-input");
+            if (inp) inp.focus();
         });
     });
 
