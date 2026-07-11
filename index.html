@@ -13,7 +13,8 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://upmath.onrender.com/">
     <meta property="og:title" content="UPMath - Nơi bạn tìm thấy cảm hứng học Toán">
-    <meta property="og:description" content="UPMath - Nền tảng học tập Giải tích và Đại số tuyến tính dành cho sinh viên môn COMP1800 tại HCMUE. Giải bài tập toán bằng LaTeX, thảo luận và chấm điểm tự động bằng AI.">
+    <meta property="og:description"
+        content="UPMath - Nền tảng học tập Giải tích và Đại số tuyến tính dành cho sinh viên môn COMP1800 tại HCMUE. Giải bài tập toán bằng LaTeX, thảo luận và chấm điểm tự động bằng AI.">
     <meta property="og:image" content="https://upmath.onrender.com/logo.png">
     <meta property="og:image:width" content="512">
     <meta property="og:image:height" content="512">
@@ -22,7 +23,8 @@
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://upmath.onrender.com/">
     <meta property="twitter:title" content="UPMath - Nơi bạn tìm thấy cảm hứng học Toán">
-    <meta property="twitter:description" content="UPMath - Nền tảng học tập Giải tích và Đại số tuyến tính dành cho sinh viên môn COMP1800 tại HCMUE. Giải bài tập toán bằng LaTeX, thảo luận và chấm điểm tự động bằng AI.">
+    <meta property="twitter:description"
+        content="UPMath - Nền tảng học tập Giải tích và Đại số tuyến tính dành cho sinh viên môn COMP1800 tại HCMUE. Giải bài tập toán bằng LaTeX, thảo luận và chấm điểm tự động bằng AI.">
     <meta property="twitter:image" content="https://upmath.onrender.com/logo.png">
 
     <!-- Google Fonts -->
@@ -51,7 +53,7 @@
 
     <!-- Google Login Callback Placeholder to prevent GSI race conditions -->
     <script>
-        window.handleGoogleCredential = function(response) {
+        window.handleGoogleCredential = function (response) {
             window._pendingGoogleResponse = response;
             if (typeof window.actualHandleGoogleCredential === 'function') {
                 window.actualHandleGoogleCredential(response);
@@ -249,7 +251,68 @@
     <!-- Toast Notifications -->
     <div id="toast-container" class="toast-container"></div>
 
+    <!-- ======= IMAGE LIGHTBOX MODAL ======= -->
+    <div id="image-lightbox" class="lightbox-modal" onclick="closeLightbox()">
+        <span class="lightbox-close">&times;</span>
+        <img class="lightbox-content" id="lightbox-img" alt="Hình ảnh phóng to">
+        <div id="lightbox-caption" style="text-align: center; color: #ccc; padding: 10px; font-size: 0.9rem;"></div>
+    </div>
 
+    <style>
+        .lightbox-modal {
+            display: none;
+            position: fixed;
+            z-index: 999999;
+            padding-top: 40px;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(10, 11, 20, 0.95);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+            cursor: zoom-out;
+        }
+        .lightbox-content {
+            margin: auto;
+            display: block;
+            max-width: 92%;
+            max-height: 82%;
+            border-radius: 10px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: lightboxZoom 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: default;
+        }
+        @keyframes lightboxZoom {
+            from { transform: scale(0.92); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 38px;
+            font-weight: bold;
+            transition: color 0.2s, transform 0.2s;
+            cursor: pointer;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .lightbox-close:hover {
+            color: #fff;
+            transform: scale(1.08);
+            background: rgba(255, 255, 255, 0.12);
+        }
+    </style>
 </body>
-
 </html>

@@ -532,6 +532,24 @@ async function voteItem(type, id, action) {
 window.handleImageFileSelect = handleImageFileSelect;
 window.voteItem = voteItem;
 
+// ======= IMAGE LIGHTBOX GLOBAL FUNCTIONS =======
+window.openLightbox = function(src, alt = "") {
+    const modal = document.getElementById("image-lightbox");
+    const modalImg = document.getElementById("lightbox-img");
+    const captionText = document.getElementById("lightbox-caption");
+    if (modal && modalImg) {
+        modal.style.display = "flex";
+        modalImg.src = src;
+        if (captionText) captionText.textContent = alt;
+        modalImg.onclick = function(e) { e.stopPropagation(); };
+    }
+};
+
+window.closeLightbox = function() {
+    const modal = document.getElementById("image-lightbox");
+    if (modal) modal.style.display = "none";
+};
+
 // ─── 4. SIDEBARS ──────────────────────────────────────────────────────────────
 
 async function renderSidebars() {
@@ -1076,7 +1094,7 @@ async function viewProblemDetail(id) {
                         <div class="problem-content" style="margin-bottom: 1rem;">${preprocessLaTeX(problem.content)}</div>
                         ${(problem.imageUrls && problem.imageUrls.length > 0) ? `
                             <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:1rem; margin-bottom:1rem;">
-                                ${problem.imageUrls.map(url => `<img src="${url}" alt="Hình bài toán" style="max-width:100%;border-radius:8px;display:block;">`).join("")}
+                                ${problem.imageUrls.map(url => `<img src="${url}" alt="Hình bài toán" onclick="openLightbox(this.src)" style="max-width:100%;border-radius:8px;display:block;cursor:zoom-in;">`).join("")}
                             </div>
                         ` : (problem.imageUrl ? `<img src="${problem.imageUrl}" alt="Hình bài toán" style="max-width:100%;border-radius:8px;margin-top:1rem;margin-bottom:1rem;display:block;">` : '')}
                         
@@ -1177,7 +1195,7 @@ async function viewProblemDetail(id) {
                                             <div style="margin-bottom:0.5rem; line-height:1.6;">${preprocessLaTeX(s.content)}</div>
                                             ${(s.imageUrls && s.imageUrls.length > 0) ? `
                                                 <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:0.75rem; margin-bottom:0.75rem;">
-                                                    ${s.imageUrls.map(url => `<img src="${url}" alt="Ảnh lời giải" style="max-width:100%;max-height:400px;object-fit:contain;border-radius:8px;display:block;">`).join("")}
+                                                    ${s.imageUrls.map(url => `<img src="${url}" alt="Ảnh lời giải" onclick="openLightbox(this.src)" style="max-width:100%;max-height:400px;object-fit:contain;border-radius:8px;display:block;cursor:zoom-in;">`).join("")}
                                                 </div>
                                             ` : (s.imageUrl ? `<img src="${s.imageUrl}" alt="Ảnh lời giải" style="max-width:100%;max-height:400px;object-fit:contain;border-radius:8px;margin-top:0.75rem;display:block;">` : '')}
                                             ${s.aiFeedback ? `
@@ -1354,12 +1372,12 @@ async function viewProblemDetail(id) {
                 }
                     </div>
                     <div class="ai-msg-content-wrap">
-                        <div class="ai-msg-bubble">${preprocessLaTeX(
+                        <div class="ai-msg-bubble" style="line-height: 1.7; font-size: 0.92rem; padding: 0.75rem 1rem; border-radius: 12px; word-break: break-word;">${preprocessLaTeX(
                             m.role === 'model'
                                 ? m.content.replace(/\\n/g, '\n')
                                 : m.content
                         )}</div>
-                        ${m.image ? `<img src="${m.image}" alt="Ảnh đính kèm" style="max-width:180px; max-height:120px; border-radius:6px; margin-top:0.25rem; border:1px solid var(--border-color); display:block;">` : ''}
+                        ${m.image ? `<img src="${m.image}" alt="Ảnh đính kèm" onclick="openLightbox(this.src)" style="max-width:180px; max-height:120px; border-radius:6px; margin-top:0.25rem; border:1px solid var(--border-color); display:block; cursor: zoom-in;">` : ''}
                         ${m.verified === true ? '<div class="ai-verify-badge verified"><i class="fa-solid fa-circle-check"></i> Đã kiểm tra</div>' : ''}
                         ${m.verified === false ? '<div class="ai-verify-badge corrected"><i class="fa-solid fa-triangle-exclamation"></i> Đã điều chỉnh</div>' : ''}
                     </div>
