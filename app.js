@@ -316,6 +316,12 @@ function preprocessLaTeX(text) {
     text = text.replace(/\\subsubsection\*?\{([^}]+)\}/g, '<h4 style="margin: 0.85rem 0 0.5rem; font-size: 1.15rem; color: var(--accent-blue); font-weight:600;">$1</h4>');
     text = text.replace(/\\subsection\*?\{([^}]+)\}/g, '<h3 style="margin: 1.1rem 0 0.65rem; font-size: 1.3rem; color: var(--accent-blue); font-weight:600;">$1</h3>');
     
+    // Bold & Italic (LaTeX style & Markdown style)
+    text = text.replace(/\\textbf\{([^}]+)\}/g, '<strong>$1</strong>');
+    text = text.replace(/\\textit\{([^}]+)\}/g, '<em>$1</em>');
+    text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    
     // 3. Remove unsupported formatting/spaces commands
     text = text.replace(/\\noindent/g, "");
     
