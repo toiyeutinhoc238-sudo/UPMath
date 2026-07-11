@@ -1403,6 +1403,12 @@ app.post('/api/ai-tutor/generate-problem', async (req, res) => {
         const prompt = `Bạn là một giảng viên soạn đề thi toán đại học xuất sắc.
 Hãy tạo ra 1 đề bài toán tự luận với đúng ${numQ} câu hỏi nhỏ, thuộc chủ đề "${catName}" với mức độ khó "${diffName}".
 
+QUY TẮC BẮT BUỘC ĐỂ ĐẢM BẢO TÍNH CHÍNH XÁC TOÁN HỌC:
+1. ĐỀ BÀI PHẢI GIẢI ĐƯỢC: Tuyệt đối không tạo ra các bài toán vô nghiệm hoặc tích phân không thể lấy được nguyên hàm bằng các phương pháp chuẩn.
+2. NGHIỆM ĐẸP: Thiết kế các tham số, hệ số sao cho nghiệm cuối cùng hoặc kết quả giới hạn/tích phân là các con số hữu tỷ đẹp, phân số hoặc căn số gọn gàng (tránh các số thập phân lẻ phức tạp).
+3. KIỂM TRA LẠI: Bạn bắt buộc phải giải nháp từng bước bài toán này trong tư duy trước khi đưa ra đề bài và thang điểm, để đảm bảo không bị lỗi số liệu hoặc sai lệch logic toán học.
+4. CHÍNH TẢ: Gọi đúng tên quy tắc giới hạn là "L'Hôpital" hoặc "L'Hopital" (tuyệt đối không viết là "L'Hospital").
+
 Yêu cầu định dạng đầu ra phải là một đối tượng JSON chính xác (không có markdown khác ngoài định dạng JSON), gồm các trường:
 {
   "title": "Tiêu đề ngắn gọn của đề bài bằng tiếng Việt (Ví dụ: Tính giới hạn và tích phân suy rộng)",
@@ -1468,6 +1474,12 @@ app.post('/api/problems/:id/similar', async (req, res) => {
         const prompt = `Bạn là giảng viên toán. Hãy tạo ra một đề bài toán tự luận MỚI, tương tự (cùng mức độ, cấu trúc) với bài toán sau đây, nhưng thay đổi số liệu hoặc cấu trúc hàm để thành một bài toán mới:
 Tiêu đề: ${sourceProblem.title}
 Nội dung: ${sourceProblem.content}
+
+QUY TẮC BẮT BUỘC ĐỂ ĐẢM BẢO TÍNH CHÍNH XÁC TOÁN HỌC:
+1. ĐỀ BÀI PHẢI GIẢI ĐƯỢC: Tuyệt đối không tạo ra các bài toán vô nghiệm hoặc tích phân không thể lấy được nguyên hàm bằng các phương pháp chuẩn.
+2. NGHIỆM ĐẸP: Thiết kế các tham số, hệ số sao cho nghiệm cuối cùng hoặc kết quả giới hạn/tích phân là các con số hữu tỷ đẹp, phân số hoặc căn số gọn gàng (tránh các số thập phân lẻ phức tạp).
+3. KIỂM TRA LẠI: Bạn bắt buộc phải giải nháp từng bước bài toán mới này trong tư duy trước khi đưa ra đề bài và thang điểm, để đảm bảo không bị lỗi số liệu hoặc sai lệch logic toán học.
+4. CHÍNH TẢ: Gọi đúng tên quy tắc giới hạn là "L'Hôpital" hoặc "L'Hopital" (tuyệt đối không viết là "L'Hospital").
 
 Yêu cầu định dạng đầu ra phải là một đối tượng JSON chính xác (không có markdown khác ngoài định dạng JSON), gồm các trường:
 {
