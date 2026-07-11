@@ -218,6 +218,7 @@ const api = {
     reactShout: (id, data) => api._req('PUT', `/shouts/${id}/react`, data),
     updateShout: (id, data) => api._req('PUT', `/shouts/${id}`, data),
     deleteShout: (id) => api._req('DELETE', `/shouts/${id}`),
+    chatAiTutor: (problemId, messages) => api._req('POST', '/ai-tutor', { problemId, messages }),
 
     // Users
     getUsers: () => api._req('GET', '/users'),
@@ -928,6 +929,35 @@ async function viewExercises(categoryFilter = "all") {
         const me = getCurrentUser();
         const canCreate = me && ['admin', 'professor', 'supporter'].includes(me.role);
         mainContent.innerHTML = `
+            <div class="page-header">
+                <h2 class="page-title"><i class="fa-solid fa-book-open-reader"></i> Kho Bài Tập <span>COMP1800</span></h2>
+                ${canCreate ? `<a href="#create-problem" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Đăng đề bài</a>` : ''}
+            </div>
+            <div id="cat-filters" style="display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+                <button class="filter-tag-btn ${categoryFilter === 'all' ? 'active' : ''}" data-c="all">Tất cả</button>
+                <button class="filter-tag-btn ${categoryFilter === 'calculus' ? 'active' : ''}" data-c="calculus">🔵 Giải tích</button>
+                <button class="filter-tag-btn ${categoryFilter === 'algebra' ? 'active' : ''}" data-c="algebra">🟣 Đại số</button>
+            </div>
+            <div id="prob-list">
+                ${problems.length === 0
+                ? `<div class="card" style="text-align:center;padding:3rem;">
+                           <i class="fa-solid fa-book-open fa-3x" style="color:var(--text-muted);margin-bottom:1rem;"></i>
+                           <p style="color:var(--text-muted);">Chưa có bài tập nào${categoryFilter !== 'all' ? ` trong chuyên mục này` : ''}.</p>
+                           ${canCreate ? `<a href="#create-problem" class="btn btn-primary" style="margin-top:1rem;">Đăng bài toán đầu tiên!</a>` : ''}
+                       </div>`
+                : problems.map(p => problemCardHTML(p)).join("")}
+            </div>`;
+
+        document.querySelectorAll("#cat-filters .filter-tag-btn").forEach(btn =>
+            btn.addEventListener("click", () => viewExercises(btn.getAttribute("data-c")))
+        );
+        renderLaTeX(mainContent);
+    } catch (e) {
+        showError("Không thể tải bài tập. Kiểm tra server backend!");
+    }
+}
+
+// ── PROBLEM DETAIL ────────────────────────────────────────────────────────────
 async function viewProblemDetail(id) {
     setActiveNav("exercises");
     showLoading();
@@ -1086,7 +1116,7 @@ async function viewProblemDetail(id) {
                                 <div class="form-group" id="s-mode-latex-container">
                                     <label class="form-label">Nội dung lời giải (LaTeX & Text):</label>
                                     <textarea id="sol-content" class="form-textarea" style="min-height:180px;"
-                                        placeholder="Nhập lời giải chi tiết. Ví dụ: $$\\int_0^1 x^2 dx = \\frac{1}{3}$$"></textarea>
+                                        placeholder="Nhập lời giải chi tiết. Ví dụ: $$\int_0^1 x^2 dx = \frac{1}{3}$$"></textarea>
                                 </div>
                                 
                                 <div class="form-group" id="s-mode-word-container" style="display:none;">
