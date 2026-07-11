@@ -890,8 +890,14 @@ async function viewProblemDetail(id) {
                             </div>
                         </div>
 
-                        <div style="display:flex;justify-content:flex-end;margin-top:1rem;">
-                            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Đăng lời giải</button>
+                        <div style="margin-top:1.25rem;padding:1rem;background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.2);border-radius:10px;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
+                            <div style="font-size:0.83rem;color:var(--text-muted);display:flex;align-items:center;gap:0.5rem;">
+                                <i class="fa-solid fa-robot" style="color:#818cf8;font-size:1.1rem;"></i>
+                                <span>Sau khi nộp, <strong style="color:var(--text-primary);">AI Gemini</strong> sẽ tự động chấm bài và trả kết quả ngay lập tức.</span>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;padding:0.65rem 1.4rem;font-size:0.95rem;font-weight:600;white-space:nowrap;">
+                                <i class="fa-solid fa-robot"></i> Nộp bài &amp; Chấm tự động
+                            </button>
                         </div>
                     </form>
                 </div>
