@@ -2259,7 +2259,8 @@ input, textarea, select, button {
     gap: 0.35rem;
     align-items: center;
 }
-.shout-msg:hover .shout-msg-hover-actions {
+.shout-msg:hover .shout-msg-hover-actions,
+.shout-msg-hover-actions.active {
     display: flex;
 }
 .shout-action-btn {
@@ -2295,8 +2296,7 @@ input, textarea, select, button {
     z-index: 100;
     animation: scaleIn 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-.shout-action-btn.react-btn:hover .reaction-emoji-bar,
-.reaction-emoji-bar:hover {
+.reaction-emoji-bar.active {
     display: flex;
 }
 .emoji-item {

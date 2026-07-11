@@ -848,6 +848,28 @@ function renderShouts(shouts) {
         });
     });
 
+    // Bind click togglers for reaction emoji bar (like Messenger)
+    c.querySelectorAll(".react-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation(); // Prevent document click handler from closing it immediately
+            const emojiBar = btn.querySelector(".reaction-emoji-bar");
+            const actionsMenu = btn.closest(".shout-msg-hover-actions");
+
+            const wasActive = emojiBar?.classList.contains("active");
+
+            // Close all other reaction bars
+            document.querySelectorAll(".reaction-emoji-bar").forEach(bar => {
+                bar.classList.remove("active");
+                bar.closest(".shout-msg-hover-actions")?.classList.remove("active");
+            });
+
+            if (!wasActive) {
+                emojiBar?.classList.add("active");
+                actionsMenu?.classList.add("active");
+            }
+        });
+    });
+
     c.scrollTop = c.scrollHeight;
 }
 
@@ -2601,4 +2623,12 @@ document.addEventListener("click", (e) => {
         window.location.hash = "#exercises";
         setTimeout(() => viewExercises(cat), 50);
     }
+});
+
+// Close reactions menu when clicking outside
+document.addEventListener("click", () => {
+    document.querySelectorAll(".reaction-emoji-bar").forEach(bar => {
+        bar.classList.remove("active");
+        bar.closest(".shout-msg-hover-actions")?.classList.remove("active");
+    });
 });
