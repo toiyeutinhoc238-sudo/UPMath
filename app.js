@@ -195,6 +195,8 @@ const api = {
     addProblem: (data) => api._req('POST', '/problems', data),
     updateProblem: (id, data) => api._req('PUT', `/problems/${id}`, data),
     deleteProblem: (id) => api._req('DELETE', `/problems/${id}`),
+    generateProblem: (data) => api._req('POST', '/ai-tutor/generate-problem', data),
+    createSimilarProblem: (id, data) => api._req('POST', `/problems/${id}/similar`, data),
 
     // Solutions
     getSolutions: (pid) => api._req('GET', `/solutions?problemId=${pid}`),
@@ -1464,6 +1466,26 @@ async function viewProblemDetail(id) {
                 }
             }
         });
++
++        // AI Similar Problem button
++        document.getElementById("ai-similar-problem-btn")?.addEventListener("click", async () => {
++            const btn = document.getElementById("ai-similar-problem-btn");
++            const originalHTML = btn.innerHTML;
++            btn.disabled = true;
++            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo bài tương tự...`;
++            try {
++                const newProb = await api.createSimilarProblem(problem._id, {
++                    creator: user ? user.name : "Hệ thống AI",
++                    creatorGoogleId: user ? user.googleId : null
++                });
++                showToast("AI đã sinh đề bài tương tự thành công! 🪄", "success");
++                window.location.hash = `#problem/${newProb._id}`;
++            } catch (err) {
++                showToast("Lỗi khi sinh đề bài tương tự: " + err.message, "error");
++                btn.disabled = false;
++                btn.innerHTML = originalHTML;
++            }
++        });
 
         // Edit Solution button (inline edit)
         document.querySelectorAll(".edit-sol-btn").forEach(btn => {
@@ -1746,6 +1768,48 @@ function viewCreateProblem() {
             </div>
         </div>
         <div class="card">
+            <!-- ✨ TRỢ LÝ SOẠN ĐỀ AI WIDGET -->
+            <div style="margin-bottom: 2rem; padding: 1.25rem; border: 1px dashed rgba(139, 92, 246, 0.4); background: rgba(99,102,241,0.04); border-radius: 12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+                    <h3 style="margin:0; font-size:1.1rem; color:#818cf8; display:flex; align-items:center; gap:0.5rem;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Trợ lý Soạn đề AI (Beta)
+                    </h3>
+                    <span style="font-size:0.78rem; color:var(--text-muted);">Tự động tạo đề bài toán tự luận bằng trí tuệ nhân tạo Gemini</span>
+                </div>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:1rem; align-items:end;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.8rem;">Chủ đề toán học:</label>
+                        <select id="ai-gen-category" class="form-select">
+                            <option value="random">🎲 Ngẫu nhiên</option>
+                            <option value="calculus">📐 Giải tích</option>
+                            <option value="algebra">🔢 Đại số tuyến tính</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.8rem;">Độ khó đề:</label>
+                        <select id="ai-gen-difficulty" class="form-select">
+                            <option value="easy">🟢 Dễ</option>
+                            <option value="medium" selected>🟡 Trung bình</option>
+                            <option value="hard">🔴 Khó</option>
+                            <option value="extreme">⚡ Siêu khó</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.8rem;">Số lượng câu hỏi:</label>
+                        <select id="ai-gen-count" class="form-select">
+                            <option value="1" selected>1 câu hỏi</option>
+                            <option value="2">2 câu hỏi</option>
+                            <option value="3">3 câu hỏi</option>
+                            <option value="4">4 câu hỏi</option>
+                            <option value="5">5 câu hỏi</option>
+                        </select>
+                    </div>
+                    <button type="button" id="ai-gen-submit-btn" class="btn btn-primary" style="background:linear-gradient(135deg,#6366f1,#8b5cf6); border:none; height:38px; display:flex; align-items:center; justify-content:center; gap:0.5rem; font-weight:600;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Sinh đề bài
+                    </button>
+                </div>
+            </div>
+
             <form id="create-prob-form">
                 <div class="form-group">
                     <label class="form-label" for="p-title">Tiêu đề bài toán:</label>
@@ -1849,6 +1913,46 @@ function viewCreateProblem() {
             placeholder: 'Soạn thảo nội dung đề bài giống Word...'
         });
     }
+
+    // AI Generate Problem Button Event Listener
+    document.getElementById("ai-gen-submit-btn")?.addEventListener("click", async () => {
+        const btn = document.getElementById("ai-gen-submit-btn");
+        const category = document.getElementById("ai-gen-category").value;
+        const difficulty = document.getElementById("ai-gen-difficulty").value;
+        const questionsCount = parseInt(document.getElementById("ai-gen-count").value) || 1;
+
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang sinh đề bài...`;
+
+        try {
+            const data = await api.generateProblem({ category, difficulty, questionsCount });
+            
+            // Tự động chuyển mode soạn thảo sang LaTeX
+            const latexModeBtn = document.querySelector('#p-input-modes .mode-btn[data-mode="latex"]');
+            if (latexModeBtn) {
+                latexModeBtn.click();
+            }
+
+            // Autofill các trường thông tin đề bài
+            document.getElementById("p-title").value = data.title || "";
+            document.getElementById("p-content").value = data.content || "";
+            document.getElementById("p-tags").value = (data.tags || []).join(", ");
+            document.getElementById("p-category").value = data.category || "calculus";
+            document.getElementById("p-difficulty").value = data.difficulty || "medium";
+            document.getElementById("p-rubric").value = data.gradingRubric || "";
+
+            // Cập nhật Preview LaTeX
+            updateProblemPreview();
+
+            showToast("Đã tự động điền đề bài do AI sinh thành công! ✨", "success");
+        } catch (err) {
+            showToast("Sinh đề bài bằng AI thất bại: " + err.message, "error");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    });
 
     // Tab buttons event listeners
     document.querySelectorAll("#p-input-modes .mode-btn").forEach(btn => {

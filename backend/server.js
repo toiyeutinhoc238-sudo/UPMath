@@ -19,12 +19,12 @@ const nodemailer = require('nodemailer');
 async function sendNotificationEmail(to, subject, html) {
     const apiKey = process.env.EMAIL_PASS; // API Key của SendGrid (SG.xxxx)
     const fromEmail = process.env.EMAIL_USER; // Email người gửi đã được xác minh trên SendGrid
-    
+
     if (!apiKey || !fromEmail) {
         console.warn(`[Email fallback] Thư từ gửi tới <${to}>: "${subject}". (Chưa cấu hình đầy đủ EMAIL_PASS/EMAIL_USER trên Render)`);
         return;
     }
-    
+
     try {
         const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
             method: 'POST',
@@ -244,7 +244,7 @@ function normalizeTags(tags) {
         if (!trimmed) return '';
         return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
     }).filter(tag => tag !== '');
-    
+
     // Loại bỏ các tag trùng lặp sau khi đã chuẩn hóa
     return [...new Set(normalized)];
 }
@@ -301,10 +301,10 @@ app.put('/api/users/:googleId/points', async (req, res) => {
         const { amount } = req.body;
         const user = await User.findOne({ googleId: req.params.googleId });
         if (!user) return res.status(404).json({ error: 'User not found' });
-        
+
         const oldPoints = user.points;
         const oldRank = user.rank;
-        
+
         user.points = Math.max(0, user.points + (amount || 0));
         user.rank = calcRank(user.points);
         await user.save();
@@ -381,7 +381,7 @@ app.put('/api/users/:googleId/role', async (req, res) => {
                 </p>
             </div>
         `;
-        
+
         // Gửi email bất đồng bộ (không bắt user đợi email gửi xong mới trả về response)
         sendNotificationEmail(user.email, `[UPMath] Tài khoản của bạn đã được cập nhật vai trò mới`, emailHtml);
 
@@ -856,14 +856,14 @@ app.put('/api/solutions/:id/upvote', async (req, res) => {
             { new: true }
         );
         if (!sol) return res.status(404).json({ error: 'Solution not found' });
-        
+
         // Award upvote points to solution author
         if (sol.authorGoogleId) {
             const u = await User.findOne({ googleId: sol.authorGoogleId });
-            if (u) { 
-                u.points += 5; 
-                u.rank = calcRank(u.points); 
-                await u.save(); 
+            if (u) {
+                u.points += 5;
+                u.rank = calcRank(u.points);
+                await u.save();
 
                 // Gửi email báo nhận được Upvote
                 const problem = await Problem.findById(sol.problemId);
@@ -916,7 +916,7 @@ app.put('/api/solutions/:id/status', async (req, res) => {
                     u.points += pointsToAward;
                     u.rank = calcRank(u.points);
                     await u.save();
-                } 
+                }
                 // Deduct points if downgraded from correct
                 else if (status !== 'correct' && oldStatus === 'correct') {
                     u.points = Math.max(0, u.points - pointsToAward);
@@ -1386,7 +1386,146 @@ app.get('/api/stats', async (req, res) => {
     }
 });
 
-// ─── FALLBACK: Serve index.html for all non-API routes ────────────────────────
+// ─── AI PROBLEM GENERATION ENDPOINTS ──────────────────────────────────────────
+
+// Tự động sinh đề bài toán ngẫu nhiên theo chủ đề và độ khó
+app.post('/api/ai-tutor/generate-problem', async (req, res) => {
+    try {
+        const { category, difficulty, questionsCount } = req.body;
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) return res.status(500).json({ error: 'Gemini API key is not configured' });
+
+        const targetCat = category === 'random' ? (Math.random() > 0.5 ? 'calculus' : 'algebra') : category;
+        const catName = targetCat === 'calculus' ? 'Giải tích (Calculus)' : 'Đại số tuyến tính (Linear Algebra)';
+        const diffName = { 'easy': 'Dễ', 'medium': 'Trung bình', 'hard': 'Khó', 'extreme': 'Siêu khó' }[difficulty] || 'Trung bình';
+        const numQ = questionsCount || 1;
+
+        const prompt = `Bạn là một giảng viên soạn đề thi toán đại học xuất sắc.
+Hãy tạo ra 1 đề bài toán tự luận với đúng ${numQ} câu hỏi nhỏ, thuộc chủ đề "${catName}" với mức độ khó "${diffName}".
+
+Yêu cầu định dạng đầu ra phải là một đối tượng JSON chính xác (không có markdown khác ngoài định dạng JSON), gồm các trường:
+{
+  "title": "Tiêu đề ngắn gọn của đề bài bằng tiếng Việt (Ví dụ: Tính giới hạn và tích phân suy rộng)",
+  "content": "Nội dung đề bài tự luận chi tiết. Phải trình bày sạch sẽ, phân chia câu 1, câu 2 rõ ràng. Công thức toán học PHẢI viết bằng LaTeX (inline sử dụng $...$, khối block sử dụng $$...$$). Sử dụng tiếng Việt chuẩn sư phạm.",
+  "tags": ["danh", "sách", "nhãn", "phù", "hợp"],
+  "gradingRubric": "Gợi ý thang điểm chi tiết cho từng câu hỏi bằng tiếng Việt (Ví dụ: Câu 1 (5 điểm): ... Câu 2 (5 điểm): ...)"
+}
+
+Chỉ trả về JSON thô, không viết thêm bất kỳ dòng text nào khác bên ngoài JSON.`;
+
+        const response = await callGeminiWithRetry(apiKey, {
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+                responseMimeType: 'application/json',
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        title: { type: "STRING" },
+                        content: { type: "STRING" },
+                        tags: {
+                            type: "ARRAY",
+                            items: { type: "STRING" }
+                        },
+                        gradingRubric: { type: "STRING" }
+                    },
+                    required: ["title", "content", "tags", "gradingRubric"]
+                }
+            }
+        });
+
+        const data = await response.json();
+        if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+            return res.status(500).json({ error: 'Không thể sinh đề bài từ AI.' });
+        }
+
+        const generated = JSON.parse(data.candidates[0].content.parts[0].text);
+        
+        // Gửi kèm category và difficulty gốc để autofill
+        res.json({
+            title: generated.title,
+            content: generated.content,
+            tags: normalizeTags(generated.tags),
+            gradingRubric: generated.gradingRubric,
+            category: targetCat,
+            difficulty: difficulty
+        });
+    } catch (err) {
+        console.error("AI Generate Problem Error:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Sinh đề bài tương tự từ một bài toán có sẵn và lưu trực tiếp vào cơ sở dữ liệu
+app.post('/api/problems/:id/similar', async (req, res) => {
+    try {
+        const sourceProblem = await Problem.findById(req.params.id);
+        if (!sourceProblem) return res.status(404).json({ error: 'Source problem not found' });
+
+        const { creator, creatorGoogleId } = req.body;
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) return res.status(500).json({ error: 'Gemini API key is not configured' });
+
+        const prompt = `Bạn là giảng viên toán. Hãy tạo ra một đề bài toán tự luận MỚI, tương tự (cùng mức độ, cấu trúc) với bài toán sau đây, nhưng thay đổi số liệu hoặc cấu trúc hàm để thành một bài toán mới:
+Tiêu đề: ${sourceProblem.title}
+Nội dung: ${sourceProblem.content}
+
+Yêu cầu định dạng đầu ra phải là một đối tượng JSON chính xác (không có markdown khác ngoài định dạng JSON), gồm các trường:
+{
+  "title": "Tiêu đề ngắn gọn của đề bài mới bằng tiếng Việt",
+  "content": "Nội dung bài toán mới bằng tiếng Việt. Sử dụng LaTeX cho công thức ($...$ hoặc $$...$$).",
+  "tags": ["tag1", "tag2"],
+  "gradingRubric": "Hướng dẫn thang điểm chi tiết cho đề bài mới"
+}
+
+Chỉ trả về JSON thô, không viết thêm bất kỳ dòng text nào khác bên ngoài JSON.`;
+
+        const response = await callGeminiWithRetry(apiKey, {
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+                responseMimeType: 'application/json',
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        title: { type: "STRING" },
+                        content: { type: "STRING" },
+                        tags: {
+                            type: "ARRAY",
+                            items: { type: "STRING" }
+                        },
+                        gradingRubric: { type: "STRING" }
+                    },
+                    required: ["title", "content", "tags", "gradingRubric"]
+                }
+            }
+        });
+
+        const data = await response.json();
+        if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+            return res.status(500).json({ error: 'Không thể tạo bài toán tương tự từ AI.' });
+        }
+
+        const generated = JSON.parse(data.candidates[0].content.parts[0].text);
+
+        // Lưu trực tiếp bài toán mới vào DB
+        const newProblem = new Problem({
+            title: generated.title,
+            content: generated.content,
+            category: sourceProblem.category,
+            tags: normalizeTags(generated.tags),
+            creator: creator || 'Hệ thống AI',
+            creatorGoogleId: creatorGoogleId,
+            points: sourceProblem.points || 10,
+            gradingRubric: generated.gradingRubric,
+            difficulty: sourceProblem.difficulty || 'medium'
+        });
+
+        await newProblem.save();
+        res.status(201).json(newProblem);
+    } catch (err) {
+        console.error("AI Create Similar Problem Error:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
 
 app.get('*', (req, res) => {
     if (!req.path.startsWith('/api')) {
