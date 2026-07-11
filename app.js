@@ -185,6 +185,7 @@ const api = {
     getProblems: (cat) => api._req('GET', cat && cat !== 'all' ? `/problems?category=${cat}` : '/problems'),
     getProblem: (id) => api._req('GET', `/problems/${id}`),
     addProblem: (data) => api._req('POST', '/problems', data),
+    updateProblem: (id, data) => api._req('PUT', `/problems/${id}`, data),
 
     // Solutions
     getSolutions: (pid) => api._req('GET', `/solutions?problemId=${pid}`),
@@ -776,7 +777,12 @@ async function viewProblemDetail(id) {
                         <span><i class="fa-solid fa-star" style="color:#f59e0b;"></i> ${problem.points} điểm thưởng</span>
                         <span><i class="fa-solid fa-lightbulb"></i> ${solutions.length} lời giải</span>
                     </div>
-                    <div style="display:flex;gap:0.5rem;">
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                        ${(user && (user.role === 'admin' || user.role === 'professor' || problem.creatorGoogleId === user.googleId)) ? `
+                            <button class="btn btn-secondary btn-sm" id="edit-problem-btn" style="height:32px;padding:0.3rem 0.75rem;font-size:0.8rem;">
+                                <i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa
+                            </button>
+                        ` : ''}
                         <button class="vote-btn ${hasLikedProblem ? 'active-like' : ''}" onclick="voteItem('problems', '${problem._id}', 'like')">
                             <i class="fa-solid fa-thumbs-up"></i> Thích <span>(${pLikes})</span>
                         </button>
@@ -968,6 +974,11 @@ async function viewProblemDetail(id) {
             });
         });
 
+        // Edit Problem button
+        document.getElementById("edit-problem-btn")?.addEventListener("click", () => {
+            viewEditProblem(problem);
+        });
+
         // Add solution
         document.getElementById("sol-form")?.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -1064,6 +1075,88 @@ function commentHTML(c) {
         </div>`;
 }
 
+// ── EDIT PROBLEM ─────────────────────────────────────────────────────────────
+function viewEditProblem(problem) {
+    const main = document.getElementById("main-content");
+    if (!main) return;
+    const categoryOptions = ['calculus', 'algebra'].map(c =>
+        `<option value="${c}" ${problem.category === c ? 'selected' : ''}>${c === 'calculus' ? 'Giải tích' : 'Đại số tuyến tính'}</option>`
+    ).join('');
+    main.innerHTML = `
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem;">
+            <a href="#" onclick="viewProblemDetail('${problem._id}')" class="btn btn-secondary btn-sm"><i class="fa-solid fa-arrow-left"></i> Quay lại</a>
+            <h2 style="margin:0;font-size:1.4rem;"><i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa Đề bài</h2>
+        </div>
+        <div class="card">
+            <form id="edit-prob-form">
+                <div class="form-group">
+                    <label class="form-label" for="ep-title">Tiêu đề bài toán:</label>
+                    <input type="text" id="ep-title" class="form-input" required value="${problem.title.replace(/"/g, '&quot;')}">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Nội dung đề bài (LaTeX / văn bản):</label>
+                    <textarea id="ep-content" class="form-textarea" style="min-height:200px;">${problem.content}</textarea>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;">
+                    <div class="form-group">
+                        <label class="form-label">Môn học:</label>
+                        <select id="ep-category" class="form-select" required>${categoryOptions}</select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Thẻ tag (phân cách dấu phẩy):</label>
+                        <input type="text" id="ep-tags" class="form-input" value="${(problem.tags || []).join(', ')}">
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:120px 1fr;gap:1rem;margin-top:1rem;align-items:start;">
+                    <div class="form-group">
+                        <label class="form-label">Tổng điểm:</label>
+                        <input type="number" id="ep-points" class="form-input" min="1" max="1000" value="${problem.points || 30}" style="text-align:center;font-weight:600;font-size:1.1rem;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Thang điểm chấm bài <span style="color:var(--text-muted);font-weight:400;font-size:0.78rem;">(tuỳ chọn — AI dùng để chấm chính xác hơn)</span>:</label>
+                        <textarea id="ep-rubric" class="form-textarea" style="min-height:72px;resize:vertical;" placeholder="Ví dụ:&#10;Câu 1 (10đ): Tính giới hạn&#10;Câu 2 (10đ): Tính căn thức&#10;Câu 3 (10đ): Tính tích phân">${problem.gradingRubric || ''}</textarea>
+                    </div>
+                </div>
+
+                <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1.5rem;border-top:1px solid var(--border-color);padding-top:1rem;">
+                    <a href="#" onclick="viewProblemDetail('${problem._id}')" class="btn btn-secondary">Hủy</a>
+                    <button type="submit" id="save-prob-btn" class="btn btn-primary">
+                        <i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi
+                    </button>
+                </div>
+            </form>
+        </div>`;
+
+    document.getElementById("edit-prob-form")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const title = document.getElementById("ep-title").value.trim();
+        const content = document.getElementById("ep-content").value.trim();
+        const category = document.getElementById("ep-category").value;
+        const tagsRaw = document.getElementById("ep-tags").value;
+        const tags = tagsRaw ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : [];
+        const points = parseInt(document.getElementById("ep-points").value) || 30;
+        const gradingRubric = document.getElementById("ep-rubric").value.trim();
+
+        const btn = document.getElementById("save-prob-btn");
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...`;
+
+        try {
+            await api.updateProblem(problem._id, { title, content, category, tags, points, gradingRubric });
+            showToast("Đã cập nhật đề bài thành công! ✅", "success");
+            window.location.hash = `#problem/${problem._id}`;
+            viewProblemDetail(problem._id);
+        } catch (err) {
+            showToast("Lưu thất bại: " + err.message, "error");
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi`;
+        }
+    });
+}
+
 // ── CREATE PROBLEM ────────────────────────────────────────────────────────────
 function viewCreateProblem() {
     const me = getCurrentUser();
@@ -1142,6 +1235,17 @@ function viewCreateProblem() {
                         <input type="text" id="p-tags" class="form-input" placeholder="tích phân, đạo hàm, giới hạn">
                     </div>
                 </div>
+
+                <div style="display:grid;grid-template-columns:120px 1fr;gap:1rem;margin-top:1rem;align-items:start;">
+                    <div class="form-group">
+                        <label class="form-label">Tổng điểm:</label>
+                        <input type="number" id="p-points" class="form-input" min="1" max="1000" value="30" style="text-align:center;font-weight:600;font-size:1.1rem;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Thang điểm chấm bài <span style="color:var(--text-muted);font-weight:400;font-size:0.78rem;">(tuỳ chọn — mô tả để AI chấm đúng hơn)</span>:</label>
+                        <textarea id="p-rubric" class="form-textarea" style="min-height:72px;resize:vertical;" placeholder="Ví dụ:&#10;Câu 1 (10đ): Tính giới hạn phân thức&#10;Câu 2 (10đ): Tính giới hạn chứa căn thức&#10;Câu 3 (10đ): Tính tích phân suy rộng"></textarea>
+                    </div>
+                </div>
                 
                 <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1.5rem;border-top:1px solid var(--border-color);padding-top:1rem;">
                     <a href="#exercises" class="btn btn-secondary">Hủy</a>
@@ -1213,13 +1317,15 @@ function viewCreateProblem() {
         const category = document.getElementById("p-category").value;
         const tagsRaw = document.getElementById("p-tags").value;
         const tags = tagsRaw ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : [];
+        const points = parseInt(document.getElementById("p-points").value) || 30;
+        const gradingRubric = document.getElementById("p-rubric").value.trim();
         
         const btn = document.getElementById("submit-prob-btn");
         btn.disabled = true;
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang đăng...`;
         
         try {
-            await api.addProblem({ title, content, category, tags, creator: user.username, creatorPicture: user.picture, creatorGoogleId: user.googleId, points: category === 'calculus' ? 30 : 25, imageUrl });
+            await api.addProblem({ title, content, category, tags, creator: user.username, creatorPicture: user.picture, creatorGoogleId: user.googleId, points, gradingRubric, imageUrl });
             showToast("Đã đăng bài toán! +10 điểm 🎉", "success");
             window.location.hash = "#exercises";
         } catch (err) {

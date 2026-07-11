@@ -57,6 +57,7 @@ const problemSchema = new mongoose.Schema({
     creatorPicture:  String,
     creatorGoogleId: String,
     points:          { type: Number, default: 25 },
+    gradingRubric:   { type: String, default: '' },
     imageUrl:        String,
     likes:           { type: [String], default: [] },
     dislikes:        { type: [String], default: [] },
@@ -276,6 +277,31 @@ app.get('/api/problems/:id', async (req, res) => {
     }
 });
 
+// Edit problem (by creator, admin, or professor)
+app.put('/api/problems/:id', async (req, res) => {
+    try {
+        const { title, content, category, tags, points, gradingRubric, imageUrl } = req.body;
+        const updateFields = {};
+        if (title !== undefined) updateFields.title = title;
+        if (content !== undefined) updateFields.content = content;
+        if (category !== undefined) updateFields.category = category;
+        if (tags !== undefined) updateFields.tags = tags;
+        if (points !== undefined) updateFields.points = points;
+        if (gradingRubric !== undefined) updateFields.gradingRubric = gradingRubric;
+        if (imageUrl !== undefined) updateFields.imageUrl = imageUrl;
+
+        const problem = await Problem.findByIdAndUpdate(
+            req.params.id,
+            { $set: updateFields },
+            { new: true }
+        );
+        if (!problem) return res.status(404).json({ error: 'Problem not found' });
+        res.json(problem);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.delete('/api/problems/:id', async (req, res) => {
     try {
         const p = await Problem.findByIdAndDelete(req.params.id);
@@ -328,11 +354,12 @@ app.post('/api/solutions', async (req, res) => {
 
         if (apiKey && problem) {
             try {
+                const rubricSection = problem.gradingRubric ? `\nThang điểm chấm bài (do giảng viên cung cấp):\n${problem.gradingRubric}\n` : '';
                 const prompt = `Bạn là một giảng viên chấm thi toán học chuyên nghiệp cho sinh viên đại học. Hãy kiểm tra lời giải của học sinh cho đề bài dưới đây và xác định xem lời giải đó là đúng hay sai.
 Đề bài toán: ${problem.title}
 Nội dung đề bài:
 ${problem.content}
-
+${rubricSection}
 Bài làm của học sinh:
 ${req.body.content || "[Không có văn bản thô, chỉ có ảnh chụp bài giải]"}
 
