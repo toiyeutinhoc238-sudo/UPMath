@@ -1284,15 +1284,16 @@ async function viewLeaderboard() {
                            <tbody>
                                ${users.map((u, i) => {
                     const isMe = me && me.email === u.email;
+                    const displayName = u.fullName || u.name || u.username || "Người dùng";
                     return `<tr style="border-bottom:1px solid var(--border-color);${isMe ? 'background:rgba(56,189,248,0.06);' : ''}">
                                        <td style="padding:0.9rem 0.75rem;font-size:${i < 3 ? '1.3rem' : '0.9rem'};font-weight:700;">${medals[i] || i + 1}</td>
                                        <td style="padding:0.9rem 0.75rem;">
                                            <div style="display:flex;align-items:center;gap:0.6rem;">
-                                               <img src="${u.picture || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(u.name)}`}"
-                                                    alt="${u.name}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid ${isMe ? 'var(--accent-blue)' : 'var(--border-color)'}"
-                                                    onerror="this.src='https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(u.name)}'">
+                                               <img src="${u.picture || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(displayName)}`}"
+                                                    alt="${displayName}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid ${isMe ? 'var(--accent-blue)' : 'var(--border-color)'}"
+                                                    onerror="this.src='https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(displayName)}'">
                                                <div>
-                                                   <div style="font-weight:600;font-size:0.9rem;">${u.name}${isMe ? ' <span style="color:var(--accent-blue);font-size:0.75rem;">(Bạn)</span>' : ''}</div>
+                                                   <div style="font-weight:600;font-size:0.9rem;">${displayName}${isMe ? ' <span style="color:var(--accent-blue);font-size:0.75rem;">(Bạn)</span>' : ''}</div>
                                                    <div style="font-size:0.75rem;color:var(--text-muted);">${u.email}</div>
                                                </div>
                                            </div>
@@ -1381,23 +1382,15 @@ async function viewProfile() {
                                     <span class="info-value" id="sidebar-fullName">${freshMe.fullName || freshMe.name}</span>
                                 </div>
                                 <div class="profile-info-row">
-                                    <span class="info-label">MSSV</span>
-                                    <span class="info-value" id="sidebar-mssv">${freshMe.mssv || 'Chưa cập nhật'}</span>
-                                </div>
-                                <div class="profile-info-row">
                                     <span class="info-label">Ngày sinh</span>
                                     <span class="info-value" id="sidebar-dob">${freshMe.dob || 'Chưa cập nhật'}</span>
-                                </div>
-                                <div class="profile-info-row">
-                                    <span class="info-label">Ngôn ngữ mặc định</span>
-                                    <span class="info-value font-mono" id="sidebar-lang" style="font-weight:700; color:var(--text-primary);">${freshMe.defaultLang || 'C++14'}</span>
                                 </div>
                                 <div class="profile-info-row">
                                     <span class="info-label">Điểm kinh nghiệm</span>
                                     <span class="info-value" id="sidebar-points" style="font-weight:700; color:var(--accent-blue);">${(freshMe.points || 0).toLocaleString()}</span>
                                 </div>
                                 <div class="profile-info-row">
-                                    <span class="info-label">Cấp độ lập trình</span>
+                                    <span class="info-label">Cấp độ</span>
                                     <span class="info-value" id="sidebar-rank" style="font-weight:600; color:#a855f7;">${freshMe.rank || 'Đồng'}</span>
                                 </div>
                                 <div class="profile-info-row">
@@ -1407,16 +1400,8 @@ async function viewProfile() {
                                     </span>
                                 </div>
                                 <div class="profile-info-row">
-                                    <span class="info-label">Điện thoại</span>
-                                    <span class="info-value" id="sidebar-phone">${freshMe.phone || 'Chưa cập nhật'}</span>
-                                </div>
-                                <div class="profile-info-row">
                                     <span class="info-label">Email</span>
                                     <span class="info-value email-value" title="${freshMe.email}">${freshMe.email}</span>
-                                </div>
-                                <div class="profile-info-row">
-                                    <span class="info-label">Trường</span>
-                                    <span class="info-value" id="sidebar-school">${freshMe.school || 'ĐH Sư Phạm TPHCM'}</span>
                                 </div>
                                 <div class="profile-info-row">
                                     <span class="info-label">Đăng ký lúc</span>
@@ -1432,13 +1417,6 @@ async function viewProfile() {
                         <div class="card profile-stat-box">
                             <div class="stat-lbl">Tổng số bài làm được</div>
                             <div class="stat-val" id="sidebar-solvedCount">${correctProblems.length} bài</div>
-                        </div>
-                        
-                        <div class="card profile-stat-box">
-                            <div class="stat-lbl">Thư mục Codenode++</div>
-                            <div class="stat-val" id="sidebar-codenode" style="font-size:1.1rem; margin-top:0.5rem;">
-                                ${freshMe.codenodeFolder ? `<a href="${freshMe.codenodeFolder}" target="_blank" class="codenode-link"><i class="fa-solid fa-folder-open"></i> Xem ở đây</a>` : '<span style="color:var(--text-muted); font-size:0.9rem;">Chưa cập nhật</span>'}
-                            </div>
                         </div>
                     </aside>
                     
@@ -1541,66 +1519,32 @@ async function viewProfile() {
                 });
 
             } else if (activeTab === 'settings') {
-                container.innerHTML = `
-                    <form id="profile-settings-form" class="settings-form">
+                container.innerHTML = `<form id="profile-settings-form" class="settings-form">
                         <div class="form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
                             <div class="form-group">
                                 <label class="form-label" for="edit-fullname">Họ và tên:</label>
                                 <input type="text" id="edit-fullname" class="form-input" value="${freshMe.fullName || freshMe.name || ''}">
                             </div>
                             <div class="form-group">
-                                <label class="form-label" for="edit-mssv">MSSV:</label>
-                                <input type="text" id="edit-mssv" class="form-input" value="${freshMe.mssv || ''}">
-                            </div>
-                            <div class="form-group">
                                 <label class="form-label" for="edit-dob">Ngày sinh (DD/MM/YYYY):</label>
                                 <input type="text" id="edit-dob" class="form-input" value="${freshMe.dob || ''}">
                             </div>
-                            <div class="form-group">
-                                <label class="form-label" for="edit-lang">Ngôn ngữ mặc định:</label>
-                                <select id="edit-lang" class="form-select" style="width:100%; background:var(--bg-input); border:1px solid var(--border-color); color:inherit; padding:0.625rem; border-radius:8px;">
-                                    <option value="C++14" ${freshMe.defaultLang === 'C++14' ? 'selected' : ''}>C++14</option>
-                                    <option value="C++17" ${freshMe.defaultLang === 'C++17' ? 'selected' : ''}>C++17</option>
-                                    <option value="C++20" ${freshMe.defaultLang === 'C++20' ? 'selected' : ''}>C++20</option>
-                                    <option value="Python3" ${freshMe.defaultLang === 'Python3' ? 'selected' : ''}>Python3</option>
-                                    <option value="Java" ${freshMe.defaultLang === 'Java' ? 'selected' : ''}>Java</option>
-                                    <option value="Pascal" ${freshMe.defaultLang === 'Pascal' ? 'selected' : ''}>Pascal</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="edit-phone">Điện thoại:</label>
-                                <input type="text" id="edit-phone" class="form-input" value="${freshMe.phone || ''}">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="edit-school">Trường học:</label>
-                                <input type="text" id="edit-school" class="form-input" value="${freshMe.school || 'ĐH Sư Phạm TPHCM'}">
-                            </div>
-                        </div>
-                        <div class="form-group" style="margin-top:1rem;">
-                            <label class="form-label" for="edit-codenode">Thư mục Codenode++ (Link URL):</label>
-                            <input type="url" id="edit-codenode" class="form-input" value="${freshMe.codenodeFolder || ''}" placeholder="https://example.com/folder">
                         </div>
                         <button type="submit" class="btn btn-primary" style="margin-top:1.5rem;"><i class="fa-solid fa-save"></i> Lưu cài đặt</button>
-                    </form>
-                `;
+                    </form>`;
 
                 // Handle submit
                 document.getElementById("profile-settings-form").addEventListener("submit", async (e) => {
                     e.preventDefault();
                     const fullName = document.getElementById("edit-fullname").value.trim();
-                    const mssv = document.getElementById("edit-mssv").value.trim();
                     const dob = document.getElementById("edit-dob").value.trim();
-                    const defaultLang = document.getElementById("edit-lang").value;
-                    const phone = document.getElementById("edit-phone").value.trim();
-                    const school = document.getElementById("edit-school").value.trim();
-                    const codenodeFolder = document.getElementById("edit-codenode").value.trim();
 
                     const btn = e.target.querySelector("button[type='submit']");
                     btn.disabled = true;
                     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...`;
 
                     try {
-                        const updated = await api.updateProfile(freshMe.googleId, { fullName, mssv, dob, defaultLang, phone, school, codenodeFolder });
+                        const updated = await api.updateProfile(freshMe.googleId, { fullName, dob });
                         freshMe = updated;
                         // Update localstorage cache
                         const localCached = getCurrentUser();

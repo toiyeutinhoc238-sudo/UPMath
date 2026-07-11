@@ -146,13 +146,14 @@ function calcRank(pts) {
 // Sync / upsert Google user
 app.post('/api/users/sync', async (req, res) => {
     try {
-        const { googleId, email, name, picture } = req.body;
+        const { googleId, email, name, username, picture } = req.body;
         if (!googleId || !email) return res.status(400).json({ error: 'googleId and email required' });
 
+        const displayName = name || username || 'Người dùng';
         const role = email === 'phanphiphu04@gmail.com' ? 'admin' : 'user';
         const user = await User.findOneAndUpdate(
             { googleId },
-            { $set: { email, name, picture, role, lastLogin: new Date() } },
+            { $set: { email, name: displayName, picture, role, lastLogin: new Date() } },
             { new: true, upsert: true, setDefaultsOnInsert: true }
         );
         res.json(user);
