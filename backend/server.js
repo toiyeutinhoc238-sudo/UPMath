@@ -11,10 +11,16 @@ const nodemailer = require('nodemailer');
 
 // ─── EMAIL TRANSPORTER CONFIGURATION ──────────────────────────────────────────
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // true cho cổng 465, false cho các cổng khác như 587
     auth: {
-        user: process.env.EMAIL_USER, // ví dụ: "admin@gmail.com"
-        pass: process.env.EMAIL_PASS  // Mật khẩu ứng dụng (App Password) Gmail
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    },
+    tls: {
+        // Tránh lỗi khi chạy trên các cloud hosting như Render
+        rejectUnauthorized: false
     }
 });
 
