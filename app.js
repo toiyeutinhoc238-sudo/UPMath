@@ -294,6 +294,80 @@ function renderLaTeX(el) {
     }
 }
 
+function preprocessLaTeX(text) {
+    if (!text) return "";
+    
+    // 1. Strip comments
+    let lines = text.split("\n");
+    lines = lines.map(line => {
+        let idx = -1;
+        for (let i = 0; i < line.length; i++) {
+            if (line[i] === '%' && (i === 0 || line[i - 1] !== '\\')) {
+                idx = i;
+                break;
+            }
+        }
+        if (idx !== -1) return line.substring(0, idx);
+        return line;
+    });
+    text = lines.join("\n");
+    
+    // 2. Headings
+    text = text.replace(/\\subsubsection\\*?\\{([^}]+)\\}/g, '<h4 style="margin: 0.5rem 0; font-size: 1.1rem; color: var(--accent-blue); font-weight:600;">$1</h4>');
+    text = text.replace(/\\subsection\\*?\\{([^}]+)\\}/g, '<h3 style="margin: 0.75rem 0; font-size: 1.25rem; color: var(--accent-blue); font-weight:600;">$1</h3>');
+    
+    // 3. Remove unsupported formatting/spaces commands
+    text = text.replace(/\\noindent/g, "");
+    
+    // 4. Minipages
+    text = text.replace(/\\begin\\{minipage\\}(\\{[^}]*\\})?(\\{[^}]*\\})?/g, '<div style="display:inline-block; vertical-align:top; width: 100%;">');
+    text = text.replace(/\\end\\{minipage\\}/g, '</div>');
+    
+    // 5. Lists (enumerate & itemize)
+    text = text.replace(/\\begin\\{enumerate\\}/g, '<ol style="margin-left: 1.8rem; list-style-type: decimal; margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">');
+    text = text.replace(/\\end\\{enumerate\\}/g, '</li></ol>');
+    text = text.replace(/\\begin\\{itemize\\}/g, '<ul style="margin-left: 1.8rem; list-style-type: disc; margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">');
+    text = text.replace(/\\end\\{itemize\\}/g, '</li></ul>');
+    
+    let parts = text.split(/\\item/g);
+    if (parts.length > 1) {
+        let newText = parts[0];
+        for (let i = 1; i < parts.length; i++) {
+            let prev = parts[i - 1].trim();
+            if (prev.endsWith('">') || prev.endsWith('ul>') || prev.endsWith('ol>')) {
+                newText += "<li>" + parts[i];
+            } else {
+                newText += "</li><li>" + parts[i];
+            }
+        }
+        text = newText;
+    }
+    text = text.replace(/<li>\\s*<\\/li>/g, "");
+    
+    // 6. Convert newlines / double backslashes while respecting math delimiters
+    let segs = text.split(/(\\$\$?)/);
+    let inMath = false;
+    let currentDelimiter = "";
+    
+    for (let i = 0; i < segs.length; i++) {
+        if (segs[i] === '$' || segs[i] === '$$') {
+            if (inMath && segs[i] === currentDelimiter) {
+                inMath = false;
+                currentDelimiter = "";
+            } else if (!inMath) {
+                inMath = true;
+                currentDelimiter = segs[i];
+            }
+        } else if (!inMath) {
+            segs[i] = segs[i].replace(/\\\\/g, "<br>");
+            segs[i] = segs[i].replace(/\n/g, "<br>");
+        }
+    }
+    text = segs.join("");
+    
+    return text;
+}
+
 function showLoading() {
     if (mainContent) mainContent.innerHTML = `
         <div style="display:flex;align-items:center;justify-content:center;min-height:300px;color:var(--text-muted);gap:0.75rem;font-size:1rem;">
@@ -683,7 +757,7 @@ async function viewProblemDetail(id) {
                         ${(problem.tags || []).map(t => `<span class="badge badge-tag">${t}</span>`).join("")}
                     </div>
                 </div>
-                <div class="problem-content" style="margin-bottom: 1rem;">${problem.content}</div>
+                <div class="problem-content" style="margin-bottom: 1rem;">${preprocessLaTeX(problem.content)}</div>
                 ${problem.imageUrl ? `<img src="${problem.imageUrl}" alt="Hình bài toán" style="max-width:100%;border-radius:8px;margin-top:1rem;margin-bottom:1rem;display:block;">` : ''}
                 
                 <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;color:var(--text-muted);flex-wrap:wrap;gap:0.75rem;">
@@ -748,7 +822,7 @@ async function viewProblemDetail(id) {
                                         </button>
                                     </div>
                                 </div>
-                                <div style="margin-bottom:0.5rem; line-height:1.6;">${s.content}</div>
+                                <div style="margin-bottom:0.5rem; line-height:1.6;">${preprocessLaTeX(s.content)}</div>
                                 ${s.imageUrl ? `<img src="${s.imageUrl}" alt="Ảnh lời giải" style="max-width:100%;max-height:400px;object-fit:contain;border-radius:8px;margin-top:0.75rem;display:block;">` : ''}
                             </div>`).join("")
             }
@@ -1109,7 +1183,7 @@ function viewCreateProblem() {
 function updateProblemPreview() {
     const c = document.getElementById("p-content");
     const p = document.getElementById("prob-preview");
-    if (c && p) { p.innerHTML = c.value; renderLaTeX(p); }
+    if (c && p) { p.innerHTML = preprocessLaTeX(c.value); renderLaTeX(p); }
 }
 
 // ── DISCUSSIONS ───────────────────────────────────────────────────────────────
@@ -1230,7 +1304,7 @@ async function viewDiscussionDetail(id) {
                         <div style="font-size:0.75rem;color:var(--text-muted);">${timeSince(disc.createdAt)} · ${disc.views} lượt xem</div>
                     </div>
                 </div>
-                <div style="margin-bottom:1rem; line-height:1.6;">${disc.content}</div>
+                <div style="margin-bottom:1rem; line-height:1.6;">${preprocessLaTeX(disc.content)}</div>
                 
                 <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:0.5rem;">
                     <button class="vote-btn ${hasLikedDisc ? 'active-like' : ''}" onclick="voteItem('discussions', '${disc._id}', 'like')">
