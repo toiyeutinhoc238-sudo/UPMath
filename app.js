@@ -763,9 +763,9 @@ async function viewProblemDetail(id) {
             <div class="card" style="margin-bottom:1.5rem;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
                     <div style="display:flex;align-items:center;gap:0.6rem;">
-                        ${avatarTag(problem.creatorPicture, problem.creator, 36)}
+                        <a href="#profile/${problem.creatorGoogleId}">${avatarTag(problem.creatorPicture, problem.creator, 36)}</a>
                         <div>
-                            <strong>${problem.creator}</strong>
+                            <strong><a href="#profile/${problem.creatorGoogleId}" style="color:var(--text-primary); text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='var(--accent-blue)'" onmouseout="this.style.color='var(--text-primary)'">${problem.creator}</a></strong>
                             <div style="font-size:0.75rem;color:var(--text-muted);">${timeSince(problem.createdAt)}</div>
                         </div>
                     </div>
@@ -810,10 +810,10 @@ async function viewProblemDetail(id) {
                             <div class="card" style="margin-bottom:1rem;padding:1.25rem;">
                                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
                                     <div style="display:flex;align-items:center;gap:0.6rem;">
-                                        ${avatarTag(s.authorPicture, s.author, 32)}
+                                        <a href="#profile/${s.authorGoogleId}">${avatarTag(s.authorPicture, s.author, 32)}</a>
                                         <div>
                                             <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-                                                <strong style="font-size:0.92rem;">${s.author}</strong>
+                                                <strong style="font-size:0.92rem;"><a href="#profile/${s.authorGoogleId}" style="color:var(--text-primary); text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='var(--accent-blue)'" onmouseout="this.style.color='var(--text-primary)'">${s.author}</a></strong>
                                                 ${s.status === 'correct' ? `
                                                     <span class="badge" style="background:rgba(16,185,129,0.1); color:#10b981; border:1px solid rgba(16,185,129,0.25); text-transform:none; font-size:0.68rem; padding:0.15rem 0.35rem; display:inline-flex; align-items:center; gap:0.25rem;">
                                                         <i class="fa-solid fa-circle-check"></i> Đúng
@@ -1707,13 +1707,13 @@ async function viewLeaderboard() {
                     return `<tr style="border-bottom:1px solid var(--border-color);${isMe ? 'background:rgba(56,189,248,0.06);' : ''}">
                                        <td style="padding:0.9rem 0.75rem;font-size:${i < 3 ? '1.3rem' : '0.9rem'};font-weight:700;">${medals[i] || i + 1}</td>
                                        <td style="padding:0.9rem 0.75rem;">
-                                           <div style="display:flex;align-items:center;gap:0.6rem;">
+                                           <div style="display:flex;align-items:center;gap:0.6rem;"><a href="#profile/${u.googleId}" style="display:inline-flex; border-radius:50%;">
                                                <img src="${u.picture || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(displayName)}`}"
                                                     alt="${displayName}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid ${isMe ? 'var(--accent-blue)' : 'var(--border-color)'}"
-                                                    onerror="this.src='https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(displayName)}'">
+                                                    onerror="this.src='https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(displayName)}'"></a>
                                                <div>
-                                                   <div style="font-weight:600;font-size:0.9rem;">${displayName}${isMe ? ' <span style="color:var(--accent-blue);font-size:0.75rem;">(Bạn)</span>' : ''}</div>
-                                                   <div style="font-size:0.75rem;color:var(--text-muted);">${u.email}</div>
+                                                   <div style="font-weight:600;font-size:0.9rem;"><a href="#profile/${u.googleId}" style="color:var(--text-primary); text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='var(--accent-blue)'" onmouseout="this.style.color='var(--text-primary)'">${displayName}</a>${isMe ? ' <span style="color:var(--accent-blue);font-size:0.75rem;">(Bạn)</span>' : ''}</div>
+                                                   <div style="font-size:0.75rem;color:var(--text-muted);">${isMe ? u.email : u.email.replace(/(.{2})(.*)(@.*)/, '$1***$3')}</div>
                                                </div>
                                            </div>
                                        </td>
@@ -1751,25 +1751,42 @@ function getNextRankInfo(pts) {
     return { nextName: 'Tối đa', diff: 0 };
 }
 
-async function viewProfile() {
+async function viewProfile(targetGoogleId) {
     setActiveNav(""); // Clear active nav classes
     showLoading();
     try {
         const me = getCurrentUser();
-        if (!me) {
-            showError("Vui lòng đăng nhập để xem hồ sơ!");
+        // If no targetGoogleId is specified, view our own profile
+        const isOwnProfile = !targetGoogleId || (me && targetGoogleId === me.googleId);
+
+        if (!isOwnProfile && !targetGoogleId) {
+            showError("Không tìm thấy thông tin người dùng!");
             return;
         }
 
         // Fetch user data, user problems, user solutions, and all problems
-        const [users, problems, solutions, allProblems] = await Promise.all([
+        const [users, allProblems] = await Promise.all([
             api.getUsers(),
-            api.getUserProblems(me.googleId),
-            api.getUserSolutions(me.googleId),
             api.getProblems()
         ]);
 
-        let freshMe = users.find(u => u.googleId === me.googleId) || me;
+        let freshMe = null;
+        if (isOwnProfile) {
+            if (!me) {
+                showError("Vui lòng đăng nhập để xem hồ sơ!");
+                return;
+            }
+            freshMe = users.find(u => u.googleId === me.googleId) || me;
+        } else {
+            freshMe = users.find(u => u.googleId === targetGoogleId);
+            if (!freshMe) {
+                showError("Không tìm thấy người dùng này trên hệ thống!");
+                return;
+            }
+        }
+
+        // Fetch solutions and problems for this user
+        const solutions = await api.getUserSolutions(freshMe.googleId);
 
         // Process solved (correct) and wrong (incorrect) problems
         const solvedSet = new Set(solutions.filter(s => s.status === 'correct').map(s => s.problemId));
@@ -1787,13 +1804,14 @@ async function viewProfile() {
         function updateLayout() {
             const nextInfo = getNextRankInfo(freshMe.points || 0);
             const fbAvatar = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(freshMe.username)}`;
+            const displayEmail = isOwnProfile ? freshMe.email : (freshMe.email ? freshMe.email.replace(/(.{2})(.*)(@.*)/, '$1***$3') : 'Ẩn');
 
             mainContent.innerHTML = `
                 <div class="profile-layout">
                     <aside class="profile-sidebar">
                         <div class="card profile-info-card">
                             <div class="profile-info-header">
-                                <h3>Profile</h3>
+                                <h3>${isOwnProfile ? 'Hồ sơ của bạn' : 'Hồ sơ thành viên'}</h3>
                             </div>
                             <div class="profile-info-list">
                                 <div class="profile-info-row">
@@ -1820,7 +1838,7 @@ async function viewProfile() {
                                 </div>
                                 <div class="profile-info-row">
                                     <span class="info-label">Email</span>
-                                    <span class="info-value email-value" title="${freshMe.email}">${freshMe.email}</span>
+                                    <span class="info-value email-value" title="${isOwnProfile ? freshMe.email : ''}">${displayEmail}</span>
                                 </div>
                                 <div class="profile-info-row">
                                     <span class="info-label">Đăng ký lúc</span>
@@ -1856,8 +1874,10 @@ async function viewProfile() {
                         <div class="profile-tabs">
                             <button class="profile-tab-btn active" data-tab="correct"><i class="fa-solid fa-circle-check" style="color:var(--accent-green);"></i> Bài làm đúng</button>
                             <button class="profile-tab-btn" data-tab="incorrect"><i class="fa-solid fa-circle-xmark" style="color:var(--accent-red);"></i> Bài làm sai</button>
-                            <button class="profile-tab-btn" data-tab="settings"><i class="fa-solid fa-user-gear"></i> Cài đặt</button>
-                            <button class="profile-tab-btn" data-tab="avatar"><i class="fa-solid fa-image"></i> Đổi hình đại diện</button>
+                            ${isOwnProfile ? `
+                                <button class="profile-tab-btn" data-tab="settings"><i class="fa-solid fa-user-gear"></i> Cài đặt</button>
+                                <button class="profile-tab-btn" data-tab="avatar"><i class="fa-solid fa-image"></i> Đổi hình đại diện</button>
+                            ` : ''}
                         </div>
                         
                         <!-- Profile Tab Content Container -->
@@ -2356,6 +2376,7 @@ async function router() {
     if (hash === "#home" || hash === "#" || hash === "") { await viewHome(); return; }
     if (hash.startsWith("#problem/")) { await viewProblemDetail(hash.split("/")[1]); return; }
     if (hash.startsWith("#discussion/")) { await viewDiscussionDetail(hash.split("/")[1]); return; }
+    if (hash.startsWith("#profile/")) { await viewProfile(hash.split("/")[1]); return; }
 
     const map = {
         exercises: () => viewExercises(),
