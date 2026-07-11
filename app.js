@@ -1134,7 +1134,7 @@ async function viewProblemDetail(id) {
                 const solution = await api.addSolution({ problemId: id, author: user.username, authorPicture: user.picture, authorGoogleId: user.googleId, content, imageUrl, skipGrading: !isGrading });
                 if (isGrading) {
                     if (solution.status === 'correct') {
-                        showToast("AI chấm: Lời giải chính xác! Bạn được cộng +15 điểm 🎉", "success");
+                        showToast(`AI chấm: Lời giải chính xác! Bạn được cộng +${problem.points} điểm 🎉`, "success");
                     } else if (solution.status === 'incorrect') {
                         showToast("AI chấm: Lời giải chưa chính xác! Hãy đọc kỹ nhận xét.", "warning");
                     } else {
