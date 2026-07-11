@@ -928,6 +928,66 @@ app.delete('/api/shouts/:id', async (req, res) => {
     }
 });
 
+// AI Tutor chat interaction (Socratic Method)
+app.post('/api/ai-tutor', async (req, res) => {
+    try {
+        const { problemId, messages } = req.body;
+        const problem = await Problem.findById(problemId);
+        if (!problem) return res.status(404).json({ error: 'Problem not found' });
+
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) return res.status(500).json({ error: 'Gemini API key is not configured' });
+
+        const systemInstruction = `Bạn là một Trợ lý Học tập AI (Socratic Tutor) giảng dạy toán học đại học xuất sắc cho môn học COMP1800 (Cơ sở Toán học trong CNTT).
+Nhiệm vụ của bạn là hướng dẫn học viên tự giải quyết bài toán dưới đây từng bước một, đóng vai trò như một người kèm học (tutor) hướng dẫn gợi mở thay vì đưa ra trực tiếp toàn bộ bài giải cuối cùng ngay từ đầu.
+
+Đề bài toán: ${problem.title}
+Nội dung bài toán:
+${problem.content}
+
+Nguyên tắc giảng dạy của bạn:
+1. Gợi mở, định hướng từng bước (Socratic Method). Hãy đưa ra các gợi ý ngắn gọn, giải thích công thức toán học/lý thuyết liên quan, hoặc đặt câu hỏi nhỏ để kiểm tra sự hiểu biết của học viên.
+2. Không cung cấp trực tiếp toàn bộ bài giải chi tiết hay kết quả cuối cùng ngay từ câu trả lời đầu tiên, trừ khi học viên đã tự mình tìm ra và bạn chỉ xác nhận tính đúng đắn.
+3. Giải thích rõ ràng các công thức toán học, định nghĩa lý thuyết (Ví dụ: cách tính đạo hàm hàm mũ, đạo hàm của x^x, đạo hàm hợp, ma trận, v.v.).
+4. Viết tất cả các công thức toán học dưới dạng LaTeX đặt trong cặp dấu đô la $ ... $ (cho inline) hoặc $$ ... $$ (cho block) để hiển thị đẹp mắt.
+5. Luôn phản hồi lịch sự, mang tính khuyến khích học tập bằng tiếng Việt.`;
+
+        const contents = [];
+        const firstMessageText = `HƯỚNG DẪN HỆ THỐNG (SYSTEM INSTRUCTION):\n${systemInstruction}\n\nCuộc trò chuyện bắt đầu:\n`;
+
+        messages.forEach((msg, idx) => {
+            let txt = msg.content;
+            if (idx === 0) {
+                txt = firstMessageText + txt;
+            }
+            contents.push({
+                role: msg.role === 'model' ? 'model' : 'user',
+                parts: [{ text: txt }]
+            });
+        });
+
+        let url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents })
+        });
+
+        const data = await response.json();
+
+        if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
+            const aiText = data.candidates[0].content.parts[0].text;
+            res.json({ text: aiText });
+        } else {
+            console.error("Gemini Response Error:", JSON.stringify(data));
+            res.status(500).json({ error: "Không nhận được phản hồi từ AI" });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ─── ROUTES: CONTESTS ─────────────────────────────────────────────────────────
 
 app.get('/api/contests', async (req, res) => {
