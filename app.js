@@ -1056,7 +1056,7 @@ async function viewProblemDetail(id) {
                                                 </div>
                                             </div>
                                             <div style="display:flex;align-items:center;gap:0.4rem;">
-                                                ${(user && (user.role === 'admin' || user.role === 'professor' || problem.creatorGoogleId === user.googleId)) ? `
+                                                ${(user && (user.role === 'admin' || user.role === 'professor' || problem.creatorGoogleId === user.googleId) && s.status === 'pending') ? `
                                                     <div style="display:inline-flex; gap:0.25rem; margin-right:0.25rem;">
                                                         <button class="btn btn-secondary btn-sm set-correct-btn" data-id="${s._id}" title="Đánh dấu Đúng" style="padding:0.3rem 0.45rem; height:28px; color:#10b981; min-width:auto;">
                                                             <i class="fa-solid fa-check"></i>

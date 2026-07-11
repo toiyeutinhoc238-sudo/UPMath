@@ -520,13 +520,22 @@ Hãy chấm điểm lời giải này và trả về kết quả ở định d�
 
         await solution.save();
 
-        // Award points ONLY if the solution is correct (either by AI or pre-graded)
+        // Award points ONLY if the solution is correct AND they don't already have another correct solution for this problem
         if (solution.status === 'correct' && req.body.authorGoogleId) {
-            const u = await User.findOne({ googleId: req.body.authorGoogleId });
-            if (u) {
-                u.points += (problem.points || 10);
-                u.rank = calcRank(u.points);
-                await u.save();
+            const alreadyHasCorrect = await Solution.findOne({
+                problemId: solution.problemId,
+                authorGoogleId: req.body.authorGoogleId,
+                status: 'correct',
+                _id: { $ne: solution._id } // exclude current solution
+            });
+
+            if (!alreadyHasCorrect) {
+                const u = await User.findOne({ googleId: req.body.authorGoogleId });
+                if (u) {
+                    u.points += (problem.points || 10);
+                    u.rank = calcRank(u.points);
+                    await u.save();
+                }
             }
         }
 
@@ -664,17 +673,46 @@ Hãy chấm điểm lời giải này và trả về kết quả ở định d�
             sol.aiFeedback = '';
         }
 
-        // Award points if status changed to correct
-        if (sol.status === 'correct' && oldStatus !== 'correct' && sol.authorGoogleId) {
-            const u = await User.findOne({ googleId: sol.authorGoogleId });
-            if (u) {
-                u.points += pointsToAward;
-                u.rank = calcRank(u.points);
-                await u.save();
+        await sol.save();
+
+        // Handle points awarding/deduction after successful save
+        if (sol.authorGoogleId) {
+            // Case 1: Status changed from non-correct to correct
+            if (sol.status === 'correct' && oldStatus !== 'correct') {
+                const alreadyHasCorrect = await Solution.findOne({
+                    problemId: sol.problemId,
+                    authorGoogleId: sol.authorGoogleId,
+                    status: 'correct',
+                    _id: { $ne: sol._id }
+                });
+                if (!alreadyHasCorrect) {
+                    const u = await User.findOne({ googleId: sol.authorGoogleId });
+                    if (u) {
+                        u.points += pointsToAward;
+                        u.rank = calcRank(u.points);
+                        await u.save();
+                    }
+                }
+            }
+            // Case 2: Status changed from correct to non-correct (e.g. downgraded by admin)
+            else if (sol.status !== 'correct' && oldStatus === 'correct') {
+                const stillHasCorrect = await Solution.findOne({
+                    problemId: sol.problemId,
+                    authorGoogleId: sol.authorGoogleId,
+                    status: 'correct',
+                    _id: { $ne: sol._id }
+                });
+                if (!stillHasCorrect) {
+                    const u = await User.findOne({ googleId: sol.authorGoogleId });
+                    if (u) {
+                        u.points = Math.max(0, u.points - pointsToAward);
+                        u.rank = calcRank(u.points);
+                        await u.save();
+                    }
+                }
             }
         }
 
-        await sol.save();
         res.json(sol);
     } catch (err) {
         res.status(500).json({ error: err.message });
