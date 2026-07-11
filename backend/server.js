@@ -236,6 +236,18 @@ const Comment = mongoose.model('Comment', commentSchema);
 const Shout = mongoose.model('Shout', shoutSchema);
 const Contest = mongoose.model('Contest', contestSchema);
 
+// Helper chuẩn hóa tags: viết hoa chữ cái đầu, còn lại viết thường, loại bỏ trùng lặp
+function normalizeTags(tags) {
+    if (!Array.isArray(tags)) return [];
+    const normalized = tags.map(tag => {
+        const trimmed = tag.trim();
+        if (!trimmed) return '';
+        return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+    }).filter(tag => tag !== '');
+    
+    // Loại bỏ các tag trùng lặp sau khi đã chuẩn hóa
+    return [...new Set(normalized)];
+}
 // ─── RANK HELPER ──────────────────────────────────────────────────────────────
 function calcRank(pts) {
     if (pts >= 100000) return 'Giáo sư';
@@ -456,7 +468,7 @@ app.put('/api/problems/:id', async (req, res) => {
         if (title !== undefined) updateFields.title = title;
         if (content !== undefined) updateFields.content = content;
         if (category !== undefined) updateFields.category = category;
-        if (tags !== undefined) updateFields.tags = tags;
+        if (tags !== undefined) updateFields.tags = normalizeTags(tags);
         if (points !== undefined) updateFields.points = points;
         if (gradingRubric !== undefined) updateFields.gradingRubric = gradingRubric;
         if (difficulty !== undefined) updateFields.difficulty = difficulty;
@@ -488,6 +500,9 @@ app.delete('/api/problems/:id', async (req, res) => {
 
 app.post('/api/problems', async (req, res) => {
     try {
+        if (req.body.tags) {
+            req.body.tags = normalizeTags(req.body.tags);
+        }
         const problem = new Problem(req.body);
         await problem.save();
         // Award points to creator
