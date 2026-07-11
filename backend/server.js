@@ -19,8 +19,9 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '..')));
 
 // ─── GEMINI API HELPER ────────────────────────────────────────────────────────
-// Model ổn định, hỗ trợ JSON mode và vision
-const GEMINI_MODEL = 'gemini-2.5-flash';
+// Model duy nhất hoạt động với API key hiện tại
+// (gemini-2.5-flash=404 deprecated, gemini-2.0-flash=429 quota, gemini-1.5-flash=404)
+const GEMINI_MODEL = 'gemini-flash-latest';
 
 /**
  * Gọi Gemini API với tự động retry khi gặp 503/429 (tối đa 3 lần)
@@ -29,7 +30,7 @@ const GEMINI_MODEL = 'gemini-2.5-flash';
  * @param {number} maxRetries
  * @returns {Promise<Response>}
  */
-async function callGeminiWithRetry(apiKey, body, maxRetries = 3) {
+async function callGeminiWithRetry(apiKey, body, maxRetries = 4) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
     let lastResponse;
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -41,13 +42,17 @@ async function callGeminiWithRetry(apiKey, body, maxRetries = 3) {
         // Retry nếu gặp 503 (overload) hoặc 429 (rate limit)
         if (lastResponse.status === 503 || lastResponse.status === 429) {
             if (attempt < maxRetries) {
-                const waitMs = attempt * 2000; // 2s, 4s, 6s
-                console.warn(`[Gemini] Attempt ${attempt} got ${lastResponse.status}, retrying in ${waitMs}ms...`);
+                const waitMs = attempt * 3000; // 3s, 6s, 9s, 12s
+                console.warn(`[Gemini] Attempt ${attempt}/${maxRetries} got ${lastResponse.status}, retrying in ${waitMs}ms...`);
                 await new Promise(r => setTimeout(r, waitMs));
                 continue;
+            } else {
+                // Clone để đọc body error mà không consume stream
+                const errText = await lastResponse.clone().text();
+                console.error(`[Gemini] All ${maxRetries} attempts failed. Last status: ${lastResponse.status}. Body: ${errText.substring(0, 200)}`);
             }
         }
-        return lastResponse; // trả về ngay nếu ok hoặc lỗi khác
+        return lastResponse;
     }
     return lastResponse;
 }
