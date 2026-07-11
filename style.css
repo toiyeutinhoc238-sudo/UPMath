@@ -1492,17 +1492,20 @@ input, textarea, select, button {
     font-weight: 900;
     background: linear-gradient(135deg, #ffffff 40%, #e2e8f0 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: -1px;
 }
 .light-theme .login-logo-text {
     background: linear-gradient(135deg, #0f172a 40%, #334155 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 .login-logo-text span {
     background: linear-gradient(135deg, #38bdf8, #a855f7);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -1512,12 +1515,14 @@ input, textarea, select, button {
     margin-bottom: 0.75rem;
     background: linear-gradient(135deg, #ffffff 30%, #cbd5e1 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: -0.5px;
 }
 .light-theme .login-title {
     background: linear-gradient(135deg, #0f172a 30%, #475569 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 .login-subtitle {
