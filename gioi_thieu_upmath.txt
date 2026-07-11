@@ -1,0 +1,21 @@
+==========================================================================
+                      CỔNG THÔNG TIN HỌC TẬP UPMATH
+            Khơi Nguồn Cảm Hứng - Kết Nối Tri Thức Toán Học
+==========================================================================
+
+Có người từng ví toán học như một bài thơ của những ý niệm logic, nơi vẻ đẹp không nằm ở những vần điệu du dương mà ẩn hiện trong sự hoàn mỹ của những định lý và chiều sâu của những tư duy vượt thời gian. Giữa dòng chảy không ngừng của kỷ nguyên số, việc truyền đi ngọn lửa đam mê toán học đòi hỏi những không gian kết nối mới mẻ, linh hoạt nhưng không kém phần chuẩn mực. Đó chính là lý do ra đời của UPMath - Cổng thông tin học tập chuyên sâu, nhịp cầu tri thức hiện đại và đầy cảm xúc dành riêng cho những ai yêu mến vẻ đẹp của những con số.
+
+UPMath không đơn thuần là một website giải toán, mà là một không gian sư phạm được kiến tạo bằng cả tâm huyết và công nghệ hàng đầu. Tại đây, ranh giới giữa người dạy và người học được xóa nhòa để nhường chỗ cho sự đồng hành và sẻ chia kiến thức. Kho bài tập phong phú được phân định khoa học từ Giải tích sâu rộng đến Đại số tuyến tính đa chiều, mở ra một thế giới tri thức bài bản, giúp người học dễ dàng tiếp cận và rèn luyện.
+
+Điểm tự hào lớn nhất của UPMath chính là tinh thần nhân văn và sự thấu hiểu hành trình học tập đầy gian nan của học viên. Hệ thống tự động chấm điểm và nhận xét thông minh của UPMath không chỉ đưa ra những kết quả đúng hay sai khô khan. Thay vào đó, giống như một người thầy tận tụy, hệ thống phân tích từng bước biến đổi, chỉ rõ những nút thắt tư duy chưa chuẩn xác, đồng thời gợi mở hướng đi tiếp theo bằng những lời nhận xét ấm áp, truyền cảm hứng. Mọi công thức toán học, mọi dấu tích phân hay giới hạn phức tạp đều được nâng niu hiển thị sắc nét qua ngôn ngữ LaTeX chuẩn mực, mang đến trải nghiệm học tập trực quan và thẩm mỹ cao nhất.
+
+Không chỉ dừng lại ở việc tự học, UPMath còn xây dựng một hệ sinh thái cộng đồng sôi nổi thông qua không gian thảo luận và Shoutbox cộng đồng. Tại đây, các thành viên có thể tự do trao đổi, phản hồi và cùng nhau giải đáp các thắc mắc toán học trong thời gian thực. Mỗi lượt tương tác, mỗi lời giải hay được đăng tải đều được ghi nhận qua hệ thống điểm thưởng và bảng xếp hạng danh giá. Đó là sự trân trọng xứng đáng dành cho những nỗ lực bền bỉ và sự đóng góp tri thức của mỗi cá nhân cho cộng đồng.
+
+Từ việc cho phép người dùng đăng bài toán bằng hình ảnh chụp trực quan, tự do quản lý nhiều ảnh lời giải, đến khả năng tạo bài tương tự thông minh hỗ trợ giáo viên soạn đề, UPMath chính là biểu tượng của sự giao thoa hài hòa giữa giáo dục truyền thống và công nghệ hiện đại. 
+
+Hãy đến với UPMath để cảm nhận rằng: Toán học không bao giờ là những con số lạnh lùng, mà là con đường rộng mở đưa ta khám phá những chân trời mới của trí tuệ và niềm vui sáng tạo!
+
+--------------------------------------------------------------------------
+UPMath - Nơi bạn tìm thấy niềm vui học Toán.
+Website: https://upmath.id.vn (Hoặc cổng dịch vụ tại trường của bạn)
+--------------------------------------------------------------------------

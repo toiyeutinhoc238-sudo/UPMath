@@ -3092,7 +3092,7 @@ async function viewAbout() {
                         <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-primary);">Kho bài tập đa dạng, bài bản</h3>
                     </div>
                     <p style="font-size: 0.88rem; line-height: 1.6; color: var(--text-muted); margin: 0;">
-                        Tập trung vào các mảng kiến thức quan trọng như Giải tích (Calculus) và Đại số tuyến tính (Linear Algebra), hệ thống bài tập được sắp xếp khoa học giúp bạn ôn luyện từ cơ bản đến nâng cao.
+                        Tập trung vào các mảng kiến thức quan trọng như Giải tích và Đại số tuyến tính, hệ thống bài tập được sắp xếp khoa học giúp bạn ôn luyện từ cơ bản đến nâng cao.
                     </p>
                 </div>
 
@@ -3144,7 +3144,7 @@ async function viewAbout() {
                         <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-primary);">Trợ thủ cho Giảng viên</h3>
                     </div>
                     <p style="font-size: 0.88rem; line-height: 1.6; color: var(--text-muted); margin: 0;">
-                        Tính năng tạo "Bài tương tự (AI)" giúp thầy cô và trợ giảng tiết kiệm tối đa thời gian biên soạn câu hỏi tự luận và đáp án đề bài tương đồng cấu trúc.
+                        Tính năng tạo "Bài tương tự" giúp thầy cô và trợ giảng tiết kiệm tối đa thời gian biên soạn câu hỏi tự luận và đáp án đề bài tương đồng cấu trúc.
                     </p>
                 </div>
 
