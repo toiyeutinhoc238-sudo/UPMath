@@ -108,7 +108,7 @@ function renderLoginMath() {
         "\\sum", "\\int", "\\pi", "\\infty", "\\sqrt{x}", "\\theta",
         "x^2 + y^2 = z^2", "f(x)", "\\Delta", "\\lim_{n \\to \\infty}",
         "A \\cup B", "x \\in \\mathbb{R}", "\\log(x)", "\\sin(x)",
-        "\\vec{v}", "\\lambda", "\\approx", "\\neq", "d/dx"
+        "\\vec{v}", "\\lambda", "\\approx", "\\neq", "\\frac{d}{dx}"
     ];
     
     for (let i = 0; i < 35; i++) {
@@ -116,7 +116,7 @@ function renderLoginMath() {
         item.className = "math-bg-item";
         
         const content = items[Math.floor(Math.random() * items.length)];
-        item.innerHTML = content.includes("\\") || content.includes("^") || content.includes("_") ? `$${content}$` : content;
+        item.innerHTML = `$${content}$`;
         
         item.style.left = `${Math.random() * 95}%`;
         item.style.top = `${Math.random() * 95}%`;
@@ -124,7 +124,7 @@ function renderLoginMath() {
         const size = 0.9 + Math.random() * 1.1;
         item.style.fontSize = `${size}rem`;
         
-        item.style.opacity = `${0.04 + Math.random() * 0.08}`;
+        item.style.opacity = `${0.12 + Math.random() * 0.12}`;
         
         const duration = 15 + Math.random() * 20;
         item.style.animationDuration = `${duration}s`;

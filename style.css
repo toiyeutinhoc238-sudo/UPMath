@@ -1311,7 +1311,7 @@ input, textarea, select, button {
     pointer-events: none;
     z-index: 2;
     overflow: hidden;
-    opacity: 0.25;
+    opacity: 0.5;
 }
 .math-bg-item {
     position: absolute;
