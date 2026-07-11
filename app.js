@@ -1173,6 +1173,16 @@ function viewCreateProblem() {
             document.getElementById("p-mode-latex-container").style.display = mode === 'latex' ? 'block' : 'none';
             document.getElementById("p-mode-word-container").style.display = mode === 'word' ? 'block' : 'none';
             document.getElementById("p-mode-image-container").style.display = mode === 'image' ? 'block' : 'none';
+
+            // Update title placeholder based on mode
+            const titleInput = document.getElementById("p-title");
+            if (titleInput) {
+                if (mode === 'latex') {
+                    titleInput.placeholder = "Ví dụ: Tính $\\int_0^1 x^2 e^x dx$";
+                } else {
+                    titleInput.placeholder = "Ví dụ: Tính tích phân từ 0 đến 1 của hàm x bình phương nhân e mũ x";
+                }
+            }
         });
     });
 
