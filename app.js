@@ -2346,20 +2346,24 @@ async function viewLeaderboard() {
                                ${users.map((u, i) => {
                     const isMe = me && me.email === u.email;
                     const displayName = u.fullName || (u.name && u.name !== 'undefined' ? u.name : '') || u.username || 'Người dùng';
-                    // Xác định màu nền và viền trái dựa trên thứ hạng (i: 0-indexed)
-                    let rowStyle = 'border-bottom:1px solid var(--border-color); border-left:4px solid transparent;';
+                    // Xác định màu nền và viền trái dựa trên thứ hạng (i: 0-indexed) - Tăng độ nổi bật màu sắc
+                    let rowStyle = 'border-bottom:1px solid var(--border-color); border-left:5px solid transparent;';
                     if (i === 0) {
-                        rowStyle += 'background:rgba(251,191,36,0.06); border-left-color:rgba(251,191,36,0.85);';
+                        // Hạng 1: Vàng hoàng kim rực rỡ
+                        rowStyle += 'background: rgba(245, 158, 11, 0.18) !important; border-left-color: #f59e0b !important;';
                     } else if (i === 1) {
-                        rowStyle += 'background:rgba(148,163,184,0.06); border-left-color:rgba(148,163,184,0.85);';
+                        // Hạng 2: Bạc bạch kim sáng
+                        rowStyle += 'background: rgba(148, 163, 184, 0.18) !important; border-left-color: #cbd5e1 !important;';
                     } else if (i === 2) {
-                        rowStyle += 'background:rgba(180,83,9,0.06); border-left-color:rgba(180,83,9,0.85);';
+                        // Hạng 3: Đồng đỏ rực
+                        rowStyle += 'background: rgba(180, 83, 9, 0.18) !important; border-left-color: #d97706 !important;';
                     } else if (i >= 3 && i <= 9) {
-                        rowStyle += 'background:rgba(14,165,233,0.04); border-left-color:rgba(14,165,233,0.75);';
+                        // Hạng 4-10: Xanh biển hy vọng nổi bật
+                        rowStyle += 'background: rgba(14, 165, 233, 0.12) !important; border-left-color: #38bdf8 !important;';
                     }
 
                     if (isMe) {
-                        rowStyle += 'background:rgba(99,102,241,0.09); border-left-color:var(--accent-blue); font-weight: 600;';
+                        rowStyle += 'background: rgba(99, 102, 241, 0.22) !important; border-left-color: #818cf8 !important; font-weight: 700;';
                     }
 
                     return `<tr style="${rowStyle}">
