@@ -835,6 +835,14 @@ async function viewProblemDetail(id) {
                                 </div>
                                 <div style="margin-bottom:0.5rem; line-height:1.6;">${preprocessLaTeX(s.content)}</div>
                                 ${s.imageUrl ? `<img src="${s.imageUrl}" alt="Ảnh lời giải" style="max-width:100%;max-height:400px;object-fit:contain;border-radius:8px;margin-top:0.75rem;display:block;">` : ''}
+                                ${s.aiFeedback ? `
+                                    <div style="margin-top:0.75rem; padding:0.75rem 1rem; background:rgba(255,255,255,0.02); border:1px dashed var(--border-color); border-radius:6px; font-size:0.85rem; color:var(--text-muted);">
+                                        <div style="font-weight:600; color:var(--accent-blue); margin-bottom:0.25rem; display:flex; align-items:center; gap:0.35rem;">
+                                            <i class="fa-solid fa-robot"></i> Đánh giá từ AI Assistant:
+                                        </div>
+                                        <div>${preprocessLaTeX(s.aiFeedback)}</div>
+                                    </div>
+                                ` : ''}
                             </div>`).join("")
             }
                 </div>
@@ -984,11 +992,32 @@ async function viewProblemDetail(id) {
                 if (!imageUrl) { showToast("Vui lòng tải lên hoặc chụp ảnh lời giải!", "warning"); return; }
             }
 
+            const submitBtn = e.target.querySelector("button[type='submit']");
+            const originalHTML = submitBtn ? submitBtn.innerHTML : "";
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> AI đang chấm bài...`;
+            }
+            showToast("AI đang tiến hành chấm bài của bạn, vui lòng đợi trong giây lát...", "info");
+
             try {
-                await api.addSolution({ problemId: id, author: user.username, authorPicture: user.picture, authorGoogleId: user.googleId, content, imageUrl });
-                showToast("Đã đăng lời giải! +15 điểm 🎉", "success");
+                const solution = await api.addSolution({ problemId: id, author: user.username, authorPicture: user.picture, authorGoogleId: user.googleId, content, imageUrl });
+                if (solution.status === 'correct') {
+                    showToast("AI chấm: Lời giải chính xác! Bạn được cộng +15 điểm 🎉", "success");
+                } else if (solution.status === 'incorrect') {
+                    showToast("AI chấm: Lời giải chưa chính xác! Hãy đọc kỹ nhận xét.", "warning");
+                } else {
+                    showToast("Đã gửi lời giải thành công! Chờ giảng viên duyệt.", "success");
+                }
                 viewProblemDetail(id);
-            } catch { showToast("Đăng lời giải thất bại!", "error"); }
+            } catch (err) {
+                showToast("Đăng lời giải thất bại: " + err.message, "error");
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHTML;
+                }
+            }
         });
 
         // Add comment

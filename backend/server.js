@@ -72,7 +72,8 @@ const solutionSchema = new mongoose.Schema({
     votes:           { type: Number, default: 0 },
     imageUrl:        String,
     createdAt:       { type: Date, default: Date.now },
-    status:          { type: String, enum: ['correct', 'incorrect', 'pending'], default: 'correct' }
+    status:          { type: String, enum: ['correct', 'incorrect', 'pending'], default: 'pending' },
+    aiFeedback:      { type: String, default: "" }
 });
 
 const discussionSchema = new mongoose.Schema({
@@ -320,11 +321,82 @@ app.get('/api/solutions', async (req, res) => {
 app.post('/api/solutions', async (req, res) => {
     try {
         const solution = new Solution(req.body);
-        await solution.save();
-        if (req.body.authorGoogleId) {
-            const u = await User.findOne({ googleId: req.body.authorGoogleId });
-            if (u) { u.points += 15; u.rank = calcRank(u.points); await u.save(); }
+        solution.status = 'pending'; // start as pending
+
+        const problem = await Problem.findById(req.body.problemId);
+        const apiKey = process.env.GEMINI_API_KEY;
+
+        if (apiKey && problem) {
+            try {
+                const prompt = `Bạn là một giảng viên chấm thi toán học chuyên nghiệp cho sinh viên đại học. Hãy kiểm tra lời giải của học sinh cho đề bài dưới đây và xác định xem lời giải đó là đúng hay sai.
+Đề bài toán: ${problem.title}
+Nội dung đề bài:
+${problem.content}
+
+Bài làm của học sinh:
+${req.body.content || "[Không có văn bản thô, chỉ có ảnh chụp bài giải]"}
+
+Hãy chấm điểm lời giải này và trả về kết quả ở định dạng JSON duy nhất dưới đây (không có bất cứ ký tự bao ngoài nào khác ngoài JSON, chỉ trả về JSON thô):
+{
+  "isCorrect": true hoặc false,
+  "feedback": "Nhận xét chi tiết của bạn bằng tiếng Việt. Chỉ rõ các bước sai và cách sửa nếu có lỗi. Hãy viết các công thức toán học dưới dạng LaTeX đặt trong cặp dấu đô la $ ... $ hoặc $$ ... $$ để hiển thị đẹp mắt."
+}`;
+
+                let inlineData = null;
+                if (req.body.imageUrl && req.body.imageUrl.startsWith('data:')) {
+                    const parts = req.body.imageUrl.split(',');
+                    const mimeMatches = parts[0].match(/:(.*?);/);
+                    const mime = mimeMatches ? mimeMatches[1] : 'image/png';
+                    const data = parts[1];
+                    inlineData = { mimeType: mime, data: data };
+                }
+
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+                const contentsParts = [{ text: prompt }];
+                if (inlineData) {
+                    contentsParts.push({ inlineData });
+                }
+
+                const apiResponse = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: contentsParts }],
+                        generationConfig: {
+                            responseMimeType: 'application/json'
+                        }
+                    })
+                });
+
+                if (apiResponse.ok) {
+                    const result = await apiResponse.json();
+                    const textResult = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (textResult) {
+                        const parsed = JSON.parse(textResult.trim());
+                        solution.status = parsed.isCorrect ? 'correct' : 'incorrect';
+                        solution.aiFeedback = parsed.feedback || "";
+                    }
+                }
+            } catch (err) {
+                console.error("AI Auto-grading error:", err.message);
+                // Fallback to pending if AI calls fail
+                solution.status = 'pending';
+                solution.aiFeedback = "Lỗi khi gọi AI chấm bài. Giáo viên sẽ chấm bài thủ công.";
+            }
         }
+
+        await solution.save();
+
+        // Award points ONLY if the solution is correct (either by AI or pre-graded)
+        if (solution.status === 'correct' && req.body.authorGoogleId) {
+            const u = await User.findOne({ googleId: req.body.authorGoogleId });
+            if (u) {
+                u.points += 15;
+                u.rank = calcRank(u.points);
+                await u.save();
+            }
+        }
+
         res.status(201).json(solution);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -357,12 +429,18 @@ app.put('/api/solutions/:id/status', async (req, res) => {
         if (!['correct', 'incorrect', 'pending'].includes(status)) {
             return res.status(400).json({ error: 'Invalid status' });
         }
-        const sol = await Solution.findByIdAndUpdate(
-            req.params.id,
-            { $set: { status } },
-            { new: true }
-        );
+        const sol = await Solution.findById(req.params.id);
         if (!sol) return res.status(404).json({ error: 'Solution not found' });
+
+        const oldStatus = sol.status;
+        sol.status = status;
+        await sol.save();
+
+        // Award points if manually changed to correct
+        if (status === 'correct' && oldStatus !== 'correct' && sol.authorGoogleId) {
+            const u = await User.findOne({ googleId: sol.authorGoogleId });
+            if (u) { u.points += 15; u.rank = calcRank(u.points); await u.save(); }
+        }
         res.json(sol);
     } catch (err) {
         res.status(500).json({ error: err.message });
