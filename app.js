@@ -313,7 +313,16 @@ function renderLaTeX(el) {
 function preprocessLaTeX(text) {
     if (!text) return "";
 
-    // 1. Strip comments
+    // 0. Normalize literal \\n escape sequences from AI responses
+    // AI sometimes outputs literal backslash-n as \n in its text
+    text = text.replace(/\\n/g, "\n");
+
+    // Convert markdown-style headings (## Heading) from AI responses
+    text = text.replace(/^###\s+(.+)$/gm, '<h4 style="margin: 0.85rem 0 0.4rem; font-size: 1rem; color: var(--accent-blue); font-weight:700;">$1</h4>');
+    text = text.replace(/^##\s+(.+)$/gm, '<h3 style="margin: 1rem 0 0.5rem; font-size: 1.15rem; color: var(--accent-blue); font-weight:700;">$1</h3>');
+    text = text.replace(/^#\s+(.+)$/gm, '<h2 style="margin: 1.1rem 0 0.6rem; font-size: 1.3rem; color: var(--accent-blue); font-weight:700;">$1</h2>');
+
+    // 1. Strip LaTeX comments
     let lines = text.split("\n");
     lines = lines.map(line => {
         let idx = -1;
@@ -328,7 +337,7 @@ function preprocessLaTeX(text) {
     });
     text = lines.join("\n");
 
-    // 2. Headings
+    // 2. LaTeX Headings
     text = text.replace(/\\subsubsection\*?\{([^}]+)\}/g, '<h4 style="margin: 0.85rem 0 0.5rem; font-size: 1.15rem; color: var(--accent-blue); font-weight:600;">$1</h4>');
     text = text.replace(/\\subsection\*?\{([^}]+)\}/g, '<h3 style="margin: 1.1rem 0 0.65rem; font-size: 1.3rem; color: var(--accent-blue); font-weight:600;">$1</h3>');
 
@@ -367,21 +376,12 @@ function preprocessLaTeX(text) {
     text = text.replace(/<li>\\s*<\/li>/g, "");
 
     // 6. Convert newlines / double backslashes while respecting math delimiters
-    let segs = text.split(/(\\$\$?)/);
-    let inMath = false;
-    let currentDelimiter = "";
-
+    let segs = text.split(/(\$\$[\s\S]*?\$\$|\$[^$\n]+?\$)/);
     for (let i = 0; i < segs.length; i++) {
-        if (segs[i] === '$' || segs[i] === '$$') {
-            if (inMath && segs[i] === currentDelimiter) {
-                inMath = false;
-                currentDelimiter = "";
-            } else if (!inMath) {
-                inMath = true;
-                currentDelimiter = segs[i];
-            }
-        } else if (!inMath) {
+        // Even-indexed segments are outside math
+        if (i % 2 === 0) {
             segs[i] = segs[i].replace(/\\\\/g, "<br>");
+            segs[i] = segs[i].replace(/\n{2,}/g, "</p><p style='margin-top:0.6rem'>");
             segs[i] = segs[i].replace(/\n/g, "<br>");
         }
     }
@@ -1206,26 +1206,33 @@ async function viewProblemDetail(id) {
         }
 
         // --- AI Tutor conversational logic state ---
+        // Khởi đầu bằng role 'user' giới thiệu đề bài (Gemini API yêu cầu cuộc hội thoại bắt đầu bằng 'user')
+        const problemContextMsg = problem.content
+            ? `Em đang học bài toán sau: "${problem.title}". Nội dung: ${problem.content}`
+            : `Em đang học bài toán sau: "${problem.title}". Đây là bài dạng hình ảnh, thầy hãy hướng dẫn các kiến thức liên quan đến chủ đề này nhé.`;
+
         let problemChatMessages = [
-            {
-                role: "model",
-                content: `Chào em! Thầy là người hướng dẫn học tập của em. Nếu em chưa biết hướng giải bài tập này, hoặc muốn tìm hiểu các lý thuyết, công thức liên quan, hãy cứ hỏi thầy nhé. Thầy sẽ hướng dẫn từng bước gợi mở để em tự tìm ra lời giải cho bài toán này! 😉`
-            }
+            { role: "user",  content: problemContextMsg },
+            { role: "model", content: `Chào em! Thầy là người hướng dẫn học tập của em. Thầy đã xem qua bài toán của em rồi. Nếu em chưa biết hướng giải, hoặc muốn tìm hiểu các lý thuyết, công thức liên quan, hãy cứ hỏi thầy nhé. Thầy sẽ hướng dẫn từng bước gợi mở để em tự tìm ra lời giải! 😊` }
         ];
 
         function renderTutorMessages() {
             const container = document.getElementById("ai-tutor-chat-messages");
             if (!container) return;
-            container.innerHTML = problemChatMessages.map(m => `
+            // Skip the first user message (problem context - hidden from UI)
+            const visibleMessages = problemChatMessages.slice(1);
+            container.innerHTML = visibleMessages.map(m => `
                 <div class="ai-msg ${m.role === 'model' ? 'ai' : 'user'}">
                     <div class="ai-msg-avatar">
                         ${m.role === 'model'
-                    ? `<div style="background:rgba(99,102,241,0.1); width:24px; height:24px; display:flex; align-items:center; justify-content:center; border-radius:50%; color:var(--accent-blue); font-size:0.75rem;"><i class="fa-solid fa-robot"></i></div>`
-                    : `<img src="${user ? user.picture : 'https://avatar.iran.liara.run/public/1'}" alt="Avatar">`
+                    ? `<div style="background:rgba(99,102,241,0.1); width:24px; height:24px; display:flex; align-items:center; justify-content:center; border-radius:50%; color:var(--accent-blue); font-size:0.75rem;"><i class="fa-solid fa-chalkboard-teacher"></i></div>`
+                    : `<img src="${user ? user.picture : 'https://avatar.iran.liara.run/public/1'}" alt="Avatar" style="width:24px;height:24px;border-radius:50%;object-fit:cover;">`
                 }
                     </div>
-                    <div class="ai-msg-bubble">
-                        ${preprocessLaTeX(m.content)}
+                    <div class="ai-msg-content-wrap">
+                        <div class="ai-msg-bubble">${preprocessLaTeX(m.content)}</div>
+                        ${m.verified === true ? '<div class="ai-verify-badge verified"><i class="fa-solid fa-circle-check"></i> Đã kiểm tra</div>' : ''}
+                        ${m.verified === false ? '<div class="ai-verify-badge corrected"><i class="fa-solid fa-triangle-exclamation"></i> Đã điều chỉnh</div>' : ''}
                     </div>
                 </div>
             `).join("");
@@ -1242,10 +1249,10 @@ async function viewProblemDetail(id) {
             typingDiv.className = "ai-msg ai";
             typingDiv.innerHTML = `
                 <div class="ai-msg-avatar">
-                    <div style="background:rgba(99,102,241,0.1); width:24px; height:24px; display:flex; align-items:center; justify-content:center; border-radius:50%; color:var(--accent-blue); font-size:0.75rem;"><i class="fa-solid fa-robot"></i></div>
+                    <div style="background:rgba(99,102,241,0.1); width:24px; height:24px; display:flex; align-items:center; justify-content:center; border-radius:50%; color:var(--accent-blue); font-size:0.75rem;"><i class="fa-solid fa-chalkboard-teacher"></i></div>
                 </div>
                 <div class="ai-msg-bubble" style="color:var(--text-muted); font-style:italic;">
-                    <i class="fa-solid fa-spinner fa-spin"></i> Đang suy nghĩ gợi ý...
+                    <i class="fa-solid fa-spinner fa-spin"></i> Thầy đang suy nghĩ...
                 </div>
             `;
             container?.appendChild(typingDiv);
@@ -1254,11 +1261,16 @@ async function viewProblemDetail(id) {
             try {
                 const reply = await api.chatAiTutor(id, problemChatMessages);
                 typingDiv.remove();
-                problemChatMessages.push({ role: "model", content: reply.text });
+                problemChatMessages.push({
+                    role: "model",
+                    content: reply.text,
+                    verified: reply.verified,
+                    issues: reply.issues
+                });
                 renderTutorMessages();
             } catch (err) {
                 typingDiv.remove();
-                problemChatMessages.push({ role: "model", content: "⚠️ Có lỗi xảy ra khi kết nối trợ lý AI. Vui lòng thử lại!" });
+                problemChatMessages.push({ role: "model", content: "⚠️ Có lỗi xảy ra khi kết nối trợ lý. Vui lòng thử lại!" });
                 renderTutorMessages();
             }
         }
@@ -1277,15 +1289,15 @@ async function viewProblemDetail(id) {
         });
 
         document.getElementById("ai-hint-start")?.addEventListener("click", () => {
-            sendTutorMessage(`Đề bài: ${problem.title}\nNội dung: ${problem.content}\n\nEm chưa biết bắt đầu từ đâu, thầy gợi ý cho em hướng giải và bước đi đầu tiên của bài toán này nhé!`);
+            sendTutorMessage("Em chưa biết bắt đầu từ đâu, thầy gợi ý cho em hướng giải và bước đi đầu tiên của bài toán này nhé!");
         });
 
         document.getElementById("ai-hint-formula")?.addEventListener("click", () => {
-            sendTutorMessage(`Đề bài: ${problem.title}\nNội dung: ${problem.content}\n\nThầy hãy chỉ ra các công thức toán học và lý thuyết quan trọng cần biết để giải quyết bài toán này cho em ạ.`);
+            sendTutorMessage("Thầy hãy chỉ ra các công thức toán học và lý thuyết quan trọng cần biết để giải quyết bài toán này cho em ạ.");
         });
 
         document.getElementById("ai-hint-next")?.addEventListener("click", () => {
-            sendTutorMessage(`Đề bài: ${problem.title}\nNội dung: ${problem.content}\n\nEm muốn thầy gợi ý thêm bước tiếp theo để tiến gần hơn tới lời giải của bài toán này.`);
+            sendTutorMessage("Em muốn thầy gợi ý thêm bước tiếp theo để tiến gần hơn tới lời giải của bài toán này.");
         });
 
         // Add event listeners for mode switcher

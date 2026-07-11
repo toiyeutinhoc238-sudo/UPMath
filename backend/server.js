@@ -928,7 +928,7 @@ app.delete('/api/shouts/:id', async (req, res) => {
     }
 });
 
-// AI Tutor chat interaction (Socratic Method)
+// AI Tutor chat interaction with Knowledge Base + Verification Layer
 app.post('/api/ai-tutor', async (req, res) => {
     try {
         const { problemId, messages } = req.body;
@@ -938,51 +938,142 @@ app.post('/api/ai-tutor', async (req, res) => {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) return res.status(500).json({ error: 'Gemini API key is not configured' });
 
+        // ── CƠ SỞ TRI THỨC COMP1800 (đã được xác minh) ──────────────────────
+        const knowledgeBase = `
+CƠ SỞ TRI THỨC COMP1800 (ĐÃ ĐƯỢC XÁC MINH - BẮT BUỘC TUÂN THEO):
+
+GIẢI TÍCH:
+• Giới hạn cơ bản: lim(x→0) sin(x)/x = 1; lim(x→0) (e^x-1)/x = 1; lim(x→0) ln(1+x)/x = 1; lim(x→0) (1-cos x)/x² = 1/2
+• Vô cùng bé tương đương (x→0): sin x ~ x; tan x ~ x; arcsin x ~ x; arctan x ~ x; 1-cos x ~ x²/2; e^x-1 ~ x; ln(1+x) ~ x; (1+x)^α - 1 ~ αx
+• Quy tắc L'Hôpital: Dạng 0/0 hoặc ∞/∞ → lim f/g = lim f'/g' (áp dụng từng bước, kiểm tra dạng vô định trước mỗi lần áp dụng)
+• Đạo hàm cơ bản: (x^n)'=nx^(n-1); (sin x)'=cos x; (cos x)'=-sin x; (tan x)'=1/cos²x; (e^x)'=e^x; (a^x)'=a^x·ln a; (ln x)'=1/x; (arcsin x)'=1/√(1-x²); (arctan x)'=1/(1+x²)
+• Quy tắc đạo hàm: (uv)'=u'v+uv'; (u/v)'=(u'v-uv')/v²; [f(g(x))]'=f'(g(x))·g'(x)
+• Đạo hàm hàm ẩn và hàm số mũ: y=f(x)^g(x) → ln y = g(x)·ln f(x) → lấy đạo hàm 2 vế
+• Tích phân cơ bản: ∫x^n dx=x^(n+1)/(n+1)+C; ∫sin x dx=-cos x+C; ∫cos x dx=sin x+C; ∫e^x dx=e^x+C; ∫1/x dx=ln|x|+C; ∫1/(1+x²) dx=arctan x+C; ∫1/√(1-x²) dx=arcsin x+C
+• Phương pháp tích phân: Từng phần ∫u dv=uv-∫v du; Đổi biến; Phân thức từng phần
+
+ĐẠI SỐ TUYẾN TÍNH:
+• Định thức 2×2: det[a b; c d]=ad-bc
+• Định thức 3×3 theo khai triển Laplace: chọn hàng/cột ít số 0 nhất
+• Ma trận nghịch đảo: A⁻¹=adj(A)/det(A), tồn tại khi và chỉ khi det(A)≠0
+• Hệ Cramer: x_i=D_i/D với D=det(A), D_i thay cột i bằng vector vế phải
+• Phép khử Gauss: biến đổi sơ cấp hàng để đưa về dạng bậc thang
+• Trị riêng: det(A-λI)=0; Vec-tơ riêng ứng với λ: (A-λI)x=0
+• Hạng ma trận (rank): số hàng khác 0 sau khử Gauss
+
+NGUYÊN TẮC SỬ DỤNG TRI THỨC:
+1. Chỉ sử dụng các công thức có trong cơ sở tri thức trên hoặc các định lý toán học chuẩn đã được kiểm chứng
+2. Trước mỗi bước tính toán, xác định rõ áp dụng quy tắc/công thức nào
+3. Kiểm tra điều kiện áp dụng của mỗi công thức (ví dụ: vô cùng bé tương đương chỉ dùng khi x→0 và là tích/thương, KHÔNG dùng cho tổng/hiệu)
+4. Khi không chắc chắn về một kết quả, nói rõ và đề nghị học viên kiểm tra với giáo trình`;
+
         const systemInstruction = `Bạn là một giảng viên toán học đại học xuất sắc (xưng hô là "Thầy" và gọi người học là "em").
-Nhiệm vụ của bạn là hướng dẫn học viên tự giải quyết bài toán dưới đây từng bước một, đóng vai trò là một giáo viên hướng dẫn gợi mở ngoài đời thực, chứ không phải một chatbot hay AI. Tuyệt đối không được xưng là "AI", "Trợ lý AI", "mô hình ngôn ngữ" hay bất cứ từ ngữ robot nào khác. Hãy nói năng tự nhiên như một thầy giáo dạy toán nhiệt huyết đang giảng bài.
+Nhiệm vụ: hướng dẫn học viên tự giải bài toán từng bước, đóng vai giáo viên thực thụ, KHÔNG xưng là "AI", "chatbot", hay "mô hình ngôn ngữ".
 
-Đề bài toán: ${problem.title}
-Nội dung bài toán:
-${problem.content}
+Đề bài: ${problem.title}
+Nội dung: ${problem.content || '[Bài dạng hình ảnh - hướng dẫn theo chủ đề và tiêu đề bài]'}
+${problem.gradingRubric ? `Thang điểm: ${problem.gradingRubric}` : ''}
 
-Nguyên tắc giảng dạy của bạn:
-1. Chỉ dẫn và gợi mở từng bước. Hãy đưa ra các gợi ý ngắn gọn, giải thích các công thức toán học hay lý thuyết liên quan đến bài tập, đặt câu hỏi nhỏ định hướng để học viên tự suy nghĩ bước tiếp theo.
-2. Tuyệt đối không cung cấp lời giải đầy đủ hoặc kết quả cuối cùng ngay từ đầu. Mục tiêu là giúp học viên tự giải được bài toán qua đối thoại tương tác qua lại.
-3. Giải thích trực quan, sinh động các khái niệm toán học, định nghĩa lý thuyết khi học viên hỏi hoặc khi cần thiết.
-4. Viết các công thức toán học dưới dạng LaTeX đặt trong cặp dấu đô la $ ... $ (cho inline) hoặc $$ ... $$ (cho block) để hiển thị đẹp mắt.
-5. Luôn phản hồi lịch sự, mang tính khuyến khích học tập bằng tiếng Việt tự nhiên và ấm áp.`;
+${knowledgeBase}
+
+Quy tắc giảng dạy:
+1. Gợi mở từng bước, đặt câu hỏi nhỏ định hướng - KHÔNG cho toàn bộ lời giải ngay
+2. Áp dụng đúng công thức từ cơ sở tri thức, nêu rõ đang dùng quy tắc nào
+3. Nếu học viên làm sai, chỉ ra lỗi cụ thể và hướng dẫn sửa
+4. Viết công thức bằng LaTeX: $...$ (inline) hoặc $$...$$ (block)
+5. Phản hồi bằng tiếng Việt tự nhiên, ấm áp, khuyến khích`;
 
         const contents = [];
-        const firstMessageText = `HƯỚNG DẪN HỆ THỐNG (SYSTEM INSTRUCTION):\n${systemInstruction}\n\nCuộc trò chuyện bắt đầu:\n`;
+        const firstMessageText = `HƯỚNG DẪN HỆ THỐNG:\n${systemInstruction}\n\nCuộc trò chuyện:\n`;
 
         messages.forEach((msg, idx) => {
             let txt = msg.content;
-            if (idx === 0) {
-                txt = firstMessageText + txt;
-            }
+            if (idx === 0) txt = firstMessageText + txt;
             contents.push({
                 role: msg.role === 'model' ? 'model' : 'user',
                 parts: [{ text: txt }]
             });
         });
 
-        let url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
 
-        const response = await fetch(url, {
+        // ── TẦNG 1: Sinh câu trả lời ──────────────────────────────────────────
+        const response1 = await fetch(geminiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents })
         });
 
-        const data = await response.json();
-
-        if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
-            const aiText = data.candidates[0].content.parts[0].text;
-            res.json({ text: aiText });
-        } else {
-            console.error("Gemini Response Error:", JSON.stringify(data));
-            res.status(500).json({ error: "Không nhận được phản hồi từ AI" });
+        const data1 = await response1.json();
+        if (!data1.candidates?.[0]?.content?.parts) {
+            console.error("Gemini Tutor Error:", JSON.stringify(data1));
+            return res.status(500).json({ error: "Không nhận được phản hồi từ AI" });
         }
+        const rawAiText = data1.candidates[0].content.parts[0].text;
+
+        // ── TẦNG 2: Xác minh độ chính xác toán học ───────────────────────────
+        let finalText = rawAiText;
+        let verified = null;
+        let issues = '';
+
+        try {
+            const verifyPrompt = `Bạn là giám khảo toán học đại học. Hãy kiểm tra câu trả lời dưới đây của một gia sư toán.
+
+Đề bài: ${problem.title}
+Nội dung đề: ${problem.content || '[Bài hình ảnh]'}
+
+Câu trả lời cần kiểm tra:
+${rawAiText}
+
+Yêu cầu: Kiểm tra từng công thức, quy tắc, bước tính toán. Phát hiện bất kỳ lỗi toán học nào (dù nhỏ).
+Trả về JSON (chỉ JSON thuần):
+{
+  "isAccurate": true hoặc false,
+  "issues": "Mô tả ngắn gọn lỗi phát hiện, để trống nếu đúng",
+  "correctedResponse": "Câu trả lời đã sửa đúng hoàn toàn nếu có lỗi (giữ văn phong Thầy-em), để trống nếu đúng"
+}`;
+
+            const response2 = await fetch(geminiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: verifyPrompt }] }],
+                    generationConfig: {
+                        responseMimeType: 'application/json',
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                isAccurate: { type: "BOOLEAN" },
+                                issues: { type: "STRING" },
+                                correctedResponse: { type: "STRING" }
+                            },
+                            required: ["isAccurate", "issues", "correctedResponse"]
+                        }
+                    }
+                })
+            });
+
+            if (response2.ok) {
+                const data2 = await response2.json();
+                const verifyText = data2.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (verifyText) {
+                    const verifyResult = JSON.parse(verifyText);
+                    verified = verifyResult.isAccurate;
+                    issues = verifyResult.issues || '';
+                    // Nếu phát hiện lỗi và có bản sửa → dùng bản sửa
+                    if (!verifyResult.isAccurate && verifyResult.correctedResponse) {
+                        finalText = verifyResult.correctedResponse;
+                    }
+                    console.log(`[AI Tutor] Verification: ${verified ? 'PASS' : 'CORRECTED'} ${issues ? '| Issues: ' + issues : ''}`);
+                }
+            }
+        } catch (verifyErr) {
+            console.warn('[AI Tutor] Verification step failed (non-critical):', verifyErr.message);
+            // Không crash - trả về bản gốc nếu verification fail
+        }
+
+        res.json({ text: finalText, verified, issues });
+
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
