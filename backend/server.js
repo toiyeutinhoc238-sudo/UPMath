@@ -56,8 +56,9 @@ const problemSchema = new mongoose.Schema({
     creator:         { type: String, required: true },
     creatorPicture:  String,
     creatorGoogleId: String,
-    points:          { type: Number, default: 25 },
+    points:          { type: Number, default: 10 },
     gradingRubric:   { type: String, default: '' },
+    difficulty:      { type: String, enum: ['easy', 'medium', 'hard', 'extreme'], default: 'medium' },
     imageUrl:        String,
     likes:           { type: [String], default: [] },
     dislikes:        { type: [String], default: [] },
@@ -280,7 +281,7 @@ app.get('/api/problems/:id', async (req, res) => {
 // Edit problem (by creator, admin, or professor)
 app.put('/api/problems/:id', async (req, res) => {
     try {
-        const { title, content, category, tags, points, gradingRubric, imageUrl } = req.body;
+        const { title, content, category, tags, points, gradingRubric, difficulty, imageUrl } = req.body;
         const updateFields = {};
         if (title !== undefined) updateFields.title = title;
         if (content !== undefined) updateFields.content = content;
@@ -288,6 +289,7 @@ app.put('/api/problems/:id', async (req, res) => {
         if (tags !== undefined) updateFields.tags = tags;
         if (points !== undefined) updateFields.points = points;
         if (gradingRubric !== undefined) updateFields.gradingRubric = gradingRubric;
+        if (difficulty !== undefined) updateFields.difficulty = difficulty;
         if (imageUrl !== undefined) updateFields.imageUrl = imageUrl;
 
         const problem = await Problem.findByIdAndUpdate(

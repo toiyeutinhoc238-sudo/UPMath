@@ -658,6 +658,7 @@ function problemCardHTML(p) {
                 <div class="problem-item-stats">
                     <span><i class="fa-solid fa-user"></i> ${p.creator}</span>
                     <span><i class="fa-solid fa-star"></i> ${p.points} điểm</span>
+                    ${p.difficulty ? `<span>${{'easy':'🟢 Dễ','medium':'🟡 Trung bình','hard':'🔴 Khó','extreme':'⚡ Siêu khó'}[p.difficulty] || ''}</span>` : ''}
                     <span><i class="fa-regular fa-clock"></i> ${timeSince(p.createdAt)}</span>
                 </div>
             </div>
@@ -775,6 +776,7 @@ async function viewProblemDetail(id) {
                 <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;color:var(--text-muted);flex-wrap:wrap;gap:0.75rem;">
                     <div style="display:flex;gap:1rem;">
                         <span><i class="fa-solid fa-star" style="color:#f59e0b;"></i> ${problem.points} điểm thưởng</span>
+                        ${problem.difficulty ? `<span>${{'easy':'🟢 Dễ','medium':'🟡 Trung bình','hard':'🔴 Khó','extreme':'⚡ Siêu khó'}[problem.difficulty] || ''}</span>` : ''}
                         <span><i class="fa-solid fa-lightbulb"></i> ${solutions.length} lời giải</span>
                     </div>
                     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
@@ -1110,14 +1112,23 @@ function viewEditProblem(problem) {
                     </div>
                 </div>
 
-                <div style="display:grid;grid-template-columns:120px 1fr;gap:1rem;margin-top:1rem;align-items:start;">
-                    <div class="form-group">
+                <div style="display:grid;grid-template-columns:110px 1fr 1fr;gap:1rem;margin-top:1rem;align-items:end;">
+                    <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label">Tổng điểm:</label>
-                        <input type="number" id="ep-points" class="form-input" min="1" max="1000" value="${problem.points || 30}" style="text-align:center;font-weight:600;font-size:1.1rem;">
+                        <input type="number" id="ep-points" class="form-input" min="1" max="1000" value="${problem.points || 10}" style="text-align:center;font-weight:700;font-size:1.1rem;">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Thang điểm chấm bài <span style="color:var(--text-muted);font-weight:400;font-size:0.78rem;">(tuỳ chọn — AI dùng để chấm chính xác hơn)</span>:</label>
-                        <textarea id="ep-rubric" class="form-textarea" style="min-height:72px;resize:vertical;" placeholder="Ví dụ:&#10;Câu 1 (10đ): Tính giới hạn&#10;Câu 2 (10đ): Tính căn thức&#10;Câu 3 (10đ): Tính tích phân">${problem.gradingRubric || ''}</textarea>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">Cấp độ:</label>
+                        <select id="ep-difficulty" class="form-select">
+                            <option value="easy" ${(problem.difficulty||'medium')==='easy'?'selected':''}>🟢 Dễ</option>
+                            <option value="medium" ${(problem.difficulty||'medium')==='medium'?'selected':''}>🟡 Trung bình</option>
+                            <option value="hard" ${(problem.difficulty||'medium')==='hard'?'selected':''}>🔴 Khó</option>
+                            <option value="extreme" ${(problem.difficulty||'medium')==='extreme'?'selected':''}>⚡ Siêu khó</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">Thang điểm chấm bài <span style="color:var(--text-muted);font-weight:400;font-size:0.76rem;">(tuỳ chọn)</span>:</label>
+                        <textarea id="ep-rubric" class="form-textarea" style="min-height:42px;max-height:120px;resize:vertical;" placeholder="Câu 1 (5đ): ...&#10;Câu 2 (5đ): ...">${problem.gradingRubric || ''}</textarea>
                     </div>
                 </div>
 
@@ -1139,13 +1150,14 @@ function viewEditProblem(problem) {
         const tags = tagsRaw ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : [];
         const points = parseInt(document.getElementById("ep-points").value) || 30;
         const gradingRubric = document.getElementById("ep-rubric").value.trim();
+        const difficulty = document.getElementById("ep-difficulty").value;
 
         const btn = document.getElementById("save-prob-btn");
         btn.disabled = true;
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...`;
 
         try {
-            await api.updateProblem(problem._id, { title, content, category, tags, points, gradingRubric });
+            await api.updateProblem(problem._id, { title, content, category, tags, points, gradingRubric, difficulty });
             showToast("Đã cập nhật đề bài thành công! ✅", "success");
             window.location.hash = `#problem/${problem._id}`;
             viewProblemDetail(problem._id);
@@ -1236,14 +1248,23 @@ function viewCreateProblem() {
                     </div>
                 </div>
 
-                <div style="display:grid;grid-template-columns:120px 1fr;gap:1rem;margin-top:1rem;align-items:start;">
-                    <div class="form-group">
+                <div style="display:grid;grid-template-columns:110px 1fr 1fr;gap:1rem;margin-top:1rem;align-items:end;">
+                    <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label">Tổng điểm:</label>
-                        <input type="number" id="p-points" class="form-input" min="1" max="1000" value="30" style="text-align:center;font-weight:600;font-size:1.1rem;">
+                        <input type="number" id="p-points" class="form-input" min="1" max="1000" value="10" style="text-align:center;font-weight:700;font-size:1.1rem;">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Thang điểm chấm bài <span style="color:var(--text-muted);font-weight:400;font-size:0.78rem;">(tuỳ chọn — mô tả để AI chấm đúng hơn)</span>:</label>
-                        <textarea id="p-rubric" class="form-textarea" style="min-height:72px;resize:vertical;" placeholder="Ví dụ:&#10;Câu 1 (10đ): Tính giới hạn phân thức&#10;Câu 2 (10đ): Tính giới hạn chứa căn thức&#10;Câu 3 (10đ): Tính tích phân suy rộng"></textarea>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">Cấp độ:</label>
+                        <select id="p-difficulty" class="form-select">
+                            <option value="easy">🟢 Dễ</option>
+                            <option value="medium" selected>🟡 Trung bình</option>
+                            <option value="hard">🔴 Khó</option>
+                            <option value="extreme">⚡ Siêu khó</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">Thang điểm chấm bài <span style="color:var(--text-muted);font-weight:400;font-size:0.76rem;">(tuỳ chọn)</span>:</label>
+                        <textarea id="p-rubric" class="form-textarea" style="min-height:42px;max-height:120px;resize:vertical;" placeholder="Câu 1 (5đ): ...&#10;Câu 2 (5đ): ..."></textarea>
                     </div>
                 </div>
                 
@@ -1317,15 +1338,16 @@ function viewCreateProblem() {
         const category = document.getElementById("p-category").value;
         const tagsRaw = document.getElementById("p-tags").value;
         const tags = tagsRaw ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : [];
-        const points = parseInt(document.getElementById("p-points").value) || 30;
+        const points = parseInt(document.getElementById("p-points").value) || 10;
         const gradingRubric = document.getElementById("p-rubric").value.trim();
+        const difficulty = document.getElementById("p-difficulty").value;
         
         const btn = document.getElementById("submit-prob-btn");
         btn.disabled = true;
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang đăng...`;
         
         try {
-            await api.addProblem({ title, content, category, tags, creator: user.username, creatorPicture: user.picture, creatorGoogleId: user.googleId, points, gradingRubric, imageUrl });
+            await api.addProblem({ title, content, category, tags, creator: user.username, creatorPicture: user.picture, creatorGoogleId: user.googleId, points, gradingRubric, difficulty, imageUrl });
             showToast("Đã đăng bài toán! +10 điểm 🎉", "success");
             window.location.hash = "#exercises";
         } catch (err) {
