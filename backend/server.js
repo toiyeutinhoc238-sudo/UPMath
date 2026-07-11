@@ -272,9 +272,42 @@ app.put('/api/users/:googleId/points', async (req, res) => {
         const { amount } = req.body;
         const user = await User.findOne({ googleId: req.params.googleId });
         if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        const oldPoints = user.points;
+        const oldRank = user.rank;
+        
         user.points = Math.max(0, user.points + (amount || 0));
         user.rank = calcRank(user.points);
         await user.save();
+
+        // Gửi email thông báo điều chỉnh điểm
+        const diff = user.points - oldPoints;
+        const isAddition = diff >= 0;
+        const diffText = isAddition ? `+${diff}` : `${diff}`;
+        const actionText = isAddition ? 'Cộng điểm' : 'Trừ điểm';
+        const color = isAddition ? '#10b981' : '#f43f5e';
+
+        const emailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #ffffff;">
+                <h2 style="color: #6366f1; border-bottom: 2px solid #6366f1; padding-bottom: 10px; margin-top: 0;">Thông Báo Điều Chỉnh Điểm Tích Lũy</h2>
+                <p>Chào <strong>${user.name}</strong>,</p>
+                <p>Quản trị viên hệ thống <strong>UPMath</strong> vừa thực hiện điều chỉnh điểm tích lũy của em:</p>
+                <div style="background-color: #f8fafc; padding: 15px; border-left: 4px solid ${color}; border-radius: 4px; margin: 20px 0; font-size: 1.05rem;">
+                    Hành động: <strong>${actionText}</strong><br>
+                    Số điểm thay đổi: <strong style="color: ${color}; font-size: 1.15rem;">${diffText} điểm</strong><br>
+                    Tổng điểm mới: <strong>${user.points} điểm</strong><br>
+                    Cấp bậc hiện tại: <strong>${user.rank}</strong>
+                </div>
+                <p>Nếu có thắc mắc về điểm số, em hãy liên hệ trực tiếp với Giảng viên quản lý môn học COMP1800.</p>
+                <p style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 15px; font-size: 0.85rem; color: #64748b;">
+                    Trân trọng,<br>
+                    <strong>Hệ thống UPMath</strong>
+                </p>
+            </div>
+        `;
+
+        sendNotificationEmail(user.email, `[UPMath] Tài khoản của bạn đã được ${actionText.toLowerCase()} (${diffText} điểm)`, emailHtml);
+
         res.json(user);
     } catch (err) {
         res.status(500).json({ error: err.message });
