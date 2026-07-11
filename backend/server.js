@@ -354,6 +354,11 @@ app.post('/api/solutions', async (req, res) => {
         const problem = await Problem.findById(req.body.problemId);
         const apiKey = process.env.GEMINI_API_KEY;
 
+        console.log("AI Auto-grading request details:");
+        console.log("- Has API Key:", !!apiKey);
+        console.log("- Has Problem:", !!problem);
+        console.log("- skipGrading:", req.body.skipGrading);
+
         if (apiKey && problem && !req.body.skipGrading) {
             try {
                 const rubricSection = problem.gradingRubric ? `\nThang điểm chấm bài (do giảng viên cung cấp):\n${problem.gradingRubric}\n` : '';
@@ -378,17 +383,27 @@ Hãy chấm điểm lời giải này và trả về kết quả ở định d�
                     const mime = mimeMatches ? mimeMatches[1] : 'image/png';
                     const data = parts[1];
                     inlineData = { mimeType: mime, data: data };
+                    console.log("- Solution has image, size:", data.length);
                 }
 
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+                let url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
+                const headers = { 'Content-Type': 'application/json' };
+
+                if (apiKey.startsWith('AIza')) {
+                    url += `?key=${apiKey}`;
+                } else {
+                    headers['Authorization'] = `Bearer ${apiKey}`;
+                }
+
                 const contentsParts = [{ text: prompt }];
                 if (inlineData) {
                     contentsParts.push({ inlineData });
                 }
 
+                console.log("- Sending request to Gemini...");
                 const apiResponse = await fetch(url, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: headers,
                     body: JSON.stringify({
                         contents: [{ parts: contentsParts }],
                         generationConfig: {
@@ -397,20 +412,26 @@ Hãy chấm điểm lời giải này và trả về kết quả ở định d�
                     })
                 });
 
+                console.log("- Gemini Response Status:", apiResponse.status);
                 if (apiResponse.ok) {
                     const result = await apiResponse.json();
                     const textResult = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    console.log("- Gemini Response Text:", textResult);
                     if (textResult) {
                         const parsed = JSON.parse(textResult.trim());
                         solution.status = parsed.isCorrect ? 'correct' : 'incorrect';
                         solution.aiFeedback = parsed.feedback || "";
                     }
+                } else {
+                    const errText = await apiResponse.text();
+                    console.error("- Gemini Error Response:", errText);
+                    solution.status = 'pending';
+                    solution.aiFeedback = `Lỗi hệ thống AI (Status ${apiResponse.status}). Vui lòng báo quản trị viên kiểm tra API Key.`;
                 }
             } catch (err) {
                 console.error("AI Auto-grading error:", err.message);
-                // Fallback to pending if AI calls fail
                 solution.status = 'pending';
-                solution.aiFeedback = "Lỗi khi gọi AI chấm bài. Giáo viên sẽ chấm bài thủ công.";
+                solution.aiFeedback = "Lỗi khi gọi AI chấm bài: " + err.message;
             }
         }
 
