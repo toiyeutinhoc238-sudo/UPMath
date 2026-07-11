@@ -2154,3 +2154,178 @@ input, textarea, select, button {
     background: rgba(56, 189, 248, 0.02);
 }
 
+/* Interactive Shoutbox additions */
+.shout-msg {
+    position: relative;
+}
+.shout-msg-hover-actions {
+    display: none;
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--bg-surface-solid);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 0.25rem 0.5rem;
+    box-shadow: var(--shadow-sm);
+    z-index: 10;
+    gap: 0.35rem;
+    align-items: center;
+}
+.shout-msg:hover .shout-msg-hover-actions {
+    display: flex;
+}
+.shout-action-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 0.2rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+.shout-action-btn:hover {
+    color: var(--accent-blue);
+    background: rgba(255,255,255,0.08);
+}
+.shout-action-btn.delete:hover {
+    color: var(--accent-red);
+}
+
+/* Reactions panel on hover */
+.reaction-emoji-bar {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    background: var(--bg-surface-solid);
+    border: 1px solid var(--border-color);
+    border-radius: 30px;
+    padding: 0.35rem 0.6rem;
+    box-shadow: var(--shadow-md);
+    gap: 0.4rem;
+    z-index: 100;
+    animation: scaleIn 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.shout-action-btn.react-btn:hover .reaction-emoji-bar,
+.reaction-emoji-bar:hover {
+    display: flex;
+}
+.emoji-item {
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: transform 0.2s;
+}
+.emoji-item:hover {
+    transform: scale(1.3);
+}
+
+/* Reacted badge list under message content */
+.shout-reactions-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.25rem;
+}
+.reaction-badge {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    padding: 0.1rem 0.35rem;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+}
+.reaction-badge:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Reply preview styles */
+.shout-reply-preview {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(99, 102, 241, 0.08);
+    border-left: 3px solid var(--accent-blue);
+    padding: 0.35rem 0.75rem;
+    font-size: 0.76rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+.shout-reply-preview .reply-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 85%;
+    color: var(--text-muted);
+}
+.shout-reply-preview .cancel-reply-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+.shout-reply-preview .cancel-reply-btn:hover {
+    color: var(--accent-red);
+}
+
+/* Edit preview styles */
+.shout-edit-preview {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(234, 179, 8, 0.08);
+    border-left: 3px solid #eab308;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.76rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+.shout-edit-preview .cancel-edit-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+.shout-edit-preview .cancel-edit-btn:hover {
+    color: var(--accent-red);
+}
+
+/* Quoted message in bubble */
+.shout-quoted-box {
+    font-size: 0.74rem;
+    opacity: 0.85;
+    background: rgba(255,255,255,0.04);
+    border-left: 2px solid var(--accent-blue);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 0.25rem;
+    max-width: 100%;
+    color: var(--text-muted);
+    word-break: break-all;
+}
+.quoted-author {
+    font-weight: 700;
+    color: var(--accent-blue);
+    margin-right: 0.25rem;
+}
+.shout-msg.is-own-msg {
+    flex-direction: row-reverse;
+}
+.shout-msg.is-own-msg .shout-content {
+    border-radius: 12px 0 12px 12px;
+    background-color: rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+.shout-msg.is-own-msg .shout-msg-hover-actions {
+    right: auto;
+    left: 0.5rem;
+}
+
+

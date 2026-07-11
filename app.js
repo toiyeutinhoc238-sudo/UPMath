@@ -6,6 +6,8 @@
 
 const GOOGLE_CLIENT_ID = "114290400611-fnma9n755iluuniauu1563p0viioobkr.apps.googleusercontent.com";
 const GOOGLE_USER_KEY = "upmath_google_user";
+let replyToShout = null;
+let editShoutId = null;
 
 function decodeJwtPayload(token) {
     try {
@@ -207,6 +209,9 @@ const api = {
     // Shouts
     getShouts: () => api._req('GET', '/shouts'),
     addShout: (data) => api._req('POST', '/shouts', data),
+    reactShout: (id, data) => api._req('PUT', `/shouts/${id}/react`, data),
+    updateShout: (id, data) => api._req('PUT', `/shouts/${id}`, data),
+    deleteShout: (id) => api._req('DELETE', `/shouts/${id}`),
 
     // Users
     getUsers: () => api._req('GET', '/users'),
@@ -632,13 +637,30 @@ async function viewHome() {
         const val = inp.value.trim();
         if (!val) return;
         try {
-            const now = new Date();
-            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} ${now.toLocaleDateString('vi-VN')}`;
-            await api.addShout({ username: user.username, userPicture: user.picture, text: val, time: timeStr });
+            if (editShoutId) {
+                // Update existing Shout
+                await api.updateShout(editShoutId, { text: val, googleId: user.googleId });
+                showToast("Đã sửa tin nhắn!", "success");
+                editShoutId = null;
+            } else {
+                // Create new Shout
+                const now = new Date();
+                const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} ${now.toLocaleDateString('vi-VN')}`;
+                await api.addShout({
+                    username: user.username,
+                    userPicture: user.picture,
+                    authorGoogleId: user.googleId,
+                    text: val,
+                    time: timeStr,
+                    replyTo: replyToShout
+                });
+                replyToShout = null;
+            }
             inp.value = "";
+            showShoutPreview();
             renderShouts(await api.getShouts());
-        } catch {
-            showToast("Gửi tin nhắn thất bại!", "error");
+        } catch (err) {
+            showToast("Thao tác thất bại: " + err.message, "error");
         }
     });
 }
@@ -678,18 +700,192 @@ function renderShouts(shouts) {
         c.innerHTML = `<p style="text-align:center;padding:1rem;color:var(--text-muted);">Chưa có tin nhắn nào. Hãy là người đầu tiên!</p>`;
         return;
     }
-    c.innerHTML = shouts.map(s => `
-        <div class="shout-msg">
-            <div class="shout-avatar">${avatarTag(s.userPicture, s.username, 28)}</div>
+    const me = getCurrentUser();
+    const reactEmojis = { like: '👍', love: '❤️', haha: '😂', wow: '😮', sad: '😢', angry: '😡' };
+
+    c.innerHTML = shouts.map(s => {
+        const isOwn = me && me.googleId === s.authorGoogleId;
+        
+        // Group reactions
+        const grouped = {};
+        (s.reactions || []).forEach(r => {
+            grouped[r.type] = (grouped[r.type] || 0) + 1;
+        });
+
+        const hasReactions = Object.keys(grouped).length > 0;
+
+        return `
+        <div class="shout-msg ${isOwn ? 'is-own-msg' : ''}" id="shout-msg-${s._id}">
+            <div class="shout-avatar">
+                <a href="#profile/${s.authorGoogleId || ''}">${avatarTag(s.userPicture, s.username, 28)}</a>
+            </div>
             <div class="shout-content">
                 <div class="shout-meta">
-                    <span class="shout-author">${s.username}</span>
+                    <span class="shout-author"><a href="#profile/${s.authorGoogleId || ''}" style="color:var(--accent-blue); text-decoration:none; font-weight:700;">${s.username}</a></span>
                     <span class="shout-time">${s.time || timeSince(s.createdAt)}</span>
+                    ${s.isEdited ? '<span style="font-size:0.65rem;color:var(--text-muted);font-style:italic;">(đã sửa)</span>' : ''}
                 </div>
+                
+                ${s.replyTo && s.replyTo.parentId ? `
+                    <div class="shout-quoted-box">
+                        <span class="quoted-author">${s.replyTo.parentAuthor}:</span>
+                        <span>${s.replyTo.parentText}</span>
+                    </div>
+                ` : ''}
+
                 <div class="shout-text">${s.text}</div>
+                
+                ${hasReactions ? `
+                    <div class="shout-reactions-list">
+                        ${Object.entries(grouped).map(([type, count]) => `
+                            <span class="reaction-badge" data-shout-id="${s._id}" data-type="${type}" title="${(s.reactions || []).filter(r => r.type === type).map(r => r.username).join(', ')}">
+                                ${reactEmojis[type]} ${count}
+                            </span>
+                        `).join("")}
+                    </div>
+                ` : ''}
             </div>
-        </div>`).join("");
+
+            <!-- Hover menu actions -->
+            <div class="shout-msg-hover-actions">
+                <div class="shout-action-btn react-btn">
+                    <i class="fa-regular fa-face-smile"></i>
+                    <div class="reaction-emoji-bar">
+                        <span class="emoji-item" data-shout-id="${s._id}" data-type="like">👍</span>
+                        <span class="emoji-item" data-shout-id="${s._id}" data-type="love">❤️</span>
+                        <span class="emoji-item" data-shout-id="${s._id}" data-type="haha">😂</span>
+                        <span class="emoji-item" data-shout-id="${s._id}" data-type="wow">😮</span>
+                        <span class="emoji-item" data-shout-id="${s._id}" data-type="sad">😢</span>
+                        <span class="emoji-item" data-shout-id="${s._id}" data-type="angry">😡</span>
+                    </div>
+                </div>
+                <button class="shout-action-btn reply-btn" data-shout-id="${s._id}" data-author="${s.username}" data-text="${encodeURIComponent(s.text)}" title="Trả lời">
+                    <i class="fa-solid fa-reply"></i>
+                </button>
+                ${(me && (me.googleId === s.authorGoogleId || me.role === 'admin')) ? `
+                    <button class="shout-action-btn edit-btn" data-shout-id="${s._id}" data-text="${encodeURIComponent(s.text)}" title="Chỉnh sửa">
+                        <i class="fa-solid fa-pencil"></i>
+                    </button>
+                    <button class="shout-action-btn delete-btn delete" data-shout-id="${s._id}" title="Xóa">
+                        <i class="fa-regular fa-trash-can"></i>
+                    </button>
+                ` : ''}
+            </div>
+        </div>`;
+    }).join("");
+
+    // Bind event listeners for reactions, reply, edit, delete
+    c.querySelectorAll(".emoji-item").forEach(item => {
+        item.addEventListener("click", async () => {
+            if (!me) { showToast("Vui lòng đăng nhập!", "warning"); return; }
+            const sId = item.getAttribute("data-shout-id");
+            const type = item.getAttribute("data-type");
+            try {
+                await api.reactShout(sId, { type, googleId: me.googleId, username: me.username });
+                renderShouts(await api.getShouts());
+            } catch (err) {
+                console.error("Reaction failed:", err);
+            }
+        });
+    });
+
+    c.querySelectorAll(".reaction-badge").forEach(badge => {
+        badge.addEventListener("click", async () => {
+            if (!me) { showToast("Vui lòng đăng nhập!", "warning"); return; }
+            const sId = badge.getAttribute("data-shout-id");
+            const type = badge.getAttribute("data-type");
+            try {
+                await api.reactShout(sId, { type, googleId: me.googleId, username: me.username });
+                renderShouts(await api.getShouts());
+            } catch (err) {
+                console.error("Reaction failed:", err);
+            }
+        });
+    });
+
+    c.querySelectorAll(".reply-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            if (!me) { showToast("Vui lòng đăng nhập!", "warning"); return; }
+            const sId = btn.getAttribute("data-shout-id");
+            const author = btn.getAttribute("data-author");
+            const text = decodeURIComponent(btn.getAttribute("data-text"));
+            
+            replyToShout = { parentId: sId, parentText: text, parentAuthor: author };
+            editShoutId = null; // Cancel editing when replying
+            
+            showShoutPreview();
+        });
+    });
+
+    c.querySelectorAll(".edit-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const sId = btn.getAttribute("data-shout-id");
+            const text = decodeURIComponent(btn.getAttribute("data-text"));
+            
+            editShoutId = sId;
+            replyToShout = null; // Cancel reply when editing
+            
+            const inp = document.getElementById("shoutbox-input");
+            if (inp) {
+                inp.value = text;
+                inp.focus();
+            }
+            showShoutPreview();
+        });
+    });
+
+    c.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            if (!confirm("Bạn có chắc chắn muốn xóa tin nhắn này?")) return;
+            const sId = btn.getAttribute("data-shout-id");
+            try {
+                await api.deleteShout(sId);
+                showToast("Đã xóa tin nhắn!", "success");
+                renderShouts(await api.getShouts());
+            } catch (err) {
+                showToast("Xóa tin nhắn thất bại!", "error");
+            }
+        });
+    });
+
     c.scrollTop = c.scrollHeight;
+}
+
+function showShoutPreview() {
+    const form = document.getElementById("shoutbox-form");
+    if (!form) return;
+
+    // Remove existing preview boxes
+    form.querySelector(".shout-reply-preview")?.remove();
+    form.querySelector(".shout-edit-preview")?.remove();
+
+    if (replyToShout) {
+        const preview = document.createElement("div");
+        preview.className = "shout-reply-preview";
+        preview.innerHTML = `
+            <span class="reply-text"><i class="fa-solid fa-reply"></i> Đang trả lời <strong>${replyToShout.parentAuthor}</strong>: "${replyToShout.parentText}"</span>
+            <button type="button" class="cancel-reply-btn"><i class="fa-solid fa-xmark"></i></button>
+        `;
+        preview.querySelector(".cancel-reply-btn").addEventListener("click", () => {
+            replyToShout = null;
+            preview.remove();
+        });
+        form.insertBefore(preview, form.firstChild);
+    } else if (editShoutId) {
+        const preview = document.createElement("div");
+        preview.className = "shout-edit-preview";
+        preview.innerHTML = `
+            <span><i class="fa-solid fa-pencil"></i> Đang chỉnh sửa tin nhắn...</span>
+            <button type="button" class="cancel-edit-btn"><i class="fa-solid fa-xmark"></i></button>
+        `;
+        preview.querySelector(".cancel-edit-btn").addEventListener("click", () => {
+            editShoutId = null;
+            preview.remove();
+            const inp = document.getElementById("shoutbox-input");
+            if (inp) inp.value = "";
+        });
+        form.insertBefore(preview, form.firstChild);
+    }
 }
 
 // ── EXERCISES ─────────────────────────────────────────────────────────────────

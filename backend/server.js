@@ -105,11 +105,28 @@ const commentSchema = new mongoose.Schema({
 });
 
 const shoutSchema = new mongoose.Schema({
-    username:    { type: String, required: true },
-    userPicture: String,
-    text:        { type: String, required: true },
-    time:        String,
-    createdAt:   { type: Date, default: Date.now }
+    username:        { type: String, required: true },
+    userPicture:     String,
+    authorGoogleId:  String,
+    text:            { type: String, required: true },
+    time:            String,
+    createdAt:       { type: Date, default: Date.now },
+    reactions:       {
+        type: [
+            {
+                googleId: String,
+                username: String,
+                type: String
+            }
+        ],
+        default: []
+    },
+    replyTo: {
+        parentId: String,
+        parentText: String,
+        parentAuthor: String
+    },
+    isEdited: { type: Boolean, default: false }
 });
 
 const contestSchema = new mongoose.Schema({
@@ -846,6 +863,65 @@ app.post('/api/shouts', async (req, res) => {
             await Shout.deleteMany({ _id: { $in: toDelete.map(s => s._id) } });
         }
         res.status(201).json(shout);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// React to a shout
+app.put('/api/shouts/:id/react', async (req, res) => {
+    try {
+        const { type, googleId, username } = req.body;
+        const shout = await Shout.findById(req.params.id);
+        if (!shout) return res.status(404).json({ error: 'Shout not found' });
+
+        if (!shout.reactions) shout.reactions = [];
+
+        const existingIdx = shout.reactions.findIndex(r => r.googleId === googleId);
+        if (existingIdx !== -1) {
+            if (shout.reactions[existingIdx].type === type) {
+                shout.reactions.splice(existingIdx, 1);
+            } else {
+                shout.reactions[existingIdx].type = type;
+            }
+        } else {
+            shout.reactions.push({ googleId, username, type });
+        }
+
+        await shout.save();
+        res.json(shout);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Edit a shout
+app.put('/api/shouts/:id', async (req, res) => {
+    try {
+        const { text, googleId } = req.body;
+        const shout = await Shout.findById(req.params.id);
+        if (!shout) return res.status(404).json({ error: 'Shout not found' });
+
+        if (shout.authorGoogleId !== googleId) {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+
+        shout.text = text;
+        shout.isEdited = true;
+        await shout.save();
+        res.json(shout);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Delete a shout
+app.delete('/api/shouts/:id', async (req, res) => {
+    try {
+        // Find and delete the shout
+        const shout = await Shout.findByIdAndDelete(req.params.id);
+        if (!shout) return res.status(404).json({ error: 'Shout not found' });
+        res.json({ message: 'Shout deleted' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
