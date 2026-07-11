@@ -1079,14 +1079,13 @@ function commentHTML(c) {
 
 // ── EDIT PROBLEM ─────────────────────────────────────────────────────────────
 function viewEditProblem(problem) {
-    const main = document.getElementById("main-content");
-    if (!main) return;
+    if (!mainContent) return;
     const categoryOptions = ['calculus', 'algebra'].map(c =>
         `<option value="${c}" ${problem.category === c ? 'selected' : ''}>${c === 'calculus' ? 'Giải tích' : 'Đại số tuyến tính'}</option>`
     ).join('');
-    main.innerHTML = `
+    mainContent.innerHTML = `
         <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem;">
-            <a href="#" onclick="viewProblemDetail('${problem._id}')" class="btn btn-secondary btn-sm"><i class="fa-solid fa-arrow-left"></i> Quay lại</a>
+            <button class="btn btn-secondary btn-sm" onclick="viewProblemDetail('${problem._id}')"><i class="fa-solid fa-arrow-left"></i> Quay lại</button>
             <h2 style="margin:0;font-size:1.4rem;"><i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa Đề bài</h2>
         </div>
         <div class="card">
@@ -1133,7 +1132,7 @@ function viewEditProblem(problem) {
                 </div>
 
                 <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1.5rem;border-top:1px solid var(--border-color);padding-top:1rem;">
-                    <a href="#" onclick="viewProblemDetail('${problem._id}')" class="btn btn-secondary">Hủy</a>
+                    <button type="button" class="btn btn-secondary" onclick="viewProblemDetail('${problem._id}')">Hủy</button>
                     <button type="submit" id="save-prob-btn" class="btn btn-primary">
                         <i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi
                     </button>
@@ -1148,7 +1147,7 @@ function viewEditProblem(problem) {
         const category = document.getElementById("ep-category").value;
         const tagsRaw = document.getElementById("ep-tags").value;
         const tags = tagsRaw ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : [];
-        const points = parseInt(document.getElementById("ep-points").value) || 30;
+        const points = parseInt(document.getElementById("ep-points").value) || 10;
         const gradingRubric = document.getElementById("ep-rubric").value.trim();
         const difficulty = document.getElementById("ep-difficulty").value;
 
