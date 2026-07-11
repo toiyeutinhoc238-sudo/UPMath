@@ -342,7 +342,7 @@ function preprocessLaTeX(text) {
         }
         text = newText;
     }
-    text = text.replace(/<li>\\s*<\\/li>/g, "");
+    text = text.replace(/<li>\s*<\/li>/g, "");
     
     // 6. Convert newlines / double backslashes while respecting math delimiters
     let segs = text.split(/(\\$\$?)/);
