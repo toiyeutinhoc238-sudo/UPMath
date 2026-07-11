@@ -1163,45 +1163,59 @@ async function viewProblemDetail(id) {
                         </form>
                     </div>
                 </div>
+            </div>
 
-                <!-- Right column: Interactive AI Tutor Chatbox -->
-                <div class="problem-right-col" id="tutor-right-col">
-                    <div class="ai-tutor-card" id="tutor-card">
-                        <div class="ai-tutor-header" style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+            <!-- Floating AI Tutor Widget Trigger Button -->
+            <button type="button" id="tutor-floating-trigger" class="tutor-trigger-btn" title="Trợ lý Học tập AI">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <span class="pulse-ring"></span>
+            </button>
+
+            <!-- Floating AI Tutor Chatbox Widget Container -->
+            <div class="ai-tutor-widget-container" id="tutor-widget-container">
+                <div class="ai-tutor-card" id="tutor-card">
+                    <div class="ai-tutor-header" style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+                        <div style="display:flex; align-items:center; gap:0.6rem;">
+                            <div class="header-bot-icon"><i class="fa-solid fa-robot"></i></div>
                             <div>
-                                <h4 class="ai-tutor-title"><i class="fa-solid fa-graduation-cap"></i> Trợ lý Học tập AI</h4>
-                                <div class="ai-tutor-tagline">Hướng dẫn từng bước gợi mở</div>
+                                <h4 class="ai-tutor-title" style="margin:0; font-size:0.95rem;">Trợ lý Học tập AI</h4>
+                                <div class="ai-tutor-tagline" style="font-size:0.68rem;">Hướng dẫn từng bước gợi mở</div>
                             </div>
-                            <button type="button" id="toggle-tutor-size-btn" class="btn btn-secondary btn-sm" style="min-width:auto; padding:0.25rem 0.5rem; height:28px;" title="Phóng to / Thu nhỏ">
+                        </div>
+                        <div style="display:flex; gap:0.25rem;">
+                            <button type="button" id="toggle-tutor-size-btn" class="btn-tutor-action-btn" title="Phóng to / Thu nhỏ">
                                 <i class="fa-solid fa-expand"></i>
                             </button>
-                        </div>
-                        <div class="ai-tutor-messages" id="ai-tutor-chat-messages">
-                            <!-- Messages will render here -->
-                        </div>
-                        
-                        <!-- Preview ảnh đính kèm -->
-                        <div id="tutor-image-preview-container" style="display:none; padding:0.5rem 1rem; border-top:1px dashed var(--border-color); background:rgba(0,0,0,0.05); position:relative;">
-                            <img id="tutor-image-preview" src="" alt="Preview" style="max-height:80px; max-width:100%; border-radius:6px; object-fit:contain; border:1px solid var(--border-color);">
-                            <button type="button" id="remove-tutor-image-btn" style="position:absolute; top:8px; left:110px; background:rgba(239,68,68,0.9); color:white; border:none; border-radius:50%; width:20px; height:20px; font-size:0.6rem; display:flex; align-items:center; justify-content:center; cursor:pointer;" title="Xóa ảnh">
-                                <i class="fa-solid fa-xmark"></i>
+                            <button type="button" id="close-tutor-widget-btn" class="btn-tutor-action-btn" title="Thu gọn" style="color:var(--text-muted);">
+                                <i class="fa-solid fa-minus"></i>
                             </button>
                         </div>
-
-                        <div class="ai-tutor-hints">
-                            <button type="button" class="ai-hint-btn" id="ai-hint-start"><i class="fa-regular fa-lightbulb"></i> Gợi ý bước đầu</button>
-                            <button type="button" class="ai-hint-btn" id="ai-hint-formula"><i class="fa-solid fa-book"></i> Lý thuyết cần dùng</button>
-                            <button type="button" class="ai-hint-btn" id="ai-hint-next"><i class="fa-solid fa-forward"></i> Gợi ý tiếp theo</button>
-                        </div>
-                        <form id="ai-tutor-chat-form" class="ai-tutor-input-area" style="display:flex; gap:0.4rem; align-items:flex-end;">
-                            <input type="file" id="tutor-image-file-input" accept="image/*" style="display:none;">
-                            <button type="button" id="tutor-attach-image-btn" class="btn btn-secondary" style="min-width:auto; padding:0.5rem 0.65rem; height:38px;" title="Đính kèm ảnh bài làm/nháp">
-                                <i class="fa-solid fa-image"></i>
-                            </button>
-                            <textarea id="ai-tutor-chat-input" class="form-input" placeholder="Hỏi Trợ lý AI cách giải..." required autocomplete="off" rows="1" style="resize:none; padding:0.5rem; height:38px; line-height:1.4; flex-grow:1;"></textarea>
-                            <button type="submit" class="btn btn-primary" style="min-width:auto; padding:0 0.85rem; height:38px;"><i class="fa-solid fa-paper-plane"></i></button>
-                        </form>
                     </div>
+                    <div class="ai-tutor-messages" id="ai-tutor-chat-messages">
+                        <!-- Messages will render here -->
+                    </div>
+                    
+                    <!-- Preview ảnh đính kèm -->
+                    <div id="tutor-image-preview-container" style="display:none; padding:0.5rem 1rem; border-top:1px dashed var(--border-color); background:rgba(0,0,0,0.05); position:relative;">
+                        <img id="tutor-image-preview" src="" alt="Preview" style="max-height:80px; max-width:100%; border-radius:6px; object-fit:contain; border:1px solid var(--border-color);">
+                        <button type="button" id="remove-tutor-image-btn" style="position:absolute; top:8px; left:110px; background:rgba(239,68,68,0.9); color:white; border:none; border-radius:50%; width:20px; height:20px; font-size:0.6rem; display:flex; align-items:center; justify-content:center; cursor:pointer;" title="Xóa ảnh">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div class="ai-tutor-hints">
+                        <button type="button" class="ai-hint-btn" id="ai-hint-start"><i class="fa-regular fa-lightbulb"></i> Gợi ý bước đầu</button>
+                        <button type="button" class="ai-hint-btn" id="ai-hint-formula"><i class="fa-solid fa-book"></i> Lý thuyết cần dùng</button>
+                        <button type="button" class="ai-hint-btn" id="ai-hint-next"><i class="fa-solid fa-forward"></i> Gợi ý tiếp theo</button>
+                    </div>
+                    <form id="ai-tutor-chat-form" class="ai-tutor-input-area" style="display:flex; gap:0.4rem; align-items:flex-end;">
+                        <input type="file" id="tutor-image-file-input" accept="image/*" style="display:none;">
+                        <button type="button" id="tutor-attach-image-btn" class="btn btn-secondary" style="min-width:auto; padding:0.5rem 0.65rem; height:38px;" title="Đính kèm ảnh bài làm/nháp">
+                            <i class="fa-solid fa-image"></i>
+                        </button>
+                        <textarea id="ai-tutor-chat-input" class="form-input" placeholder="Hỏi Trợ lý AI cách giải..." required autocomplete="off" rows="1" style="resize:none; padding:0.5rem; height:38px; line-height:1.4; flex-grow:1;"></textarea>
+                        <button type="submit" class="btn btn-primary" style="min-width:auto; padding:0 0.85rem; height:38px;"><i class="fa-solid fa-paper-plane"></i></button>
+                    </form>
                 </div>
             </div>`;
 
