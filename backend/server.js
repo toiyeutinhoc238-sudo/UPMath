@@ -7,6 +7,41 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const nodemailer = require('nodemailer');
+
+// ─── EMAIL TRANSPORTER CONFIGURATION ──────────────────────────────────────────
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER, // ví dụ: "admin@gmail.com"
+        pass: process.env.EMAIL_PASS  // Mật khẩu ứng dụng (App Password) Gmail
+    }
+});
+
+/**
+ * Gửi email thông báo với fallback an toàn
+ * @param {string} to - email người nhận
+ * @param {string} subject - tiêu đề email
+ * @param {string} html - nội dung định dạng html
+ */
+async function sendNotificationEmail(to, subject, html) {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        console.warn(`[Email fallback] Thư từ gửi tới <${to}>: "${subject}". (Chưa cấu hình EMAIL_USER/EMAIL_PASS trong .env)`);
+        return;
+    }
+    try {
+        const info = await transporter.sendMail({
+            from: `"Hệ thống UPMath" <${process.env.EMAIL_USER}>`,
+            to,
+            subject,
+            html
+        });
+        console.log(`[Email] Đã gửi thành công tới ${to}. MessageId: ${info.messageId}`);
+    } catch (err) {
+        console.error(`[Email error] Thất bại khi gửi email tới ${to}:`, err.message);
+    }
+}
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -259,6 +294,35 @@ app.put('/api/users/:googleId/role', async (req, res) => {
             { new: true }
         );
         if (!user) return res.status(404).json({ error: 'User not found' });
+
+        // Gửi email thông báo đổi quyền
+        const roleNames = {
+            'user': 'Thành viên (Học sinh)',
+            'professor': 'Giảng viên (Professor)',
+            'supporter': 'Người hỗ trợ học tập (Supporter)',
+            'admin': 'Quản trị viên (Admin)'
+        };
+        const roleName = roleNames[role] || role;
+
+        const emailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #ffffff;">
+                <h2 style="color: #6366f1; border-bottom: 2px solid #6366f1; padding-bottom: 10px; margin-top: 0;">Thông Báo Thay Đổi Vai Trò</h2>
+                <p>Chào <strong>${user.name}</strong>,</p>
+                <p>Quản trị viên hệ thống học tập toán cao cấp <strong>UPMath</strong> vừa thực hiện cập nhật vai trò tài khoản của em trên hệ thống:</p>
+                <div style="background-color: #f8fafc; padding: 15px; border-left: 4px solid #6366f1; border-radius: 4px; margin: 20px 0; font-size: 1.05rem;">
+                    Vai trò mới của em: <strong>${roleName}</strong>
+                </div>
+                <p>Nếu có bất cứ thắc mắc nào, em vui lòng phản hồi trực tiếp qua email này hoặc liên hệ giảng viên môn học COMP1800.</p>
+                <p style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 15px; font-size: 0.85rem; color: #64748b;">
+                    Trân trọng,<br>
+                    <strong>Ban quản trị UPMath</strong>
+                </p>
+            </div>
+        `;
+        
+        // Gửi email bất đồng bộ (không bắt user đợi email gửi xong mới trả về response)
+        sendNotificationEmail(user.email, `[UPMath] Tài khoản của bạn đã được cập nhật vai trò mới`, emailHtml);
+
         res.json(user);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -727,10 +791,34 @@ app.put('/api/solutions/:id/upvote', async (req, res) => {
             { new: true }
         );
         if (!sol) return res.status(404).json({ error: 'Solution not found' });
+        
         // Award upvote points to solution author
         if (sol.authorGoogleId) {
             const u = await User.findOne({ googleId: sol.authorGoogleId });
-            if (u) { u.points += 5; u.rank = calcRank(u.points); await u.save(); }
+            if (u) { 
+                u.points += 5; 
+                u.rank = calcRank(u.points); 
+                await u.save(); 
+
+                // Gửi email báo nhận được Upvote
+                const problem = await Problem.findById(sol.problemId);
+                const emailHtml = `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #ffffff;">
+                        <h2 style="color: #6366f1; border-bottom: 2px solid #6366f1; padding-bottom: 10px; margin-top: 0;">Tương Tác Bài Giải Mới</h2>
+                        <p>Chào <strong>${u.name}</strong>,</p>
+                        <p>Một học viên vừa thả tim (Upvote) cho lời giải của em trong bài toán: <strong>"${problem ? problem.title : 'Bài toán'}"</strong>.</p>
+                        <div style="background-color: #f8fafc; padding: 15px; border-left: 4px solid #10b981; border-radius: 4px; margin: 20px 0; font-size: 1rem;">
+                            🎉 Em vừa nhận được <strong>+5 điểm thưởng</strong>. Điểm tích lũy hiện tại: <strong>${u.points} (${u.rank})</strong>.
+                        </div>
+                        <p>Hãy tiếp tục chia sẻ những lời giải hay để hỗ trợ các bạn cùng khóa học nhé!</p>
+                        <p style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 15px; font-size: 0.85rem; color: #64748b;">
+                            Trân trọng,<br>
+                            <strong>Hệ thống UPMath</strong>
+                        </p>
+                    </div>
+                `;
+                sendNotificationEmail(u.email, `[UPMath] Lời giải của bạn vừa được nhận lượt thích (Upvote)`, emailHtml);
+            }
         }
         res.json(sol);
     } catch (err) {
@@ -752,12 +840,52 @@ app.put('/api/solutions/:id/status', async (req, res) => {
         sol.status = status;
         await sol.save();
 
-        // Award points if manually changed to correct
-        if (status === 'correct' && oldStatus !== 'correct' && sol.authorGoogleId) {
-            const problem = await Problem.findById(sol.problemId);
-            const pointsToAward = problem ? (problem.points || 10) : 10;
+        const problem = await Problem.findById(sol.problemId);
+        const pointsToAward = problem ? (problem.points || 10) : 10;
+
+        if (sol.authorGoogleId) {
             const u = await User.findOne({ googleId: sol.authorGoogleId });
-            if (u) { u.points += pointsToAward; u.rank = calcRank(u.points); await u.save(); }
+            if (u) {
+                // Award points if manually changed to correct
+                if (status === 'correct' && oldStatus !== 'correct') {
+                    u.points += pointsToAward;
+                    u.rank = calcRank(u.points);
+                    await u.save();
+                } 
+                // Deduct points if downgraded from correct
+                else if (status !== 'correct' && oldStatus === 'correct') {
+                    u.points = Math.max(0, u.points - pointsToAward);
+                    u.rank = calcRank(u.points);
+                    await u.save();
+                }
+
+                // Gửi email thông báo trạng thái bài giải được phê duyệt bởi Giảng viên
+                const statusNames = {
+                    'correct': 'ĐÚNG (Chấp nhận)',
+                    'incorrect': 'SAI (Cần chỉnh sửa)',
+                    'pending': 'Chờ kiểm duyệt'
+                };
+                const statusColor = status === 'correct' ? '#10b981' : '#f43f5e';
+                const statusName = statusNames[status];
+
+                const emailHtml = `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #ffffff;">
+                        <h2 style="color: #6366f1; border-bottom: 2px solid #6366f1; padding-bottom: 10px; margin-top: 0;">Kết Quả Phê Duyệt Lời Giải</h2>
+                        <p>Chào <strong>${u.name}</strong>,</p>
+                        <p>Giảng viên vừa thực hiện kiểm duyệt lời giải của em cho bài toán: <strong>"${problem ? problem.title : 'Bài toán'}"</strong>.</p>
+                        <div style="background-color: #f8fafc; padding: 15px; border-left: 4px solid ${statusColor}; border-radius: 4px; margin: 20px 0; font-size: 1.05rem;">
+                            Trạng thái lời giải: <strong style="color: ${statusColor};">${statusName}</strong>
+                            ${status === 'correct' ? `<br>🎉 Em được cộng <strong>+${pointsToAward} điểm thưởng</strong>! Điểm hiện tại: <strong>${u.points} (${u.rank})</strong>.` : ''}
+                        </div>
+                        ${status === 'incorrect' ? '<p>💡 <em>Lời giải chưa chính xác, em hãy kiểm tra lại các bước tính toán và chỉnh sửa để nộp lại nhé.</em></p>' : ''}
+                        <p style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 15px; font-size: 0.85rem; color: #64748b;">
+                            Trân trọng,<br>
+                            <strong>Hệ thống UPMath</strong>
+                        </p>
+                    </div>
+                `;
+                sendNotificationEmail(u.email, `[UPMath] Kết quả đánh giá lời giải bài toán "${problem ? problem.title : 'học tập'}"`, emailHtml);
+            }
         }
         res.json(sol);
     } catch (err) {
@@ -1052,7 +1180,7 @@ Quy tắc giảng dạy:
         messages.forEach((msg, idx) => {
             let txt = msg.content;
             if (idx === 0) txt = firstMessageText + txt;
-            
+
             const parts = [{ text: txt }];
             if (msg.image && msg.image.startsWith('data:')) {
                 const imgParts = msg.image.split(',');
