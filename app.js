@@ -582,7 +582,6 @@ async function viewHome() {
         <div class="card shoutbox-card">
             <div class="shoutbox-header">
                 <h3 class="card-title shoutbox-title"><i class="fa-solid fa-comment-dots"></i> Shoutbox cộng đồng</h3>
-                <span class="shoutbox-tagline">Gõ <code>$công thức$</code> để viết ký hiệu toán</span>
             </div>
             <div class="shoutbox-messages" id="shoutbox-container">
                 <div style="text-align:center;padding:1rem;color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i></div>
@@ -590,11 +589,10 @@ async function viewHome() {
             <form id="shoutbox-form" class="shoutbox-input-area">
                 <div class="input-group">
                     <input type="text" id="shoutbox-input" class="form-input"
-                           placeholder="Nhập tin nhắn... Ví dụ: tính $\\lim_{x\\to 0}\\frac{\\sin x}{x}$?" required autocomplete="off">
+                           placeholder="Nhập tin nhắn..." required autocomplete="off">
                 </div>
                 <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Gửi</button>
             </form>
-            <div class="shoutbox-tip"><i class="fa-solid fa-lightbulb"></i> Mẹo: <strong>$$A\\vec{x} = \\lambda\\vec{x}$$</strong> = Block LaTeX.</div>
         </div>
 
         <div class="card">
@@ -691,7 +689,6 @@ function renderShouts(shouts) {
                 <div class="shout-text">${s.text}</div>
             </div>
         </div>`).join("");
-    renderLaTeX(c);
     c.scrollTop = c.scrollHeight;
 }
 
