@@ -68,89 +68,89 @@ mongoose.connect(process.env.MONGODB_URI)
 // ─── SCHEMAS & MODELS ────────────────────────────────────────────────────────
 
 const userSchema = new mongoose.Schema({
-    googleId:        { type: String, required: true, unique: true },
-    email:           { type: String, required: true },
-    name:            { type: String, required: true },
-    picture:         String,
-    points:          { type: Number, default: 0 },
-    rank:            { type: String, default: 'Đồng' },
-    role:            { type: String, enum: ['user', 'admin', 'professor', 'supporter'], default: 'user' },
-    joinedAt:        { type: Date, default: Date.now },
+    googleId: { type: String, required: true, unique: true },
+    email: { type: String, required: true },
+    name: { type: String, required: true },
+    picture: String,
+    points: { type: Number, default: 0 },
+    rank: { type: String, default: 'Đồng' },
+    role: { type: String, enum: ['user', 'admin', 'professor', 'supporter'], default: 'user' },
+    joinedAt: { type: Date, default: Date.now },
     // Custom profile fields
-    fullName:        String,
-    mssv:            String,
-    dob:             String,
-    defaultLang:     { type: String, default: 'C++14' },
-    phone:           String,
-    school:          String,
-    codenodeFolder:  String,
-    lastLogin:       { type: Date, default: Date.now }
+    fullName: String,
+    mssv: String,
+    dob: String,
+    defaultLang: { type: String, default: 'C++14' },
+    phone: String,
+    school: String,
+    codenodeFolder: String,
+    lastLogin: { type: Date, default: Date.now }
 });
 
 const problemSchema = new mongoose.Schema({
-    title:           { type: String, required: true },
-    content:         { type: String, required: true },
-    category:        { type: String, enum: ['calculus', 'algebra'], required: true },
-    tags:            [String],
-    creator:         { type: String, required: true },
-    creatorPicture:  String,
+    title: { type: String, required: true },
+    content: { type: String, required: true },
+    category: { type: String, enum: ['calculus', 'algebra'], required: true },
+    tags: [String],
+    creator: { type: String, required: true },
+    creatorPicture: String,
     creatorGoogleId: String,
-    points:          { type: Number, default: 10 },
-    gradingRubric:   { type: String, default: '' },
-    difficulty:      { type: String, enum: ['easy', 'medium', 'hard', 'extreme'], default: 'medium' },
-    imageUrl:        String,
-    likes:           { type: [String], default: [] },
-    dislikes:        { type: [String], default: [] },
-    createdAt:       { type: Date, default: Date.now }
+    points: { type: Number, default: 10 },
+    gradingRubric: { type: String, default: '' },
+    difficulty: { type: String, enum: ['easy', 'medium', 'hard', 'extreme'], default: 'medium' },
+    imageUrl: String,
+    likes: { type: [String], default: [] },
+    dislikes: { type: [String], default: [] },
+    createdAt: { type: Date, default: Date.now }
 });
 
 const solutionSchema = new mongoose.Schema({
-    problemId:       { type: mongoose.Schema.Types.ObjectId, ref: 'Problem', required: true },
-    author:          { type: String, required: true },
-    authorPicture:   String,
-    authorGoogleId:  String,
-    content:         { type: String, required: true },
-    votes:           { type: Number, default: 0 },
-    imageUrl:        String,
-    createdAt:       { type: Date, default: Date.now },
-    status:          { type: String, enum: ['correct', 'incorrect', 'pending'], default: 'pending' },
-    aiFeedback:      { type: String, default: "" }
+    problemId: { type: mongoose.Schema.Types.ObjectId, ref: 'Problem', required: true },
+    author: { type: String, required: true },
+    authorPicture: String,
+    authorGoogleId: String,
+    content: { type: String, required: true },
+    votes: { type: Number, default: 0 },
+    imageUrl: String,
+    createdAt: { type: Date, default: Date.now },
+    status: { type: String, enum: ['correct', 'incorrect', 'pending'], default: 'pending' },
+    aiFeedback: { type: String, default: "" }
 });
 
 const discussionSchema = new mongoose.Schema({
-    title:           { type: String, required: true },
-    content:         { type: String, required: true },
-    creator:         { type: String, required: true },
-    creatorPicture:  String,
+    title: { type: String, required: true },
+    content: { type: String, required: true },
+    creator: { type: String, required: true },
+    creatorPicture: String,
     creatorGoogleId: String,
-    category:        { type: String, default: 'Giải tích' },
-    replies:         { type: Number, default: 0 },
-    views:           { type: Number, default: 0 },
-    likes:           { type: [String], default: [] },
-    dislikes:        { type: [String], default: [] },
-    createdAt:       { type: Date, default: Date.now }
+    category: { type: String, default: 'Giải tích' },
+    replies: { type: Number, default: 0 },
+    views: { type: Number, default: 0 },
+    likes: { type: [String], default: [] },
+    dislikes: { type: [String], default: [] },
+    createdAt: { type: Date, default: Date.now }
 });
 
 const commentSchema = new mongoose.Schema({
-    targetType:      { type: String, enum: ['problem', 'discussion'], required: true },
-    targetId:        { type: String, required: true },
-    author:          { type: String, required: true },
-    authorPicture:   String,
-    authorGoogleId:  String,
-    content:         { type: String, required: true },
-    likes:           { type: [String], default: [] },
-    dislikes:        { type: [String], default: [] },
-    createdAt:       { type: Date, default: Date.now }
+    targetType: { type: String, enum: ['problem', 'discussion'], required: true },
+    targetId: { type: String, required: true },
+    author: { type: String, required: true },
+    authorPicture: String,
+    authorGoogleId: String,
+    content: { type: String, required: true },
+    likes: { type: [String], default: [] },
+    dislikes: { type: [String], default: [] },
+    createdAt: { type: Date, default: Date.now }
 });
 
 const shoutSchema = new mongoose.Schema({
-    username:        { type: String, required: true },
-    userPicture:     String,
-    authorGoogleId:  String,
-    text:            { type: String, required: true },
-    time:            String,
-    createdAt:       { type: Date, default: Date.now },
-    reactions:       {
+    username: { type: String, required: true },
+    userPicture: String,
+    authorGoogleId: String,
+    text: { type: String, required: true },
+    time: String,
+    createdAt: { type: Date, default: Date.now },
+    reactions: {
         type: [
             {
                 googleId: String,
@@ -169,34 +169,34 @@ const shoutSchema = new mongoose.Schema({
 });
 
 const contestSchema = new mongoose.Schema({
-    title:     { type: String, required: true },
-    duration:  String,
+    title: { type: String, required: true },
+    duration: String,
     startTime: String,
-    status:    { type: String, enum: ['upcoming', 'running', 'ended'], default: 'upcoming' },
+    status: { type: String, enum: ['upcoming', 'running', 'ended'], default: 'upcoming' },
     createdAt: { type: Date, default: Date.now }
 });
 
-const User       = mongoose.model('User',       userSchema);
-const Problem    = mongoose.model('Problem',    problemSchema);
-const Solution   = mongoose.model('Solution',   solutionSchema);
+const User = mongoose.model('User', userSchema);
+const Problem = mongoose.model('Problem', problemSchema);
+const Solution = mongoose.model('Solution', solutionSchema);
 const Discussion = mongoose.model('Discussion', discussionSchema);
-const Comment    = mongoose.model('Comment',    commentSchema);
-const Shout      = mongoose.model('Shout',      shoutSchema);
-const Contest    = mongoose.model('Contest',    contestSchema);
+const Comment = mongoose.model('Comment', commentSchema);
+const Shout = mongoose.model('Shout', shoutSchema);
+const Contest = mongoose.model('Contest', contestSchema);
 
 // ─── RANK HELPER ──────────────────────────────────────────────────────────────
 function calcRank(pts) {
     if (pts >= 100000) return 'Giáo sư';
-    if (pts >= 60000)  return 'Phó Giáo sư';
-    if (pts >= 30000)  return 'Tiến sĩ';
-    if (pts >= 15000)  return 'Thạc sĩ';
-    if (pts >= 8000)   return 'Chiến thần';
-    if (pts >= 4000)   return 'Cao thủ';
-    if (pts >= 2000)   return 'Tinh anh';
-    if (pts >= 1000)   return 'Kim cương';
-    if (pts >= 500)    return 'Bạch kim';
-    if (pts >= 300)    return 'Vàng';
-    if (pts >= 100)    return 'Bạc';
+    if (pts >= 60000) return 'Phó Giáo sư';
+    if (pts >= 30000) return 'Tiến sĩ';
+    if (pts >= 15000) return 'Thạc sĩ';
+    if (pts >= 8000) return 'Chiến thần';
+    if (pts >= 4000) return 'Cao thủ';
+    if (pts >= 2000) return 'Tinh anh';
+    if (pts >= 1000) return 'Kim cương';
+    if (pts >= 500) return 'Bạch kim';
+    if (pts >= 300) return 'Vàng';
+    if (pts >= 100) return 'Bạc';
     return 'Đồng';
 }
 
@@ -298,7 +298,7 @@ app.put('/api/users/:googleId/profile', async (req, res) => {
         if (school !== undefined) updateFields.school = school;
         if (codenodeFolder !== undefined) updateFields.codenodeFolder = codenodeFolder;
         if (picture !== undefined) updateFields.picture = picture;
-        
+
         const user = await User.findOneAndUpdate(
             { googleId: req.params.googleId },
             { $set: updateFields },
@@ -383,7 +383,7 @@ app.post('/api/problems', async (req, res) => {
                 [{ $set: { points: { $add: ['$points', 10] } } }]
             ).then(async u => {
                 if (u) { u.rank = calcRank(u.points + 10); await u.save(); }
-            }).catch(() => {});
+            }).catch(() => { });
         }
         res.status(201).json(problem);
     } catch (err) {
@@ -488,7 +488,7 @@ Hãy chấm điểm lời giải này và trả về kết quả ở định d�
                             console.warn("Failed standard JSON parse, attempting regex extraction...", parseErr);
                             const isCorrectMatch = cleanedText.match(/"isCorrect"\s*:\s*(true|false)/);
                             const feedbackMatch = cleanedText.match(/"feedback"\s*:\s*"([\s\S]*)"\s*}/);
-                            
+
                             if (isCorrectMatch) {
                                 solution.status = (isCorrectMatch[1] === 'true') ? 'correct' : 'incorrect';
                             } else {
@@ -641,7 +641,7 @@ Hãy chấm điểm lời giải này và trả về kết quả ở định d�
                                 console.warn("Failed standard JSON parse, attempting regex extraction...", parseErr);
                                 const isCorrectMatch = cleanedText.match(/"isCorrect"\s*:\s*(true|false)/);
                                 const feedbackMatch = cleanedText.match(/"feedback"\s*:\s*"([\s\S]*)"\s*}/);
-                                
+
                                 if (isCorrectMatch) {
                                     sol.status = (isCorrectMatch[1] === 'true') ? 'correct' : 'incorrect';
                                 } else {
@@ -810,7 +810,7 @@ app.get('/api/comments', async (req, res) => {
     try {
         const filter = {};
         if (req.query.targetType) filter.targetType = req.query.targetType;
-        if (req.query.targetId)   filter.targetId   = req.query.targetId;
+        if (req.query.targetId) filter.targetId = req.query.targetId;
         const comments = await Comment.find(filter).sort({ createdAt: 1 });
         res.json(comments);
     } catch (err) {
@@ -1052,9 +1052,24 @@ Quy tắc giảng dạy:
         messages.forEach((msg, idx) => {
             let txt = msg.content;
             if (idx === 0) txt = firstMessageText + txt;
+            
+            const parts = [{ text: txt }];
+            if (msg.image && msg.image.startsWith('data:')) {
+                const imgParts = msg.image.split(',');
+                const mimeMatches = imgParts[0].match(/:(.*?);/);
+                const mime = mimeMatches ? mimeMatches[1] : 'image/png';
+                const data = imgParts[1];
+                parts.push({
+                    inlineData: {
+                        mimeType: mime,
+                        data: data
+                    }
+                });
+            }
+
             contents.push({
                 role: msg.role === 'model' ? 'model' : 'user',
-                parts: [{ text: txt }]
+                parts: parts
             });
         });
 

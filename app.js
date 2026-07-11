@@ -1165,23 +1165,41 @@ async function viewProblemDetail(id) {
                 </div>
 
                 <!-- Right column: Interactive AI Tutor Chatbox -->
-                <div class="problem-right-col">
-                    <div class="ai-tutor-card">
-                        <div class="ai-tutor-header">
-                            <h4 class="ai-tutor-title"><i class="fa-solid fa-robot"></i> Trợ lý Học tập AI</h4>
-                            <div class="ai-tutor-tagline">Hướng dẫn từng bước gợi mở</div>
+                <div class="problem-right-col" id="tutor-right-col">
+                    <div class="ai-tutor-card" id="tutor-card">
+                        <div class="ai-tutor-header" style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+                            <div>
+                                <h4 class="ai-tutor-title"><i class="fa-solid fa-graduation-cap"></i> Trợ lý Học tập AI</h4>
+                                <div class="ai-tutor-tagline">Hướng dẫn từng bước gợi mở</div>
+                            </div>
+                            <button type="button" id="toggle-tutor-size-btn" class="btn btn-secondary btn-sm" style="min-width:auto; padding:0.25rem 0.5rem; height:28px;" title="Phóng to / Thu nhỏ">
+                                <i class="fa-solid fa-expand"></i>
+                            </button>
                         </div>
                         <div class="ai-tutor-messages" id="ai-tutor-chat-messages">
                             <!-- Messages will render here -->
                         </div>
+                        
+                        <!-- Preview ảnh đính kèm -->
+                        <div id="tutor-image-preview-container" style="display:none; padding:0.5rem 1rem; border-top:1px dashed var(--border-color); background:rgba(0,0,0,0.05); position:relative;">
+                            <img id="tutor-image-preview" src="" alt="Preview" style="max-height:80px; max-width:100%; border-radius:6px; object-fit:contain; border:1px solid var(--border-color);">
+                            <button type="button" id="remove-tutor-image-btn" style="position:absolute; top:8px; left:110px; background:rgba(239,68,68,0.9); color:white; border:none; border-radius:50%; width:20px; height:20px; font-size:0.6rem; display:flex; align-items:center; justify-content:center; cursor:pointer;" title="Xóa ảnh">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+
                         <div class="ai-tutor-hints">
                             <button type="button" class="ai-hint-btn" id="ai-hint-start"><i class="fa-regular fa-lightbulb"></i> Gợi ý bước đầu</button>
                             <button type="button" class="ai-hint-btn" id="ai-hint-formula"><i class="fa-solid fa-book"></i> Lý thuyết cần dùng</button>
                             <button type="button" class="ai-hint-btn" id="ai-hint-next"><i class="fa-solid fa-forward"></i> Gợi ý tiếp theo</button>
                         </div>
-                        <form id="ai-tutor-chat-form" class="ai-tutor-input-area">
-                            <input type="text" id="ai-tutor-chat-input" class="form-input" placeholder="Hỏi Trợ lý AI cách giải..." required autocomplete="off">
-                            <button type="submit" class="btn btn-primary" style="min-width:auto;padding:0 0.85rem;"><i class="fa-solid fa-paper-plane"></i></button>
+                        <form id="ai-tutor-chat-form" class="ai-tutor-input-area" style="display:flex; gap:0.4rem; align-items:flex-end;">
+                            <input type="file" id="tutor-image-file-input" accept="image/*" style="display:none;">
+                            <button type="button" id="tutor-attach-image-btn" class="btn btn-secondary" style="min-width:auto; padding:0.5rem 0.65rem; height:38px;" title="Đính kèm ảnh bài làm/nháp">
+                                <i class="fa-solid fa-image"></i>
+                            </button>
+                            <textarea id="ai-tutor-chat-input" class="form-input" placeholder="Hỏi Trợ lý AI cách giải..." required autocomplete="off" rows="1" style="resize:none; padding:0.5rem; height:38px; line-height:1.4; flex-grow:1;"></textarea>
+                            <button type="submit" class="btn btn-primary" style="min-width:auto; padding:0 0.85rem; height:38px;"><i class="fa-solid fa-paper-plane"></i></button>
                         </form>
                     </div>
                 </div>
@@ -1228,9 +1246,10 @@ async function viewProblemDetail(id) {
                     <div class="ai-msg-content-wrap">
                         <div class="ai-msg-bubble">${preprocessLaTeX(
                             m.role === 'model'
-                                ? m.content.replace(/\\n/g, '\n')  // chỉ normalize \n literal trong AI responses
+                                ? m.content.replace(/\\n/g, '\n')
                                 : m.content
                         )}</div>
+                        ${m.image ? `<img src="${m.image}" alt="Ảnh đính kèm" style="max-width:180px; max-height:120px; border-radius:6px; margin-top:0.25rem; border:1px solid var(--border-color); display:block;">` : ''}
                         ${m.verified === true ? '<div class="ai-verify-badge verified"><i class="fa-solid fa-circle-check"></i> Đã kiểm tra</div>' : ''}
                         ${m.verified === false ? '<div class="ai-verify-badge corrected"><i class="fa-solid fa-triangle-exclamation"></i> Đã điều chỉnh</div>' : ''}
                     </div>
@@ -1240,8 +1259,69 @@ async function viewProblemDetail(id) {
             container.scrollTop = container.scrollHeight;
         }
 
-        async function sendTutorMessage(text) {
-            problemChatMessages.push({ role: "user", content: text });
+        // Biến lưu trữ ảnh đính kèm của AI Tutor
+        let tutorUploadedImageBase64 = null;
+
+        // Auto-resize textarea input chat
+        const tutorTextarea = document.getElementById("ai-tutor-chat-input");
+        tutorTextarea?.addEventListener("input", function() {
+            this.style.height = "auto";
+            this.style.height = (this.scrollHeight) + "px";
+            if (this.scrollHeight > 150) {
+                this.style.overflowY = "auto";
+                this.style.height = "150px";
+            } else {
+                this.style.overflowY = "hidden";
+            }
+        });
+
+        // Đính kèm ảnh cho AI Tutor
+        const attachBtn = document.getElementById("tutor-attach-image-btn");
+        const fileInput = document.getElementById("tutor-image-file-input");
+        const previewContainer = document.getElementById("tutor-image-preview-container");
+        const previewImg = document.getElementById("tutor-image-preview");
+        const removeImgBtn = document.getElementById("remove-tutor-image-btn");
+
+        attachBtn?.addEventListener("click", () => fileInput?.click());
+
+        fileInput?.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                tutorUploadedImageBase64 = evt.target.result;
+                if (previewImg) previewImg.src = tutorUploadedImageBase64;
+                if (previewContainer) previewContainer.style.display = "block";
+            };
+            reader.readAsDataURL(file);
+        });
+
+        removeImgBtn?.addEventListener("click", () => {
+            tutorUploadedImageBase64 = null;
+            if (fileInput) fileInput.value = "";
+            if (previewContainer) previewContainer.style.display = "none";
+            if (previewImg) previewImg.src = "";
+        });
+
+        // Phóng to / Thu nhỏ Trợ lý học tập
+        const toggleSizeBtn = document.getElementById("toggle-tutor-size-btn");
+        toggleSizeBtn?.addEventListener("click", () => {
+            const layout = document.querySelector(".problem-page-layout");
+            const icon = toggleSizeBtn.querySelector("i");
+            if (layout.classList.contains("tutor-expanded")) {
+                layout.classList.remove("tutor-expanded");
+                icon.className = "fa-solid fa-expand";
+                toggleSizeBtn.title = "Phóng to";
+            } else {
+                layout.classList.add("tutor-expanded");
+                icon.className = "fa-solid fa-compress";
+                toggleSizeBtn.title = "Thu nhỏ";
+            }
+        });
+
+        async function sendTutorMessage(text, imageData = null) {
+            problemChatMessages.push({ role: "user", content: text, image: imageData });
             renderTutorMessages();
 
             const container = document.getElementById("ai-tutor-chat-messages");

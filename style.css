@@ -2436,6 +2436,16 @@ input, textarea, select, button {
     top: 90px;
     z-index: 10;
 }
+/* Trợ lý học tập phóng to */
+.problem-page-layout {
+    transition: grid-template-columns 0.3s ease;
+}
+.problem-page-layout.tutor-expanded {
+    grid-template-columns: 4.5fr 5.5fr;
+}
+.problem-page-layout.tutor-expanded .ai-tutor-card {
+    height: 760px;
+}
 .ai-tutor-card {
     display: flex;
     flex-direction: column;
@@ -2445,6 +2455,7 @@ input, textarea, select, button {
     border-radius: 16px;
     box-shadow: var(--shadow-md);
     overflow: hidden;
+    transition: height 0.3s ease;
 }
 .ai-tutor-header {
     padding: 1rem 1.25rem;
