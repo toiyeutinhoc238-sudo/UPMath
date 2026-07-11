@@ -186,10 +186,13 @@ const api = {
     getProblem: (id) => api._req('GET', `/problems/${id}`),
     addProblem: (data) => api._req('POST', '/problems', data),
     updateProblem: (id, data) => api._req('PUT', `/problems/${id}`, data),
+    deleteProblem: (id) => api._req('DELETE', `/problems/${id}`),
 
     // Solutions
     getSolutions: (pid) => api._req('GET', `/solutions?problemId=${pid}`),
     addSolution: (data) => api._req('POST', '/solutions', data),
+    updateSolution: (id, data) => api._req('PUT', `/solutions/${id}`, data),
+    deleteSolution: (id) => api._req('DELETE', `/solutions/${id}`),
     upvoteSol: (id) => api._req('PUT', `/solutions/${id}/upvote`),
 
     // Discussions
@@ -784,6 +787,9 @@ async function viewProblemDetail(id) {
                             <button class="btn btn-secondary btn-sm" id="edit-problem-btn" style="height:32px;padding:0.3rem 0.75rem;font-size:0.8rem;">
                                 <i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa
                             </button>
+                            <button class="btn btn-secondary btn-sm" id="delete-problem-btn" style="height:32px;padding:0.3rem 0.75rem;font-size:0.8rem;color:var(--accent-red);">
+                                <i class="fa-solid fa-trash"></i> Xóa đề bài
+                            </button>
                         ` : ''}
                         <button class="vote-btn ${hasLikedProblem ? 'active-like' : ''}" onclick="voteItem('problems', '${problem._id}', 'like')">
                             <i class="fa-solid fa-thumbs-up"></i> Thích <span>(${pLikes})</span>
@@ -836,21 +842,33 @@ async function viewProblemDetail(id) {
                                                 </button>
                                             </div>
                                         ` : ''}
+                                        ${(user && (user.role === 'admin' || user.role === 'professor' || s.authorGoogleId === user.googleId)) ? `
+                                            <div style="display:inline-flex; gap:0.25rem; margin-right:0.25rem;">
+                                                <button class="btn btn-secondary btn-sm edit-sol-btn" data-id="${s._id}" data-content="${encodeURIComponent(s.content)}" data-has-image="${!!s.imageUrl}" title="Chỉnh sửa lời giải" style="padding:0.3rem 0.45rem; height:28px; min-width:auto;">
+                                                    <i class="fa-solid fa-pen"></i>
+                                                </button>
+                                                <button class="btn btn-secondary btn-sm delete-sol-btn" data-id="${s._id}" title="Xóa lời giải" style="padding:0.3rem 0.45rem; height:28px; color:var(--accent-red); min-width:auto;">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        ` : ''}
                                         <button class="btn btn-secondary btn-sm upvote-btn" data-id="${s._id}" style="height:28px; padding:0.3rem 0.6rem;">
                                             <i class="fa-solid fa-thumbs-up"></i> <span>${s.votes}</span>
                                         </button>
                                     </div>
                                 </div>
-                                <div style="margin-bottom:0.5rem; line-height:1.6;">${preprocessLaTeX(s.content)}</div>
-                                ${s.imageUrl ? `<img src="${s.imageUrl}" alt="Ảnh lời giải" style="max-width:100%;max-height:400px;object-fit:contain;border-radius:8px;margin-top:0.75rem;display:block;">` : ''}
-                                ${s.aiFeedback ? `
-                                    <div style="margin-top:0.75rem; padding:0.75rem 1rem; background:rgba(255,255,255,0.02); border:1px dashed var(--border-color); border-radius:6px; font-size:0.85rem; color:var(--text-muted);">
-                                        <div style="font-weight:600; color:var(--accent-blue); margin-bottom:0.25rem; display:flex; align-items:center; gap:0.35rem;">
-                                            <i class="fa-solid fa-robot"></i> Đánh giá từ AI Assistant:
+                                <div class="sol-body-container" id="sol-body-${s._id}">
+                                    <div style="margin-bottom:0.5rem; line-height:1.6;">${preprocessLaTeX(s.content)}</div>
+                                    ${s.imageUrl ? `<img src="${s.imageUrl}" alt="Ảnh lời giải" style="max-width:100%;max-height:400px;object-fit:contain;border-radius:8px;margin-top:0.75rem;display:block;">` : ''}
+                                    ${s.aiFeedback ? `
+                                        <div style="margin-top:0.75rem; padding:0.75rem 1rem; background:rgba(255,255,255,0.02); border:1px dashed var(--border-color); border-radius:6px; font-size:0.85rem; color:var(--text-muted);">
+                                            <div style="font-weight:600; color:var(--accent-blue); margin-bottom:0.25rem; display:flex; align-items:center; gap:0.35rem;">
+                                                <i class="fa-solid fa-robot"></i> Đánh giá từ AI Assistant:
+                                            </div>
+                                            <div>${preprocessLaTeX(s.aiFeedback)}</div>
                                         </div>
-                                        <div>${preprocessLaTeX(s.aiFeedback)}</div>
-                                    </div>
-                                ` : ''}
+                                    ` : ''}
+                                </div>
                             </div>`).join("")
             }
                 </div>
@@ -990,6 +1008,90 @@ async function viewProblemDetail(id) {
         // Edit Problem button
         document.getElementById("edit-problem-btn")?.addEventListener("click", () => {
             viewEditProblem(problem);
+        });
+
+        // Delete Problem button
+        document.getElementById("delete-problem-btn")?.addEventListener("click", async () => {
+            if (confirm("Bạn có chắc chắn muốn xóa đề bài này cùng tất cả lời giải liên quan? Thao tác này không thể phục hồi!")) {
+                try {
+                    await api.deleteProblem(problem._id);
+                    showToast("Đã xóa đề bài thành công! 🗑️", "success");
+                    window.location.hash = "#exercises";
+                } catch (e) {
+                    showToast("Xóa đề bài thất bại: " + e.message, "error");
+                }
+            }
+        });
+
+        // Edit Solution button (inline edit)
+        document.querySelectorAll(".edit-sol-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const sId = btn.getAttribute("data-id");
+                const originalContent = decodeURIComponent(btn.getAttribute("data-content"));
+                
+                const bodyDiv = document.getElementById(`sol-body-${sId}`);
+                if (!bodyDiv) return;
+
+                const originalHTML = bodyDiv.innerHTML;
+
+                bodyDiv.innerHTML = `
+                    <div style="margin-bottom:0.5rem;">
+                        <textarea id="edit-sol-content-${sId}" class="form-textarea" style="min-height:120px;width:100%;box-sizing:border-box;font-family:inherit;font-size:0.95rem;line-height:1.6;padding:0.5rem 0.75rem;">${originalContent}</textarea>
+                    </div>
+                    <div style="font-size:0.76rem;color:var(--text-muted);margin-bottom:0.5rem;display:flex;align-items:center;gap:0.35rem;">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>Ấn Lưu sẽ tự động nhờ AI Gemini chấm điểm và nhận xét lại bài làm.</span>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
+                        <button class="btn btn-secondary btn-sm cancel-edit-btn" style="height:30px;padding:0 0.75rem;font-size:0.8rem;">Hủy</button>
+                        <button class="btn btn-primary btn-sm save-edit-btn" style="height:30px;padding:0 0.75rem;font-size:0.8rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;font-weight:600;">Lưu &amp; Chấm lại</button>
+                    </div>
+                `;
+
+                // Bind Cancel click
+                bodyDiv.querySelector(".cancel-edit-btn")?.addEventListener("click", () => {
+                    bodyDiv.innerHTML = originalHTML;
+                });
+
+                // Bind Save click
+                bodyDiv.querySelector(".save-edit-btn")?.addEventListener("click", async () => {
+                    const newContent = document.getElementById(`edit-sol-content-${sId}`).value.trim();
+                    if (!newContent) {
+                        showToast("Nội dung không được bỏ trống!", "warning");
+                        return;
+                    }
+
+                    const saveBtn = bodyDiv.querySelector(".save-edit-btn");
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang chấm lại...`;
+
+                    try {
+                        await api.updateSolution(sId, { content: newContent, skipGrading: false });
+                        showToast("Đã cập nhật lời giải và AI đã chấm điểm lại! 🎉", "success");
+                        viewProblemDetail(id);
+                    } catch (err) {
+                        showToast("Cập nhật thất bại: " + err.message, "error");
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = "Lưu &amp; Chấm lại";
+                    }
+                });
+            });
+        });
+
+        // Delete Solution button
+        document.querySelectorAll(".delete-sol-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const sId = btn.getAttribute("data-id");
+                if (confirm("Bạn có chắc chắn muốn xóa lời giải này không?")) {
+                    try {
+                        await api.deleteSolution(sId);
+                        showToast("Đã xóa lời giải thành công! 🗑️", "success");
+                        viewProblemDetail(id);
+                    } catch (e) {
+                        showToast("Xóa lời giải thất bại: " + e.message, "error");
+                    }
+                }
+            });
         });
 
         // Add solution
