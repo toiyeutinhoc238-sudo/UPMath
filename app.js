@@ -635,7 +635,7 @@ function problemCardHTML(p) {
         <div class="problem-card-item">
             <div class="problem-item-details">
                 <div class="problem-item-title-row">
-                    <a href="#problem/${p._id}" class="problem-item-title">${p.title}</a>
+                    <a href="#problem/${p._id}" class="problem-item-title">${preprocessLaTeX(p.title)}</a>
                     <span class="badge ${p.category === 'calculus' ? 'badge-calculus' : 'badge-algebra'}">
                         ${p.category === 'calculus' ? 'Giải tích' : 'Đại số'}
                     </span>
@@ -736,7 +736,7 @@ async function viewProblemDetail(id) {
             <div class="page-header">
                 <div>
                     <a href="#exercises" style="font-size:0.9rem;"><i class="fa-solid fa-arrow-left"></i> Quay lại kho bài tập</a>
-                    <h2 class="page-title" style="margin-top:0.5rem;">${problem.title}</h2>
+                    <h2 class="page-title" style="margin-top:0.5rem;">${preprocessLaTeX(problem.title)}</h2>
                 </div>
                 <span class="badge ${problem.category === 'calculus' ? 'badge-calculus' : 'badge-algebra'}" style="font-size:0.9rem;padding:0.4rem 0.8rem;">
                     <i class="fa-solid ${problem.category === 'calculus' ? 'fa-wave-square' : 'fa-table-cells'}"></i>
