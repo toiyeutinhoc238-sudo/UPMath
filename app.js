@@ -98,9 +98,46 @@ function logoutGoogle() {
 }
 
 function renderLoginMath() {
-    const el = document.getElementById("login-math-preview");
-    if (el && window.renderMathInElement) {
-        renderMathInElement(el, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false });
+    const bg = document.getElementById("login-math-bg");
+    if (!bg) return;
+    
+    bg.innerHTML = "";
+    
+    const items = [
+        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+        "\\sum", "\\int", "\\pi", "\\infty", "\\sqrt{x}", "\\theta",
+        "x^2 + y^2 = z^2", "f(x)", "\\Delta", "\\lim_{n \\to \\infty}",
+        "A \\cup B", "x \\in \\mathbb{R}", "\\log(x)", "\\sin(x)",
+        "\\vec{v}", "\\lambda", "\\approx", "\\neq", "d/dx"
+    ];
+    
+    for (let i = 0; i < 35; i++) {
+        const item = document.createElement("span");
+        item.className = "math-bg-item";
+        
+        const content = items[Math.floor(Math.random() * items.length)];
+        item.innerHTML = content.includes("\\") || content.includes("^") || content.includes("_") ? `$${content}$` : content;
+        
+        item.style.left = `${Math.random() * 95}%`;
+        item.style.top = `${Math.random() * 95}%`;
+        
+        const size = 0.9 + Math.random() * 1.1;
+        item.style.fontSize = `${size}rem`;
+        
+        item.style.opacity = `${0.04 + Math.random() * 0.08}`;
+        
+        const duration = 15 + Math.random() * 20;
+        item.style.animationDuration = `${duration}s`;
+        item.style.animationDelay = `${-Math.random() * 20}s`;
+        
+        bg.appendChild(item);
+    }
+    
+    if (window.renderMathInElement) {
+        renderMathInElement(bg, {
+            delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }],
+            throwOnError: false
+        });
     }
 }
 
@@ -452,7 +489,7 @@ async function viewHome() {
         <div class="card shoutbox-card">
             <div class="shoutbox-header">
                 <h3 class="card-title shoutbox-title"><i class="fa-solid fa-comment-dots"></i> Shoutbox cộng đồng</h3>
-                <span class="shoutbox-tagline">Gõ $công thức$ để viết ký hiệu toán</span>
+                <span class="shoutbox-tagline">Gõ <code>$công thức$</code> để viết ký hiệu toán</span>
             </div>
             <div class="shoutbox-messages" id="shoutbox-container">
                 <div style="text-align:center;padding:1rem;color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i></div>
