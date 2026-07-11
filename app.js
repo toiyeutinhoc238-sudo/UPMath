@@ -219,7 +219,7 @@ const api = {
     addShout: (data) => api._req('POST', '/shouts', data),
     reactShout: (id, data) => api._req('PUT', `/shouts/${id}/react`, data),
     updateShout: (id, data) => api._req('PUT', `/shouts/${id}`, data),
-    deleteShout: (id) => api._req('DELETE', `/shouts/${id}`),
+    deleteShout: (id, googleId) => api._req('DELETE', `/shouts/${id}?googleId=${googleId}`),
     chatAiTutor: (problemId, messages) => api._req('POST', '/ai-tutor', { problemId, messages }),
 
     // Users
@@ -820,14 +820,32 @@ function renderShouts(shouts) {
                 <button class="shout-action-btn reply-btn" data-shout-id="${s._id}" data-author="${s.username}" data-text="${encodeURIComponent(s.text)}" title="Trả lời">
                     <i class="fa-solid fa-reply"></i>
                 </button>
-                ${(me && (me.googleId === s.authorGoogleId || me.role === 'admin')) ? `
-                    <button class="shout-action-btn edit-btn" data-shout-id="${s._id}" data-text="${encodeURIComponent(s.text)}" title="Chỉnh sửa">
-                        <i class="fa-solid fa-pencil"></i>
-                    </button>
-                    <button class="shout-action-btn delete-btn delete" data-shout-id="${s._id}" title="Xóa">
-                        <i class="fa-regular fa-trash-can"></i>
-                    </button>
-                ` : ''}
+                ${(() => {
+                    if (!me) return '';
+                    const isOwner = me.googleId === s.authorGoogleId;
+                    const isAdmin = me.role === 'admin';
+                    const diffMs = Date.now() - new Date(s.createdAt).getTime();
+
+                    const canEdit = isOwner && (diffMs < 15 * 60 * 1000);
+                    const canDelete = isAdmin || (isOwner && (diffMs < 24 * 60 * 60 * 1000));
+
+                    let btns = '';
+                    if (canEdit) {
+                        btns += `
+                            <button class="shout-action-btn edit-btn" data-shout-id="${s._id}" data-text="${encodeURIComponent(s.text)}" title="Chỉnh sửa">
+                                <i class="fa-solid fa-pencil"></i>
+                            </button>
+                        `;
+                    }
+                    if (canDelete) {
+                        btns += `
+                            <button class="shout-action-btn delete-btn delete" data-shout-id="${s._id}" title="Xóa">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                        `;
+                    }
+                    return btns;
+                })()}
             </div>
         </div>`;
     }).join("");
@@ -900,11 +918,11 @@ function renderShouts(shouts) {
             if (!confirm("Bạn có chắc chắn muốn xóa tin nhắn này?")) return;
             const sId = btn.getAttribute("data-shout-id");
             try {
-                await api.deleteShout(sId);
+                await api.deleteShout(sId, me.googleId);
                 showToast("Đã xóa tin nhắn!", "success");
                 renderShouts(await api.getShouts());
             } catch (err) {
-                showToast("Xóa tin nhắn thất bại!", "error");
+                showToast("Xóa tin nhắn thất bại: " + err.message, "error");
             }
         });
     });

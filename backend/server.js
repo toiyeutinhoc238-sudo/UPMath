@@ -1169,8 +1169,15 @@ app.put('/api/shouts/:id', async (req, res) => {
         const shout = await Shout.findById(req.params.id);
         if (!shout) return res.status(404).json({ error: 'Shout not found' });
 
+        // Chỉ chính chủ mới được sửa tin nhắn của mình
         if (shout.authorGoogleId !== googleId) {
-            return res.status(403).json({ error: 'Forbidden' });
+            return res.status(403).json({ error: 'Bạn không có quyền chỉnh sửa tin nhắn của người khác!' });
+        }
+
+        // Giới hạn thời gian sửa trong vòng 15 phút (900000 ms)
+        const timeDiff = Date.now() - new Date(shout.createdAt).getTime();
+        if (timeDiff > 15 * 60 * 1000) {
+            return res.status(400).json({ error: 'Đã quá 15 phút kể từ lúc gửi, bạn không thể chỉnh sửa tin nhắn này!' });
         }
 
         shout.text = text;
@@ -1185,14 +1192,40 @@ app.put('/api/shouts/:id', async (req, res) => {
 // Delete a shout
 app.delete('/api/shouts/:id', async (req, res) => {
     try {
-        // Find and delete the shout
-        const shout = await Shout.findByIdAndDelete(req.params.id);
+        const { googleId } = req.query; // Nhận googleId của người yêu cầu xóa từ query parameters
+        if (!googleId) return res.status(400).json({ error: 'googleId required' });
+
+        const shout = await Shout.findById(req.params.id);
         if (!shout) return res.status(404).json({ error: 'Shout not found' });
+
+        const requestUser = await User.findOne({ googleId });
+        if (!requestUser) return res.status(404).json({ error: 'User requesting action not found' });
+
+        const isAdmin = requestUser.role === 'admin';
+        const isOwner = shout.authorGoogleId === googleId;
+
+        if (!isOwner && !isAdmin) {
+            return res.status(403).json({ error: 'Bạn không có quyền xóa tin nhắn này!' });
+        }
+
+        // Nếu là người thường (chính chủ), giới hạn thời gian xóa trong vòng 1 ngày (24 giờ)
+        if (!isAdmin && timeLimitExceeded(shout.createdAt, 24 * 60 * 60 * 1000)) {
+            return res.status(400).json({ error: 'Đã quá 1 ngày, bạn không thể tự xóa tin nhắn này!' });
+        }
+
+        // Tiến hành xóa
+        await Shout.findByIdAndDelete(req.params.id);
         res.json({ message: 'Shout deleted' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
+
+// Helper tính toán vượt giới hạn thời gian
+function timeLimitExceeded(createdAt, limitMs) {
+    const diff = Date.now() - new Date(createdAt).getTime();
+    return diff > limitMs;
+}
 
 // AI Tutor chat interaction with Knowledge Base + Verification Layer
 app.post('/api/ai-tutor', async (req, res) => {
