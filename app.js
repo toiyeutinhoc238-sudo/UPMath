@@ -316,8 +316,8 @@ function renderLaTeX(el) {
 function preprocessLaTeX(text) {
     if (!text) return "";
 
-    // Convert double-escaped backslash-n to actual newlines
-    text = text.replace(/\\n/g, "\n").replace(/\\r/g, "\r");
+    // Convert double-escaped backslash-n to actual newlines, but only if they are not part of LaTeX commands (not followed by letters)
+    text = text.replace(/\\n(?![a-zA-Z])/g, "\n").replace(/\\r(?![a-zA-Z])/g, "\r");
 
     // Convert markdown-style headings (## Heading) from AI responses
     text = text.replace(/^###\s+(.+)$/gm, '<h4 style="margin: 0.85rem 0 0.4rem; font-size: 1rem; color: var(--accent-blue); font-weight:700;">$1</h4>');
