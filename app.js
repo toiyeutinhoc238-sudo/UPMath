@@ -1277,15 +1277,15 @@ async function viewProblemDetail(id) {
         });
 
         document.getElementById("ai-hint-start")?.addEventListener("click", () => {
-            sendTutorMessage("Hãy gợi ý cho mình hướng giải hoặc bước đi đầu tiên của bài toán này.");
+            sendTutorMessage(`Đề bài: ${problem.title}\nNội dung: ${problem.content}\n\nEm chưa biết bắt đầu từ đâu, thầy gợi ý cho em hướng giải và bước đi đầu tiên của bài toán này nhé!`);
         });
 
         document.getElementById("ai-hint-formula")?.addEventListener("click", () => {
-            sendTutorMessage("Hãy chỉ ra các công thức toán học và lý thuyết quan trọng cần biết để giải quyết bài toán này.");
+            sendTutorMessage(`Đề bài: ${problem.title}\nNội dung: ${problem.content}\n\nThầy hãy chỉ ra các công thức toán học và lý thuyết quan trọng cần biết để giải quyết bài toán này cho em ạ.`);
         });
 
         document.getElementById("ai-hint-next")?.addEventListener("click", () => {
-            sendTutorMessage("Mình muốn biết bước tiếp theo sau các định hướng cơ bản là gì.");
+            sendTutorMessage(`Đề bài: ${problem.title}\nNội dung: ${problem.content}\n\nEm muốn thầy gợi ý thêm bước tiếp theo để tiến gần hơn tới lời giải của bài toán này.`);
         });
 
         // Add event listeners for mode switcher
@@ -2753,15 +2753,15 @@ document.addEventListener("click", () => {
     });
 });
 
-window.handlePortalMockLogin = function(e) {
+window.handlePortalMockLogin = function (e) {
     e.preventDefault();
     const userInp = document.getElementById("portal-username");
     const passInp = document.getElementById("portal-password");
     const userErr = document.getElementById("portal-username-error");
     const passErr = document.getElementById("portal-password-error");
-    
+
     let hasError = false;
-    
+
     if (!userInp.value.trim()) {
         userInp.classList.add("has-error");
         if (userErr) userErr.style.display = "block";
@@ -2770,7 +2770,7 @@ window.handlePortalMockLogin = function(e) {
         userInp.classList.remove("has-error");
         if (userErr) userErr.style.display = "none";
     }
-    
+
     if (!passInp.value.trim()) {
         passInp.classList.add("has-error");
         if (passErr) passErr.style.display = "block";
@@ -2779,7 +2779,7 @@ window.handlePortalMockLogin = function(e) {
         passInp.classList.remove("has-error");
         if (passErr) passErr.style.display = "none";
     }
-    
+
     if (!hasError) {
         showToast("Để đồng bộ học tập, vui lòng đăng nhập bằng tài khoản Google trường cấp ở nút phía dưới! 🔑", "info");
     }
