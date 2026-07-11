@@ -228,6 +228,7 @@ const api = {
     getUserSolutions: (gid) => api._req('GET', `/users/${gid}/solutions`),
     updateProfile: (gid, data) => api._req('PUT', `/users/${gid}/profile`, data),
     updateSolutionStatus: (id, status) => api._req('PUT', `/solutions/${id}/status`, { status }),
+    updateRole: (gid, role) => api._req('PUT', `/users/${gid}/role`, { role }),
 
     // Contests & Stats
     getContests: () => api._req('GET', '/contests'),
