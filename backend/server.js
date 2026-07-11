@@ -35,7 +35,7 @@ const userSchema = new mongoose.Schema({
     picture:         String,
     points:          { type: Number, default: 0 },
     rank:            { type: String, default: 'Đồng' },
-    role:            { type: String, enum: ['user', 'admin'], default: 'user' },
+    role:            { type: String, enum: ['user', 'admin', 'professor', 'supporter'], default: 'user' },
     joinedAt:        { type: Date, default: Date.now },
     // Custom profile fields
     fullName:        String,
@@ -181,6 +181,25 @@ app.put('/api/users/:googleId/points', async (req, res) => {
         user.points = Math.max(0, user.points + (amount || 0));
         user.rank = calcRank(user.points);
         await user.save();
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Update user role
+app.put('/api/users/:googleId/role', async (req, res) => {
+    try {
+        const { role } = req.body;
+        if (!['user', 'admin', 'professor', 'supporter'].includes(role)) {
+            return res.status(400).json({ error: 'Invalid role' });
+        }
+        const user = await User.findOneAndUpdate(
+            { googleId: req.params.googleId },
+            { $set: { role } },
+            { new: true }
+        );
+        if (!user) return res.status(404).json({ error: 'User not found' });
         res.json(user);
     } catch (err) {
         res.status(500).json({ error: err.message });

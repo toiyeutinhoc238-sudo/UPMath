@@ -71,7 +71,11 @@ function updateHeaderWithGoogle(u) {
     setText("dropdown-email", u.email);
 
     const adminBtn = document.getElementById("admin-panel-btn");
-    if (adminBtn) adminBtn.style.display = u.role === 'admin' ? '' : 'none';
+    if (adminBtn) {
+        const isStaff = ['admin', 'professor', 'supporter'].includes(u.role);
+        adminBtn.style.display = isStaff ? '' : 'none';
+        adminBtn.innerHTML = u.role === 'admin' ? '<i class="fa-solid fa-lock"></i> Quản trị' : (u.role === 'professor' ? '<i class="fa-solid fa-graduation-cap"></i> Giảng viên' : '<i class="fa-solid fa-user-shield"></i> Hỗ trợ');
+    }
 }
 
 function toggleUserDropdown() {
@@ -607,10 +611,12 @@ async function viewExercises(categoryFilter = "all") {
     showLoading();
     try {
         const problems = await api.getProblems(categoryFilter);
+        const me = getCurrentUser();
+        const canCreate = me && ['admin', 'professor', 'supporter'].includes(me.role);
         mainContent.innerHTML = `
             <div class="page-header">
                 <h2 class="page-title"><i class="fa-solid fa-book-open-reader"></i> Kho Bài Tập <span>COMP1800</span></h2>
-                <a href="#create-problem" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Đăng đề bài</a>
+                ${canCreate ? `<a href="#create-problem" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Đăng đề bài</a>` : ''}
             </div>
             <div id="cat-filters" style="display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap;">
                 <button class="filter-tag-btn ${categoryFilter === 'all' ? 'active' : ''}" data-c="all">Tất cả</button>
@@ -622,7 +628,7 @@ async function viewExercises(categoryFilter = "all") {
                 ? `<div class="card" style="text-align:center;padding:3rem;">
                            <i class="fa-solid fa-book-open fa-3x" style="color:var(--text-muted);margin-bottom:1rem;"></i>
                            <p style="color:var(--text-muted);">Chưa có bài tập nào${categoryFilter !== 'all' ? ` trong chuyên mục này` : ''}.</p>
-                           <a href="#create-problem" class="btn btn-primary" style="margin-top:1rem;">Đăng bài toán đầu tiên!</a>
+                           ${canCreate ? `<a href="#create-problem" class="btn btn-primary" style="margin-top:1rem;">Đăng bài toán đầu tiên!</a>` : ''}
                        </div>`
                 : problems.map(p => problemCardHTML(p)).join("")}
             </div>`;
@@ -727,7 +733,7 @@ async function viewProblemDetail(id) {
                                         </div>
                                     </div>
                                     <div style="display:flex;align-items:center;gap:0.4rem;">
-                                        ${(user && (user.role === 'admin' || problem.creatorGoogleId === user.googleId)) ? `
+                                        ${(user && (user.role === 'admin' || user.role === 'professor' || problem.creatorGoogleId === user.googleId)) ? `
                                             <div style="display:inline-flex; gap:0.25rem; margin-right:0.25rem;">
                                                 <button class="btn btn-secondary btn-sm set-correct-btn" data-id="${s._id}" title="Đánh dấu Đúng" style="padding:0.3rem 0.45rem; height:28px; color:#10b981; min-width:auto;">
                                                     <i class="fa-solid fa-check"></i>
@@ -946,6 +952,11 @@ function commentHTML(c) {
 
 // ── CREATE PROBLEM ────────────────────────────────────────────────────────────
 function viewCreateProblem() {
+    const me = getCurrentUser();
+    if (!me || !['admin', 'professor', 'supporter'].includes(me.role)) {
+        showError("Bạn không có quyền đăng đề bài mới!");
+        return;
+    }
     setActiveNav("exercises");
     mainContent.innerHTML = `
         <div class="page-header">
@@ -1690,8 +1701,9 @@ async function viewAdmin() {
     showLoading();
     try {
         const me = getCurrentUser();
-        if (!me || me.role !== 'admin') {
-            showError("Bạn không có quyền truy cập trang quản trị!");
+        const isStaff = me && ['admin', 'professor', 'supporter'].includes(me.role);
+        if (!isStaff) {
+            showError("Bạn không có quyền truy cập trang quản lý!");
             return;
         }
 
@@ -1704,17 +1716,18 @@ async function viewAdmin() {
 
         mainContent.innerHTML = `
             <div class="page-header">
-                <h2 class="page-title"><i class="fa-solid fa-lock"></i> Trang <span>Quản Trị Hệ Thống</span></h2>
+                <h2 class="page-title"><i class="fa-solid fa-lock"></i> Trang <span>Quản Lý Hệ Thống</span></h2>
             </div>
 
             <!-- Tabs Navigation -->
             <div id="admin-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
-                <button class="filter-tag-btn active" data-tab="contests"><i class="fa-solid fa-trophy"></i> Quản lý Kỳ thi</button>
-                <button class="filter-tag-btn" data-tab="problems"><i class="fa-solid fa-book-open"></i> Quản lý Đề bài</button>
-                <button class="filter-tag-btn" data-tab="users"><i class="fa-solid fa-users"></i> Quản lý Thành viên</button>
+                ${['admin', 'professor'].includes(me.role) ? `<button class="filter-tag-btn active" data-tab="contests"><i class="fa-solid fa-trophy"></i> Quản lý Kỳ thi</button>` : ''}
+                ${['admin', 'professor', 'supporter'].includes(me.role) ? `<button class="filter-tag-btn ${!['admin', 'professor'].includes(me.role) ? 'active' : ''}" data-tab="problems"><i class="fa-solid fa-book-open"></i> Quản lý Đề bài</button>` : ''}
+                ${me.role === 'admin' ? `<button class="filter-tag-btn ${!['admin', 'professor'].includes(me.role) && !['admin', 'professor', 'supporter'].includes(me.role) ? 'active' : ''}" data-tab="users"><i class="fa-solid fa-users"></i> Quản lý Thành viên</button>` : ''}
             </div>
 
             <!-- Tab 1: CONTESTS MANAGER -->
+            ${['admin', 'professor'].includes(me.role) ? `
             <div id="admin-tab-contests" class="admin-tab-content">
                 <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem;">
                     <!-- List Contests -->
@@ -1722,27 +1735,27 @@ async function viewAdmin() {
                         <h3 style="margin-bottom: 1rem; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Danh sách kỳ thi</h3>
                         <div style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 450px; overflow-y: auto;">
                             ${contests.length === 0
-                ? `<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Chưa có kỳ thi nào.</p>`
-                : contests.map(c => `
+                                ? \`<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Chưa có kỳ thi nào.</p>\`
+                                : contests.map(c => \`
                                     <div style="padding: 0.85rem; background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
                                         <div>
-                                            <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">${c.title}</div>
+                                            <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">\${c.title}</div>
                                             <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; gap: 0.75rem;">
-                                                <span>Thời gian: ${c.duration}</span>
-                                                <span>Bắt đầu: ${c.startTime}</span>
+                                                <span>Thời gian: \${c.duration}</span>
+                                                <span>Bắt đầu: \${c.startTime}</span>
                                             </div>
                                         </div>
                                         <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                            <span class="badge ${c.status === 'running' ? 'badge-calculus' : c.status === 'upcoming' ? 'badge-algebra' : 'badge-tag'}" style="font-size: 0.75rem;">
-                                                ${c.status === 'running' ? '🔴 Đang chạy' : c.status === 'upcoming' ? '⏳ Sắp mở' : '✅ Đã đóng'}
+                                            <span class="badge \${c.status === 'running' ? 'badge-calculus' : c.status === 'upcoming' ? 'badge-algebra' : 'badge-tag'}" style="font-size: 0.75rem;">
+                                                \${c.status === 'running' ? '🔴 Đang chạy' : c.status === 'upcoming' ? '⏳ Sắp mở' : '✅ Đã đóng'}
                                             </span>
-                                            <button class="btn btn-secondary btn-sm delete-contest-btn" data-id="${c._id}" style="padding: 0.35rem 0.5rem; color: var(--accent-red);">
+                                            <button class="btn btn-secondary btn-sm delete-contest-btn" data-id="\${c._id}" style="padding: 0.35rem 0.5rem; color: var(--accent-red);">
                                                 <i class="fa-regular fa-trash-can"></i>
                                             </button>
                                         </div>
                                     </div>
-                                `).join("")
-            }
+                                \`).join("")
+                            }
                         </div>
                     </div>
 
@@ -1752,65 +1765,64 @@ async function viewAdmin() {
                         <form id="create-contest-form">
                             <div class="form-group">
                                 <label class="form-label" for="c-title">Tiêu đề kỳ thi:</label>
-                                <input type="text" id="c-title" class="form-input" required placeholder="Ví dụ: Giữa kỳ môn Cơ sở toán">
+                                <input type="text" id="c-title" class="form-input" required placeholder="Ví dụ: Giữa kỳ Giải tích 1">
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="c-duration">Thời lượng:</label>
-                                <input type="text" id="c-duration" class="form-input" required placeholder="Ví dụ: 90 phút, 180 phút">
+                                <input type="text" id="c-duration" class="form-input" required placeholder="Ví dụ: 90 phút">
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="c-start">Thời gian bắt đầu:</label>
-                                <input type="text" id="c-start" class="form-input" required placeholder="Ví dụ: 08:30 ngày 15/10/2026">
+                                <input type="text" id="c-start" class="form-input" required placeholder="Ví dụ: 08:00 20/12/2026">
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="c-status">Trạng thái:</label>
-                                <select id="c-status" class="form-select">
-                                    <option value="upcoming">Chưa mở (Sắp diễn ra)</option>
-                                    <option value="running">🔴 Đang mở (Đang diễn ra)</option>
+                                <select id="c-status" class="form-select" style="background:var(--bg-input); border:1px solid var(--border-color); color:inherit; padding:0.625rem; border-radius:8px;">
+                                    <option value="upcoming">Chưa bắt đầu</option>
+                                    <option value="running">Đang diễn ra</option>
                                     <option value="ended">Đã kết thúc</option>
                                 </select>
                             </div>
-                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
-                                <i class="fa-solid fa-plus"></i> Tạo kỳ thi
-                            </button>
+                            <button type="submit" class="btn btn-primary" style="margin-top: 1rem; width: 100%;"><i class="fa-solid fa-plus"></i> Tạo kỳ thi</button>
                         </form>
                     </div>
                 </div>
             </div>
+            ` : ''}
 
             <!-- Tab 2: PROBLEMS MANAGER -->
-            <div id="admin-tab-problems" class="admin-tab-content" style="display: none;">
+            ${['admin', 'professor', 'supporter'].includes(me.role) ? `
+            <div id="admin-tab-problems" class="admin-tab-content" style="${!['admin', 'professor'].includes(me.role) ? '' : 'display: none;'}">
                 <div class="card">
-                    <h3 style="margin-bottom: 1rem; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Quản lý kho bài tập</h3>
+                    <h3 style="margin-bottom: 1rem; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Quản lý kho đề bài</h3>
                     <div style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 500px; overflow-y: auto;">
                         ${problems.length === 0
-                ? `<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Chưa có bài tập nào.</p>`
-                : problems.map(p => `
+                            ? \`<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Chưa có đề bài nào.</p>\`
+                            : problems.map(p => \`
                                 <div style="padding: 0.85rem; background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-                                    <div style="min-width: 0; flex: 1;">
-                                        <a href="#problem/${p._id}" style="font-weight: 600; text-decoration: none; color: var(--text-color); font-size: 0.95rem; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 0.25rem;">
-                                            ${p.title}
-                                        </a>
-                                        <div style="font-size: 0.75rem; color: var(--text-muted);">
-                                            <span>Người đăng: ${p.creator}</span> · 
-                                            <span>Môn: ${p.category === 'calculus' ? 'Giải tích' : 'Đại số'}</span> · 
-                                            <span>Đăng vào: ${new Date(p.createdAt).toLocaleDateString('vi-VN')}</span>
+                                    <div>
+                                        <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">\${p.title}</div>
+                                        <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; gap: 0.75rem;">
+                                            <span>Người đăng: \${p.creator}</span>
+                                            <span>Phân loại: \${p.category === 'calculus' ? 'Giải tích' : 'Đại số'}</span>
                                         </div>
                                     </div>
-                                    <button class="btn btn-secondary btn-sm delete-problem-btn" data-id="${p._id}" style="padding: 0.35rem 0.5rem; color: var(--accent-red);">
+                                    <button class="btn btn-secondary btn-sm delete-problem-btn" data-id="\${p._id}" style="padding: 0.35rem 0.5rem; color: var(--accent-red);">
                                         <i class="fa-regular fa-trash-can"></i> Xóa đề
                                     </button>
                                 </div>
-                            `).join("")
-            }
+                            \`).join("")
+                        }
                     </div>
                 </div>
             </div>
+            ` : ''}
 
             <!-- Tab 3: USERS MANAGER -->
+            ${me.role === 'admin' ? `
             <div id="admin-tab-users" class="admin-tab-content" style="display: none;">
                 <div class="card">
-                    <h3 style="margin-bottom: 1rem; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Cấp quyền &amp; Quản lý điểm số</h3>
+                    <h3 style="margin-bottom: 1rem; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Phân vai trò &amp; Quản lý điểm số</h3>
                     <div style="overflow-x: auto;">
                         <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
                             <thead>
@@ -1823,47 +1835,50 @@ async function viewAdmin() {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${users.map(u => `
+                                ${users.map(u => \`
                                     <tr style="border-bottom: 1px solid var(--border-color);">
                                         <td style="padding: 0.75rem;">
                                             <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                                <img src="${u.picture || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(u.name)}`}" 
+                                                <img src="\${u.picture || \`https://api.dicebear.com/7.x/adventurer/svg?seed=\${encodeURIComponent(u.name)}`\`}" 
                                                      style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;"
-                                                     onerror="this.src='https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(u.name)}'">
+                                                     onerror="this.src='https://api.dicebear.com/7.x/adventurer/svg?seed=\${encodeURIComponent(u.name)}'">
                                                 <div>
-                                                    <div style="font-weight: 600; font-size: 0.88rem;">${u.name}</div>
-                                                    <div style="font-size: 0.72rem; color: var(--text-muted);">${u.email}</div>
+                                                    <div style="font-weight: 600; font-size: 0.88rem;">\${u.fullName || u.name}</div>
+                                                    <div style="font-size: 0.72rem; color: var(--text-muted);">\${u.email}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td style="padding: 0.75rem;">
-                                            <span class="badge" style="background: ${u.role === 'admin' ? 'var(--accent-red)' : 'var(--bg-input)'}; color: ${u.role === 'admin' ? '#fff' : 'var(--text-muted)'}; font-size: 0.72rem; padding: 0.25rem 0.5rem;">
-                                                ${u.role === 'admin' ? 'Quản trị' : 'Thành viên'}
-                                            </span>
+                                            <select class="form-select role-select" data-gid="\${u.googleId}" style="font-size: 0.75rem; padding: 0.2rem 0.4rem; height: auto; width: auto; display: inline-block; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px;" \${u.role === 'admin' ? 'disabled' : ''}>
+                                                <option value="user" \${u.role === 'user' ? 'selected' : ''}>Thành viên</option>
+                                                <option value="professor" \${u.role === 'professor' ? 'selected' : ''}>Professor</option>
+                                                <option value="supporter" \${u.role === 'supporter' ? 'selected' : ''}>Supporter</option>
+                                                \${u.role === 'admin' ? '<option value="admin" selected>Admin</option>' : ''}
+                                            </select>
                                         </td>
                                         <td style="padding: 0.75rem;">
-                                            <span class="badge badge-tag" style="font-size: 0.72rem;">${u.rank}</span>
+                                            <span class="badge badge-tag" style="font-size: 0.72rem;">\${u.rank}</span>
                                         </td>
                                         <td style="padding: 0.75rem; font-weight: 700; color: var(--accent-blue);">
-                                            ${u.points}
+                                            \${u.points}
                                         </td>
                                         <td style="padding: 0.75rem; text-align: right;">
                                             <div style="display: inline-flex; gap: 0.25rem;">
-                                                <input type="number" class="form-input pts-adjust-input" data-gid="${u.googleId}" style="width: 70px; padding: 0.25rem 0.4rem; font-size: 0.8rem; height: auto;" value="10">
-                                                <button class="btn btn-primary btn-sm adjust-pts-btn" data-gid="${u.googleId}" data-dir="1" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;"><i class="fa-solid fa-plus"></i></button>
-                                                <button class="btn btn-secondary btn-sm adjust-pts-btn" data-gid="${u.googleId}" data-dir="-1" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;"><i class="fa-solid fa-minus"></i></button>
+                                                <input type="number" class="form-input pts-adjust-input" data-gid="\${u.googleId}" style="width: 70px; padding: 0.25rem 0.4rem; font-size: 0.8rem; height: auto;" value="10">
+                                                <button class="btn btn-primary btn-sm adjust-pts-btn" data-gid="\${u.googleId}" data-dir="1" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;"><i class="fa-solid fa-plus"></i></button>
+                                                <button class="btn btn-secondary btn-sm adjust-pts-btn" data-gid="\${u.googleId}" data-dir="-1" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;"><i class="fa-solid fa-minus"></i></button>
                                             </div>
                                         </td>
                                     </tr>
-                                `).join("")}
+                                \`).join("")}
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
+            ` : ''}
         `;
-
-        // Add Tabs Event Listeners
+// Add Tabs Event Listeners
         document.querySelectorAll("#admin-tabs .filter-tag-btn").forEach(btn => {
             btn.addEventListener("click", () => {
                 document.querySelectorAll("#admin-tabs .filter-tag-btn").forEach(b => b.classList.remove("active"));
@@ -1914,6 +1929,21 @@ async function viewAdmin() {
                     showToast("Đã xóa đề bài khỏi hệ thống!", "success");
                     viewAdmin();
                 } catch { showToast("Không thể xóa đề bài!", "error"); }
+            });
+        });
+
+        // Change Role Action
+        document.querySelectorAll(".role-select").forEach(select => {
+            select.addEventListener("change", async (e) => {
+                const gid = select.getAttribute("data-gid");
+                const role = select.value;
+                try {
+                    await api.updateRole(gid, role);
+                    showToast("Đã cập nhật vai trò thành công!", "success");
+                    viewAdmin();
+                } catch (err) {
+                    showToast("Không thể cập nhật vai trò: " + err.message, "error");
+                }
             });
         });
 
