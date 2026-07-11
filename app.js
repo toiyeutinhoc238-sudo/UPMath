@@ -469,7 +469,7 @@ async function renderSidebars() {
         if (lpEl) {
             lpEl.innerHTML = problems.slice(0, 5).map(p => `
                 <a href="#problem/${p._id}" class="sidebar-item">
-                    <div class="sidebar-item-title">${p.title}</div>
+                    <div class="sidebar-item-title">${preprocessLaTeX(p.title)}</div>
                     <div class="sidebar-item-meta">
                         <span class="badge ${p.category === 'calculus' ? 'badge-calculus' : 'badge-algebra'}">
                             ${p.category === 'calculus' ? 'Giải tích' : 'Đại số'}
@@ -485,7 +485,7 @@ async function renderSidebars() {
             const uc = contests.filter(c => c.status !== 'ended').slice(0, 3);
             cEl.innerHTML = uc.map(c => `
                 <div class="sidebar-item">
-                    <div class="sidebar-item-title">${c.title}</div>
+                    <div class="sidebar-item-title">${preprocessLaTeX(c.title)}</div>
                     <div class="sidebar-item-meta">
                         <span><i class="fa-solid fa-clock"></i> ${c.duration}</span>
                         <span class="badge ${c.status === 'running' ? 'badge-calculus' : 'badge-tag'}">
@@ -500,7 +500,7 @@ async function renderSidebars() {
         if (dEl) {
             dEl.innerHTML = discussions.slice(0, 3).map(d => `
                 <a href="#discussion/${d._id}" class="sidebar-item">
-                    <div class="sidebar-item-title">${d.title}</div>
+                    <div class="sidebar-item-title">${preprocessLaTeX(d.title)}</div>
                     <div class="sidebar-item-meta">
                         <span class="badge badge-tag">${d.category}</span>
                         <span><i class="fa-regular fa-comment"></i> ${d.replies}</span>
@@ -515,6 +515,11 @@ async function renderSidebars() {
             const el = document.getElementById(id);
             if (el) el.textContent = val ?? 0;
         });
+
+        // Render LaTeX in sidebars
+        if (lpEl) renderLaTeX(lpEl);
+        if (cEl) renderLaTeX(cEl);
+        if (dEl) renderLaTeX(dEl);
     } catch (e) {
         console.warn("Sidebar load error:", e.message);
     }
