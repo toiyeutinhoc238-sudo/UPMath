@@ -1284,7 +1284,7 @@ async function viewLeaderboard() {
                            <tbody>
                                ${users.map((u, i) => {
                     const isMe = me && me.email === u.email;
-                    const displayName = u.fullName || u.name || u.username || "Người dùng";
+                    const displayName = u.fullName || (u.name && u.name !== 'undefined' ? u.name : '') || u.username || 'Người dùng';
                     return `<tr style="border-bottom:1px solid var(--border-color);${isMe ? 'background:rgba(56,189,248,0.06);' : ''}">
                                        <td style="padding:0.9rem 0.75rem;font-size:${i < 3 ? '1.3rem' : '0.9rem'};font-weight:700;">${medals[i] || i + 1}</td>
                                        <td style="padding:0.9rem 0.75rem;">
@@ -1379,7 +1379,7 @@ async function viewProfile() {
                             <div class="profile-info-list">
                                 <div class="profile-info-row">
                                     <span class="info-label">Họ và tên</span>
-                                    <span class="info-value" id="sidebar-fullName">${freshMe.fullName || freshMe.name}</span>
+                                    <span class="info-value" id="sidebar-fullName">${freshMe.fullName || (freshMe.name && freshMe.name !== 'undefined' ? freshMe.name : '') || freshMe.username || 'Người dùng'}</span>
                                 </div>
                                 <div class="profile-info-row">
                                     <span class="info-label">Ngày sinh</span>
@@ -1427,7 +1427,7 @@ async function viewProfile() {
                                     <img src="${freshMe.picture || fbAvatar}" alt="Avatar" id="profile-banner-avatar-img" onerror="this.src='${fbAvatar}'">
                                 </div>
                                 <div class="banner-user-info">
-                                    <h2 id="banner-username">${freshMe.fullName || freshMe.username}</h2>
+                                    <h2 id="banner-username">${freshMe.fullName || (freshMe.name && freshMe.name !== 'undefined' ? freshMe.name : '') || freshMe.username || 'Người dùng'}</h2>
                                     <p><span class="badge badge-tag" id="banner-rank" style="background:rgba(56,189,248,0.15); color:var(--accent-blue);">${freshMe.rank}</span></p>
                                 </div>
                             </div>
