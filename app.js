@@ -1735,26 +1735,26 @@ async function viewAdmin() {
                         <h3 style="margin-bottom: 1rem; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Danh sách kỳ thi</h3>
                         <div style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 450px; overflow-y: auto;">
                             ${contests.length === 0
-                                ? \`<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Chưa có kỳ thi nào.</p>\`
-                                : contests.map(c => \`
+                                ? `<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Chưa có kỳ thi nào.</p>`
+                                : contests.map(c => `
                                     <div style="padding: 0.85rem; background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
                                         <div>
-                                            <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">\${c.title}</div>
+                                            <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">${c.title}</div>
                                             <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; gap: 0.75rem;">
-                                                <span>Thời gian: \${c.duration}</span>
-                                                <span>Bắt đầu: \${c.startTime}</span>
+                                                <span>Thời gian: ${c.duration}</span>
+                                                <span>Bắt đầu: ${c.startTime}</span>
                                             </div>
                                         </div>
                                         <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                            <span class="badge \${c.status === 'running' ? 'badge-calculus' : c.status === 'upcoming' ? 'badge-algebra' : 'badge-tag'}" style="font-size: 0.75rem;">
-                                                \${c.status === 'running' ? '🔴 Đang chạy' : c.status === 'upcoming' ? '⏳ Sắp mở' : '✅ Đã đóng'}
+                                            <span class="badge ${c.status === 'running' ? 'badge-calculus' : c.status === 'upcoming' ? 'badge-algebra' : 'badge-tag'}" style="font-size: 0.75rem;">
+                                                ${c.status === 'running' ? '🔴 Đang chạy' : c.status === 'upcoming' ? '⏳ Sắp mở' : '✅ Đã đóng'}
                                             </span>
-                                            <button class="btn btn-secondary btn-sm delete-contest-btn" data-id="\${c._id}" style="padding: 0.35rem 0.5rem; color: var(--accent-red);">
+                                            <button class="btn btn-secondary btn-sm delete-contest-btn" data-id="${c._id}" style="padding: 0.35rem 0.5rem; color: var(--accent-red);">
                                                 <i class="fa-regular fa-trash-can"></i>
                                             </button>
                                         </div>
                                     </div>
-                                \`).join("")
+                                `).join("")
                             }
                         </div>
                     </div>
@@ -1797,21 +1797,21 @@ async function viewAdmin() {
                     <h3 style="margin-bottom: 1rem; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Quản lý kho đề bài</h3>
                     <div style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 500px; overflow-y: auto;">
                         ${problems.length === 0
-                            ? \`<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Chưa có đề bài nào.</p>\`
-                            : problems.map(p => \`
+                            ? `<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Chưa có đề bài nào.</p>`
+                            : problems.map(p => `
                                 <div style="padding: 0.85rem; background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
                                     <div>
-                                        <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">\${p.title}</div>
+                                        <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">${p.title}</div>
                                         <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; gap: 0.75rem;">
-                                            <span>Người đăng: \${p.creator}</span>
-                                            <span>Phân loại: \${p.category === 'calculus' ? 'Giải tích' : 'Đại số'}</span>
+                                            <span>Người đăng: ${p.creator}</span>
+                                            <span>Phân loại: ${p.category === 'calculus' ? 'Giải tích' : 'Đại số'}</span>
                                         </div>
                                     </div>
-                                    <button class="btn btn-secondary btn-sm delete-problem-btn" data-id="\${p._id}" style="padding: 0.35rem 0.5rem; color: var(--accent-red);">
+                                    <button class="btn btn-secondary btn-sm delete-problem-btn" data-id="${p._id}" style="padding: 0.35rem 0.5rem; color: var(--accent-red);">
                                         <i class="fa-regular fa-trash-can"></i> Xóa đề
                                     </button>
                                 </div>
-                            \`).join("")
+                            `).join("")
                         }
                     </div>
                 </div>
@@ -1835,42 +1835,42 @@ async function viewAdmin() {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${users.map(u => \`
+                                ${users.map(u => `
                                     <tr style="border-bottom: 1px solid var(--border-color);">
                                         <td style="padding: 0.75rem;">
                                             <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                                <img src="\${u.picture || \`https://api.dicebear.com/7.x/adventurer/svg?seed=\${encodeURIComponent(u.name)}`\`}" 
+                                                <img src="${u.picture || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(u.name)}`}" 
                                                      style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;"
-                                                     onerror="this.src='https://api.dicebear.com/7.x/adventurer/svg?seed=\${encodeURIComponent(u.name)}'">
+                                                     onerror="this.src='https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(u.name)}'">
                                                 <div>
-                                                    <div style="font-weight: 600; font-size: 0.88rem;">\${u.fullName || u.name}</div>
-                                                    <div style="font-size: 0.72rem; color: var(--text-muted);">\${u.email}</div>
+                                                    <div style="font-weight: 600; font-size: 0.88rem;">${u.fullName || u.name}</div>
+                                                    <div style="font-size: 0.72rem; color: var(--text-muted);">${u.email}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td style="padding: 0.75rem;">
-                                            <select class="form-select role-select" data-gid="\${u.googleId}" style="font-size: 0.75rem; padding: 0.2rem 0.4rem; height: auto; width: auto; display: inline-block; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px;" \${u.role === 'admin' ? 'disabled' : ''}>
-                                                <option value="user" \${u.role === 'user' ? 'selected' : ''}>Thành viên</option>
-                                                <option value="professor" \${u.role === 'professor' ? 'selected' : ''}>Professor</option>
-                                                <option value="supporter" \${u.role === 'supporter' ? 'selected' : ''}>Supporter</option>
-                                                \${u.role === 'admin' ? '<option value="admin" selected>Admin</option>' : ''}
+                                            <select class="form-select role-select" data-gid="${u.googleId}" style="font-size: 0.75rem; padding: 0.2rem 0.4rem; height: auto; width: auto; display: inline-block; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px;" ${u.role === 'admin' ? 'disabled' : ''}>
+                                                <option value="user" ${u.role === 'user' ? 'selected' : ''}>Thành viên</option>
+                                                <option value="professor" ${u.role === 'professor' ? 'selected' : ''}>Professor</option>
+                                                <option value="supporter" ${u.role === 'supporter' ? 'selected' : ''}>Supporter</option>
+                                                ${u.role === 'admin' ? '<option value="admin" selected>Admin</option>' : ''}
                                             </select>
                                         </td>
                                         <td style="padding: 0.75rem;">
-                                            <span class="badge badge-tag" style="font-size: 0.72rem;">\${u.rank}</span>
+                                            <span class="badge badge-tag" style="font-size: 0.72rem;">${u.rank}</span>
                                         </td>
                                         <td style="padding: 0.75rem; font-weight: 700; color: var(--accent-blue);">
-                                            \${u.points}
+                                            ${u.points}
                                         </td>
                                         <td style="padding: 0.75rem; text-align: right;">
                                             <div style="display: inline-flex; gap: 0.25rem;">
-                                                <input type="number" class="form-input pts-adjust-input" data-gid="\${u.googleId}" style="width: 70px; padding: 0.25rem 0.4rem; font-size: 0.8rem; height: auto;" value="10">
-                                                <button class="btn btn-primary btn-sm adjust-pts-btn" data-gid="\${u.googleId}" data-dir="1" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;"><i class="fa-solid fa-plus"></i></button>
-                                                <button class="btn btn-secondary btn-sm adjust-pts-btn" data-gid="\${u.googleId}" data-dir="-1" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;"><i class="fa-solid fa-minus"></i></button>
+                                                <input type="number" class="form-input pts-adjust-input" data-gid="${u.googleId}" style="width: 70px; padding: 0.25rem 0.4rem; font-size: 0.8rem; height: auto;" value="10">
+                                                <button class="btn btn-primary btn-sm adjust-pts-btn" data-gid="${u.googleId}" data-dir="1" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;"><i class="fa-solid fa-plus"></i></button>
+                                                <button class="btn btn-secondary btn-sm adjust-pts-btn" data-gid="${u.googleId}" data-dir="-1" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;"><i class="fa-solid fa-minus"></i></button>
                                             </div>
                                         </td>
                                     </tr>
-                                \`).join("")}
+                                `).join("")}
                             </tbody>
                         </table>
                     </div>
