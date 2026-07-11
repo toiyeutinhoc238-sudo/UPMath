@@ -320,14 +320,14 @@ function preprocessLaTeX(text) {
     text = text.replace(/\\noindent/g, "");
     
     // 4. Minipages
-    text = text.replace(/\\begin\\{minipage\\}(\\{[^}]*\\})?(\\{[^}]*\\})?/g, '<div style="display:inline-block; vertical-align:top; width: 100%;">');
-    text = text.replace(/\\end\\{minipage\\}/g, '</div>');
+    text = text.replace(/\\begin\{minipage\}(\{[^}]*\})?(\{[^}]*\})?/g, '<div style="display:inline-block; vertical-align:top; width: 100%;">');
+    text = text.replace(/\\end\{minipage\}/g, '</div>');
     
     // 5. Lists (enumerate & itemize)
-    text = text.replace(/\\begin\\{enumerate\\}/g, '<ol style="margin-left: 1.8rem; list-style-type: decimal; margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">');
-    text = text.replace(/\\end\\{enumerate\\}/g, '</li></ol>');
-    text = text.replace(/\\begin\\{itemize\\}/g, '<ul style="margin-left: 1.8rem; list-style-type: disc; margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">');
-    text = text.replace(/\\end\\{itemize\\}/g, '</li></ul>');
+    text = text.replace(/\\begin\{enumerate\}/g, '<ol style="margin-left: 1.8rem; list-style-type: decimal; margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">');
+    text = text.replace(/\\end\{enumerate\}/g, '</li></ol>');
+    text = text.replace(/\\begin\{itemize\}/g, '<ul style="margin-left: 1.8rem; list-style-type: disc; margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">');
+    text = text.replace(/\\end\{itemize\}/g, '</li></ul>');
     
     let parts = text.split(/\\item/g);
     if (parts.length > 1) {
@@ -342,7 +342,7 @@ function preprocessLaTeX(text) {
         }
         text = newText;
     }
-    text = text.replace(/<li>\s*<\/li>/g, "");
+    text = text.replace(/<li>\\s*<\/li>/g, "");
     
     // 6. Convert newlines / double backslashes while respecting math delimiters
     let segs = text.split(/(\\$\$?)/);
