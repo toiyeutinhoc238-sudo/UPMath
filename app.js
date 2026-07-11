@@ -890,14 +890,19 @@ async function viewProblemDetail(id) {
                             </div>
                         </div>
 
-                        <div style="margin-top:1.25rem;padding:1rem;background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.2);border-radius:10px;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
-                            <div style="font-size:0.83rem;color:var(--text-muted);display:flex;align-items:center;gap:0.5rem;">
-                                <i class="fa-solid fa-robot" style="color:#818cf8;font-size:1.1rem;"></i>
-                                <span>Sau khi nộp, <strong style="color:var(--text-primary);">AI Gemini</strong> sẽ tự động chấm bài và trả kết quả ngay lập tức.</span>
+                        <div style="margin-top:1.25rem;padding:1rem;background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.2);border-radius:10px;">
+                            <div style="font-size:0.8rem;color:var(--text-muted);display:flex;align-items:center;gap:0.5rem;margin-bottom:0.85rem;">
+                                <i class="fa-solid fa-circle-info" style="color:#818cf8;"></i>
+                                <span>Chọn cách nộp bài: đăng để cộng đồng góp ý, hoặc nhờ AI Gemini chấm điểm ngay.</span>
                             </div>
-                            <button type="submit" class="btn btn-primary" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;padding:0.65rem 1.4rem;font-size:0.95rem;font-weight:600;white-space:nowrap;">
-                                <i class="fa-solid fa-robot"></i> Nộp bài &amp; Chấm tự động
-                            </button>
+                            <div style="display:flex;gap:0.75rem;justify-content:flex-end;flex-wrap:wrap;">
+                                <button type="submit" name="action" value="post" class="btn btn-secondary" style="display:flex;align-items:center;gap:0.4rem;">
+                                    <i class="fa-solid fa-paper-plane"></i> Đăng lời giải
+                                </button>
+                                <button type="submit" name="action" value="grade" class="btn btn-primary" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;font-weight:600;display:flex;align-items:center;gap:0.4rem;">
+                                    <i class="fa-solid fa-robot"></i> Nộp bài &amp; Chấm tự động
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -1011,31 +1016,38 @@ async function viewProblemDetail(id) {
                 if (!imageUrl) { showToast("Vui lòng tải lên hoặc chụp ảnh lời giải!", "warning"); return; }
             }
 
-            const submitBtn = e.target.querySelector("button[type='submit']");
-            const originalHTML = submitBtn ? submitBtn.innerHTML : "";
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> AI đang chấm bài...`;
-            }
-            showToast("AI đang tiến hành chấm bài của bạn, vui lòng đợi trong giây lát...", "info");
+            const isGrading = e.submitter?.value === 'grade';
+
+            const submitBtns = e.target.querySelectorAll("button[type='submit']");
+            submitBtns.forEach(b => { b.disabled = true; });
+            const gradeBtn = e.target.querySelector("button[value='grade']");
+            const postBtn = e.target.querySelector("button[value='post']");
+            const origGradeHTML = gradeBtn ? gradeBtn.innerHTML : '';
+            const origPostHTML = postBtn ? postBtn.innerHTML : '';
+            if (isGrading && gradeBtn) gradeBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> AI đang chấm bài...`;
+            else if (postBtn) postBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang đăng...`;
+            if (isGrading) showToast("AI đang tiến hành chấm bài của bạn, vui lòng đợi trong giây lát...", "info");
 
             try {
-                const solution = await api.addSolution({ problemId: id, author: user.username, authorPicture: user.picture, authorGoogleId: user.googleId, content, imageUrl });
-                if (solution.status === 'correct') {
-                    showToast("AI chấm: Lời giải chính xác! Bạn được cộng +15 điểm 🎉", "success");
-                } else if (solution.status === 'incorrect') {
-                    showToast("AI chấm: Lời giải chưa chính xác! Hãy đọc kỹ nhận xét.", "warning");
+                const solution = await api.addSolution({ problemId: id, author: user.username, authorPicture: user.picture, authorGoogleId: user.googleId, content, imageUrl, skipGrading: !isGrading });
+                if (isGrading) {
+                    if (solution.status === 'correct') {
+                        showToast("AI chấm: Lời giải chính xác! Bạn được cộng +15 điểm 🎉", "success");
+                    } else if (solution.status === 'incorrect') {
+                        showToast("AI chấm: Lời giải chưa chính xác! Hãy đọc kỹ nhận xét.", "warning");
+                    } else {
+                        showToast("Đã nộp bài. AI không chấm được, chờ giảng viên duyệt.", "info");
+                    }
                 } else {
-                    showToast("Đã gửi lời giải thành công! Chờ giảng viên duyệt.", "success");
+                    showToast("Đã đăng lời giải! Mọi người có thể xem và góp ý. 💬", "success");
                 }
                 viewProblemDetail(id);
             } catch (err) {
                 showToast("Đăng lời giải thất bại: " + err.message, "error");
             } finally {
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalHTML;
-                }
+                submitBtns.forEach(b => { b.disabled = false; });
+                if (gradeBtn) gradeBtn.innerHTML = origGradeHTML;
+                if (postBtn) postBtn.innerHTML = origPostHTML;
             }
         });
 

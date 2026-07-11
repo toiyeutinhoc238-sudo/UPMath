@@ -354,7 +354,7 @@ app.post('/api/solutions', async (req, res) => {
         const problem = await Problem.findById(req.body.problemId);
         const apiKey = process.env.GEMINI_API_KEY;
 
-        if (apiKey && problem) {
+        if (apiKey && problem && !req.body.skipGrading) {
             try {
                 const rubricSection = problem.gradingRubric ? `\nThang điểm chấm bài (do giảng viên cung cấp):\n${problem.gradingRubric}\n` : '';
                 const prompt = `Bạn là một giảng viên chấm thi toán học chuyên nghiệp cho sinh viên đại học. Hãy kiểm tra lời giải của học sinh cho đề bài dưới đây và xác định xem lời giải đó là đúng hay sai.
