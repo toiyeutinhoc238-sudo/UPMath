@@ -1423,27 +1423,6 @@ app.post('/api/contests', async (req, res) => {
     try {
         const contest = new Contest(req.body);
         await contest.save();
-
-        // Create associated Problems automatically
-        if (req.body.questions && req.body.questions.length > 0) {
-            for (let i = 0; i < req.body.questions.length; i++) {
-                const q = req.body.questions[i];
-                const problem = new Problem({
-                    title: `${contest.title} - Câu ${i + 1}`,
-                    content: q,
-                    category: req.body.category || 'calculus',
-                    tags: [...(req.body.tags || []), 'contest', contest._id.toString()],
-                    creator: 'System',
-                    creatorGoogleId: 'system',
-                    points: req.body.points || 10,
-                    gradingRubric: req.body.gradingRubric || '',
-                    difficulty: req.body.difficulty || 'medium',
-                    contestId: contest._id
-                });
-                await problem.save();
-            }
-        }
-
         res.status(201).json(contest);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -1472,6 +1451,31 @@ app.put('/api/contests/:id', async (req, res) => {
     try {
         const updated = await Contest.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!updated) return res.status(404).json({ error: 'Contest not found' });
+
+        // If questions are updated, sync them to Problem collection
+        if (req.body.questions) {
+            // Delete old associated problems
+            await Problem.deleteMany({ contestId: req.params.id });
+
+            // Create new associated problems
+            for (let i = 0; i < req.body.questions.length; i++) {
+                const q = req.body.questions[i];
+                const problem = new Problem({
+                    title: `${updated.title} - Câu ${i + 1}`,
+                    content: q,
+                    category: req.body.category || updated.category || 'calculus',
+                    tags: ['contest', updated._id.toString()],
+                    creator: 'System',
+                    creatorGoogleId: 'system',
+                    points: 10,
+                    gradingRubric: '',
+                    difficulty: req.body.difficulty || updated.difficulty || 'medium',
+                    contestId: updated._id
+                });
+                await problem.save();
+            }
+        }
+
         res.json(updated);
     } catch (err) {
         res.status(500).json({ error: err.message });

@@ -2882,6 +2882,9 @@ async function viewAdmin() {
                                             <span class="badge ${c.status === 'running' ? 'badge-calculus' : c.status === 'upcoming' ? 'badge-algebra' : 'badge-tag'}" style="font-size: 0.75rem;">
                                                 ${c.status === 'running' ? '🔴 Đang chạy' : c.status === 'upcoming' ? '⏳ Sắp mở' : '✅ Đã đóng'}
                                             </span>
+                                            <button class="btn btn-secondary btn-sm" onclick="viewEditContestQuestions('${c._id}')" style="padding: 0.35rem 0.5rem; color: var(--accent-orange);" title="Soạn đề thi">
+                                                <i class="fa-solid fa-file-signature"></i> Soạn đề
+                                            </button>
                                             <button class="btn btn-secondary btn-sm extend-contest-btn" data-id="${c._id}" data-title="${c.title}" data-duration="${c.duration}" style="padding: 0.35rem 0.5rem; color: var(--accent-blue);" title="Gia hạn thời gian">
                                                 <i class="fa-solid fa-clock-rotate-left"></i> Gia hạn
                                             </button>
@@ -3094,37 +3097,7 @@ async function viewAdmin() {
             });
         });
 
-        // Initialize dynamic question count
-        let questionCount = 1;
-        document.getElementById("c-add-question-btn")?.addEventListener("click", () => {
-            questionCount++;
-            const container = document.getElementById("c-questions-container");
-            const div = document.createElement("div");
-            div.className = "form-group c-question-item";
-            div.setAttribute("data-index", questionCount);
-            div.style.marginTop = "1rem";
-            div.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <label class="form-label" style="font-weight: 600; color: var(--accent-orange); margin-bottom: 0.25rem;">Câu ${questionCount}:</label>
-                    <button type="button" class="btn btn-secondary btn-xs c-ai-gen-btn" data-target="c-question-textarea-${questionCount}" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 6px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Sinh ngẫu nhiên</button>
-                </div>
-                <textarea class="form-textarea c-question-content" id="c-question-textarea-${questionCount}" style="min-height:90px;" required
-                    placeholder="Nhập nội dung đề bài cho Câu ${questionCount}..."></textarea>
-            `;
-            container.appendChild(div);
-            document.getElementById("c-remove-question-btn").style.display = "block";
-        });
 
-        document.getElementById("c-remove-question-btn")?.addEventListener("click", () => {
-            if (questionCount > 1) {
-                const container = document.getElementById("c-questions-container");
-                container.lastElementChild.remove();
-                questionCount--;
-                if (questionCount === 1) {
-                    document.getElementById("c-remove-question-btn").style.display = "none";
-                }
-            }
-        });
 
         // Add Contest submission
         document.getElementById("create-contest-form")?.addEventListener("submit", async (e) => {
@@ -3143,40 +3116,16 @@ async function viewAdmin() {
             const status = document.getElementById("c-status").value;
             const statusLabel = status === 'upcoming' ? 'Chưa bắt đầu' : status === 'running' ? 'Đang diễn ra' : 'Đã kết thúc';
 
-            const category = document.getElementById("c-category").value;
-            const difficulty = document.getElementById("c-difficulty").value;
-            const points = parseInt(document.getElementById("c-points").value) || 10;
-            const tagsRaw = document.getElementById("c-tags").value;
-            const tags = tagsRaw ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : [];
-            const gradingRubric = document.getElementById("c-rubric").value.trim();
-
-            // Collect questions
-            const questionTextareas = document.querySelectorAll(".c-question-content");
-            const questions = Array.from(questionTextareas).map(ta => ta.value.trim()).filter(Boolean);
-
             const confirmMsg = `Bạn có chắc chắn muốn tạo kỳ thi này với thông tin sau?\n\n` +
                                `- Tiêu đề: ${title}\n` +
                                `- Thời lượng: ${duration}\n` +
                                `- Bắt đầu lúc: ${startTime}\n` +
-                               `- Trạng thái: ${statusLabel}\n` +
-                               `- Tổng số câu hỏi: ${questions.length} câu`;
+                               `- Trạng thái: ${statusLabel}`;
 
             if (!confirm(confirmMsg)) return;
 
             try {
-                await api.addContest({ 
-                    title, 
-                    duration, 
-                    startTime, 
-                    status, 
-                    content: questions[0] || "", 
-                    questions, 
-                    category, 
-                    difficulty, 
-                    points, 
-                    tags, 
-                    gradingRubric 
-                });
+                await api.addContest({ title, duration, startTime, status });
                 showToast("Tạo kỳ thi thành công!", "success");
                 viewAdmin();
             } catch (err) {
@@ -3486,7 +3435,7 @@ document.addEventListener("click", async (e) => {
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang sinh...`;
 
         try {
-            const res = await api._req('POST', '/problems/generate', { category, difficulty });
+            const res = await api.generateProblem({ category, difficulty });
             if (res && res.content) {
                 textarea.value = res.content;
                 showToast("Đã sinh đề ngẫu nhiên thành công!", "success");
@@ -3755,5 +3704,130 @@ async function viewContestDetail(id) {
         renderLaTeX(mainContent);
     } catch (e) {
         showError("Không thể tải chi tiết kỳ thi!");
+    }
+}
+
+
+async function viewEditContestQuestions(contestId) {
+    setActiveNav("admin");
+    showLoading();
+    try {
+        const contests = await api.getContests();
+        const c = contests.find(item => item._id === contestId);
+        if (!c) { showError("Không tìm thấy kỳ thi!"); return; }
+
+        const savedQuestions = c.questions || [];
+        let questionCount = Math.max(1, savedQuestions.length);
+
+        mainContent.innerHTML = `
+            <div class="page-header" style="margin-bottom: 1.5rem;">
+                <h2 class="page-title"><i class="fa-solid fa-file-signature"></i> Soạn Đề Thi <span>- ${c.title}</span></h2>
+                <button class="btn btn-secondary btn-sm" onclick="viewAdmin()" style="height: 38px; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-arrow-left"></i> Quay lại</button>
+            </div>
+
+            <div class="card">
+                <form id="edit-contest-questions-form">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom: 1.5rem;">
+                        <div class="form-group">
+                            <label class="form-label" for="c-category">Môn học (Dùng để sinh đề ngẫu nhiên):</label>
+                            <select id="c-category" class="form-select" style="background:var(--bg-input); border:1px solid var(--border-color); color:inherit; padding:0.625rem; border-radius:8px; width:100%;">
+                                <option value="calculus" ${c.category === 'calculus' ? 'selected' : ''}>Giải tích</option>
+                                <option value="algebra" ${c.category === 'algebra' ? 'selected' : ''}>Đại số tuyến tính</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="c-difficulty">Độ khó (Dùng để sinh đề ngẫu nhiên):</label>
+                            <select id="c-difficulty" class="form-select" style="background:var(--bg-input); border:1px solid var(--border-color); color:inherit; padding:0.625rem; border-radius:8px; width:100%;">
+                                <option value="easy" ${c.difficulty === 'easy' ? 'selected' : ''}>Dễ</option>
+                                <option value="medium" ${c.difficulty === 'medium' || !c.difficulty ? 'selected' : ''}>Trung bình</option>
+                                <option value="hard" ${c.difficulty === 'hard' ? 'selected' : ''}>Khó</option>
+                                <option value="extreme" ${c.difficulty === 'extreme' ? 'selected' : ''}>Cực khó</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="c-questions-container">
+                        ${savedQuestions.length === 0 ? `
+                            <div class="form-group c-question-item" data-index="1">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <label class="form-label" style="font-weight: 600; color: var(--accent-orange); margin-bottom: 0.25rem;">Câu 1:</label>
+                                    <button type="button" class="btn btn-secondary btn-xs c-ai-gen-btn" data-target="c-question-textarea-1" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 6px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Sinh ngẫu nhiên</button>
+                                </div>
+                                <textarea class="form-textarea c-question-content" id="c-question-textarea-1" style="min-height:90px;" required placeholder="Nhập nội dung đề bài cho Câu 1..."></textarea>
+                            </div>
+                        ` : savedQuestions.map((q, idx) => `
+                            <div class="form-group c-question-item" data-index="${idx + 1}" style="margin-top: ${idx > 0 ? '1rem' : '0'};">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <label class="form-label" style="font-weight: 600; color: var(--accent-orange); margin-bottom: 0.25rem;">Câu ${idx + 1}:</label>
+                                    <button type="button" class="btn btn-secondary btn-xs c-ai-gen-btn" data-target="c-question-textarea-${idx + 1}" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 6px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Sinh ngẫu nhiên</button>
+                                </div>
+                                <textarea class="form-textarea c-question-content" id="c-question-textarea-${idx + 1}" style="min-height:90px;" required placeholder="Nhập nội dung đề bài cho Câu ${idx + 1}...">${q}</textarea>
+                            </div>
+                        `).join("")}
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; margin-top: 1rem;">
+                        <button type="button" id="c-add-question-btn" class="btn btn-secondary btn-sm" style="flex: 1; padding: 0.5rem;"><i class="fa-solid fa-plus"></i> Thêm câu hỏi (Câu tiếp theo)</button>
+                        <button type="button" id="c-remove-question-btn" class="btn btn-secondary btn-sm" style="flex: 1; padding: 0.5rem; color: var(--accent-red); ${questionCount <= 1 ? 'display: none;' : ''}"><i class="fa-solid fa-trash-can"></i> Xóa câu cuối</button>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%;"><i class="fa-solid fa-floppy-disk"></i> Lưu đề thi</button>
+                </form>
+            </div>
+        `;
+
+        // Listeners for dynamic add/remove inside edit form
+        document.getElementById("c-add-question-btn")?.addEventListener("click", () => {
+            questionCount++;
+            const container = document.getElementById("c-questions-container");
+            const div = document.createElement("div");
+            div.className = "form-group c-question-item";
+            div.setAttribute("data-index", questionCount);
+            div.style.marginTop = "1rem";
+            div.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <label class="form-label" style="font-weight: 600; color: var(--accent-orange); margin-bottom: 0.25rem;">Câu ${questionCount}:</label>
+                    <button type="button" class="btn btn-secondary btn-xs c-ai-gen-btn" data-target="c-question-textarea-${questionCount}" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 6px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Sinh ngẫu nhiên</button>
+                </div>
+                <textarea class="form-textarea c-question-content" id="c-question-textarea-${questionCount}" style="min-height:90px;" required placeholder="Nhập nội dung đề bài cho Câu ${questionCount}..."></textarea>
+            `;
+            container.appendChild(div);
+            document.getElementById("c-remove-question-btn").style.display = "block";
+        });
+
+        document.getElementById("c-remove-question-btn")?.addEventListener("click", () => {
+            if (questionCount > 1) {
+                const container = document.getElementById("c-questions-container");
+                container.lastElementChild.remove();
+                questionCount--;
+                if (questionCount === 1) {
+                    document.getElementById("c-remove-question-btn").style.display = "none";
+                }
+            }
+        });
+
+        // Submit form
+        document.getElementById("edit-contest-questions-form")?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const category = document.getElementById("c-category").value;
+            const difficulty = document.getElementById("c-difficulty").value;
+
+            const questionTextareas = document.querySelectorAll(".c-question-content");
+            const questions = Array.from(questionTextareas).map(ta => ta.value.trim()).filter(Boolean);
+
+            if (!confirm(`Lưu đề thi gồm ${questions.length} câu hỏi?`)) return;
+
+            try {
+                await api.updateContest(contestId, { questions, category, difficulty });
+                showToast("Đã lưu đề thi và đồng bộ câu hỏi thành công!", "success");
+                viewAdmin();
+            } catch (err) {
+                showToast("Không thể lưu đề thi: " + err.message, "error");
+            }
+        });
+
+        renderLaTeX(mainContent);
+    } catch (e) {
+        showError("Lỗi tải trang soạn đề!");
     }
 }
