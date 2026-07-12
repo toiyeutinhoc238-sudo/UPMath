@@ -2341,7 +2341,7 @@ async function viewContests() {
                        <p style="color:var(--text-muted);">Chưa có kỳ thi nào. Hãy theo dõi để cập nhật!</p>
                    </div>`
                 : contests.map(c => `
-                    <div class="card" style="margin-bottom:1.5rem;padding:1.5rem;border-left:4px solid ${c.status === 'running' ? 'var(--accent-green)' : c.status === 'upcoming' ? 'var(--accent-blue)' : 'var(--text-muted)'};">
+                    <div class="card contest-list-card" onclick="window.location.hash='#contest/${c._id}'" style="margin-bottom:1.5rem;padding:1.5rem;border-left:4px solid ${c.status === 'running' ? 'var(--accent-green)' : c.status === 'upcoming' ? 'var(--accent-blue)' : 'var(--text-muted)'}; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';">
                         <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
                             <div>
                                 <h3 style="font-size:1.15rem;margin-bottom:0.4rem;font-weight:700;color:var(--text-primary);">${c.title}</h3>
@@ -2387,6 +2387,12 @@ async function viewContests() {
                                    </div>` : ''}
                                   `
                             }
+                        </div>
+                        
+                        <div style="margin-top: 1rem; display: flex; justify-content: flex-end; border-top: 1px dashed var(--border-color); padding-top: 0.75rem;">
+                            <span style="color: var(--accent-blue); font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 0.35rem;">
+                                Xem chi tiết &amp; Đăng ký tham gia <i class="fa-solid fa-arrow-right-long"></i>
+                            </span>
                         </div>
                     </div>`).join("")}`;
     } catch (e) { showError("Không thể tải kỳ thi!"); }
