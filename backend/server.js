@@ -312,7 +312,12 @@ function getContestStatus(c) {
         const [timePart, datePart] = c.startTime.split(' ');
         const [hour, min] = timePart.split(':');
         const [day, month, year] = datePart.split('/');
-        const start = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(min));
+        
+        // Parse explicitly as Vietnam timezone (UTC+7)
+        const formatPart = (str) => str.trim().padStart(2, '0');
+        const startISO = `${year}-${formatPart(month)}-${formatPart(day)}T${formatPart(hour)}:${formatPart(min)}:00+07:00`;
+        
+        const start = new Date(startISO);
         const now = new Date();
         if (now >= start) {
             const durationMins = parseInt(c.duration) || 90;
