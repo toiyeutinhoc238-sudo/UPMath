@@ -3666,7 +3666,7 @@ async function viewContestDetail(id) {
 
         // Fetch all problems linked to this contest
         const problems = await api.getProblems();
-        const contestProblems = problems.filter(p => p.contestId === id);
+        const contestProblems = problems.filter(p => p.contestId === id).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
         // Fetch all solutions for these problems
         const allSolutions = [];
