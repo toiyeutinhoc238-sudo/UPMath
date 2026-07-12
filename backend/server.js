@@ -305,6 +305,28 @@ const Comment = mongoose.model('Comment', commentSchema);
 const Shout = mongoose.model('Shout', shoutSchema);
 const Contest = mongoose.model('Contest', contestSchema);
 
+function getContestStatus(c) {
+    if (c.status === 'ended') return 'ended';
+    if (!c.startTime) return c.status;
+    try {
+        const [timePart, datePart] = c.startTime.split(' ');
+        const [hour, min] = timePart.split(':');
+        const [day, month, year] = datePart.split('/');
+        const start = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(min));
+        const now = new Date();
+        if (now >= start) {
+            const durationMins = parseInt(c.duration) || 90;
+            const end = new Date(start.getTime() + durationMins * 60000);
+            if (now >= end) return 'ended';
+            return 'running';
+        }
+    } catch (e) {
+        console.error("Error calculating contest status:", e);
+    }
+    return c.status;
+}
+
+
 // Helper chuẩn hóa tags: viết hoa chữ cái đầu, còn lại viết thường, loại bỏ trùng lặp
 function normalizeTags(tags) {
     if (!Array.isArray(tags)) return [];
@@ -1413,7 +1435,12 @@ Trả về JSON (chỉ JSON thuần):
 app.get('/api/contests', async (req, res) => {
     try {
         const contests = await Contest.find().sort({ createdAt: -1 });
-        res.json(contests);
+        const processed = contests.map(c => {
+            const doc = c.toObject();
+            doc.status = getContestStatus(doc);
+            return doc;
+        });
+        res.json(processed);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
