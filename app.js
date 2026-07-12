@@ -241,6 +241,8 @@ const api = {
     getContests: () => api._req('GET', '/contests'),
     addContest: (data) => api._req('POST', '/contests', data),
     deleteContest: (id) => api._req('DELETE', `/contests/${id}`),
+    registerContest: (id, data) => api._req('POST', `/contests/${id}/register`, data),
+    updateContest: (id, data) => api._req('PUT', `/contests/${id}`, data),
     deleteProblem: (id) => api._req('DELETE', `/problems/${id}`),
     getStats: () => api._req('GET', '/stats'),
 
@@ -2880,6 +2882,18 @@ async function viewAdmin() {
                                             <span class="badge ${c.status === 'running' ? 'badge-calculus' : c.status === 'upcoming' ? 'badge-algebra' : 'badge-tag'}" style="font-size: 0.75rem;">
                                                 ${c.status === 'running' ? '🔴 Đang chạy' : c.status === 'upcoming' ? '⏳ Sắp mở' : '✅ Đã đóng'}
                                             </span>
+                                            <button class="btn btn-secondary btn-sm extend-contest-btn" data-id="${c._id}" data-title="${c.title}" data-duration="${c.duration}" style="padding: 0.35rem 0.5rem; color: var(--accent-blue);" title="Gia hạn thời gian">
+                                                <i class="fa-solid fa-clock-rotate-left"></i> Gia hạn
+                                            </button>
+                                            ${c.status === 'running' ? `
+                                                <button class="btn btn-secondary btn-sm toggle-contest-status-btn" data-id="${c._id}" data-target-status="ended" style="padding: 0.35rem 0.5rem; color: var(--accent-orange);" title="Dừng kỳ thi">
+                                                    <i class="fa-solid fa-circle-stop"></i> Dừng
+                                                </button>
+                                            ` : (c.status === 'ended' ? `
+                                                <button class="btn btn-secondary btn-sm toggle-contest-status-btn" data-id="${c._id}" data-target-status="running" style="padding: 0.35rem 0.5rem; color: var(--accent-green);" title="Tiếp tục kỳ thi">
+                                                    <i class="fa-solid fa-circle-play"></i> Tiếp tục
+                                                </button>
+                                            ` : '')}
                                             <button class="btn btn-secondary btn-sm delete-contest-btn" data-id="${c._id}" style="padding: 0.35rem 0.5rem; color: var(--accent-red);">
                                                 <i class="fa-regular fa-trash-can"></i>
                                             </button>
@@ -2928,8 +2942,11 @@ async function viewAdmin() {
                              
                              <div id="c-questions-container">
                                  <div class="form-group c-question-item" data-index="1">
-                                     <label class="form-label" style="font-weight: 600; color: var(--accent-orange);">Câu 1:</label>
-                                     <textarea class="form-textarea c-question-content" style="min-height:90px;" required
+                                     <div style="display:flex; justify-content:space-between; align-items:center;">
+                                         <label class="form-label" style="font-weight: 600; color: var(--accent-orange); margin-bottom: 0.25rem;">Câu 1:</label>
+                                         <button type="button" class="btn btn-secondary btn-xs c-ai-gen-btn" data-target="c-question-textarea-1" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 6px;"><i class="fa-solid fa-wand-magic-sparkles"></i> AI sinh đề</button>
+                                     </div>
+                                     <textarea class="form-textarea c-question-content" id="c-question-textarea-1" style="min-height:90px;" required
                                          placeholder="Nhập nội dung đề bài cho Câu 1..."></textarea>
                                  </div>
                              </div>
@@ -3087,8 +3104,11 @@ async function viewAdmin() {
             div.setAttribute("data-index", questionCount);
             div.style.marginTop = "1rem";
             div.innerHTML = `
-                <label class="form-label" style="font-weight: 600; color: var(--accent-orange);">Câu ${questionCount}:</label>
-                <textarea class="form-textarea c-question-content" style="min-height:90px;" required
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <label class="form-label" style="font-weight: 600; color: var(--accent-orange); margin-bottom: 0.25rem;">Câu ${questionCount}:</label>
+                    <button type="button" class="btn btn-secondary btn-xs c-ai-gen-btn" data-target="c-question-textarea-${questionCount}" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 6px;"><i class="fa-solid fa-wand-magic-sparkles"></i> AI sinh đề</button>
+                </div>
+                <textarea class="form-textarea c-question-content" id="c-question-textarea-${questionCount}" style="min-height:90px;" required
                     placeholder="Nhập nội dung đề bài cho Câu ${questionCount}..."></textarea>
             `;
             container.appendChild(div);
@@ -3162,6 +3182,52 @@ async function viewAdmin() {
             } catch (err) {
                 showToast("Tạo kỳ thi thất bại!", "error");
             }
+        });
+
+        // Extend Contest Time Action
+        document.querySelectorAll(".extend-contest-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const id = btn.getAttribute("data-id");
+                const currentDuration = btn.getAttribute("data-duration") || "90 phút";
+                const currentMins = parseInt(currentDuration) || 90;
+                
+                const val = prompt(`Gia hạn thời gian cho kỳ thi. Nhập số phút muốn cộng thêm (tối đa 180 phút):`, "30");
+                if (val === null) return;
+                
+                const addedMins = parseInt(val) || 0;
+                if (addedMins <= 0 || addedMins > 180) {
+                    showToast("Số phút gia hạn không hợp lệ (từ 1 đến 180 phút)!", "warning");
+                    return;
+                }
+                
+                const newDuration = `${currentMins + addedMins} phút`;
+                try {
+                    await api.updateContest(id, { duration: newDuration });
+                    showToast(`Đã gia hạn thêm ${addedMins} phút cho kỳ thi thành công!`, "success");
+                    viewAdmin();
+                } catch (err) {
+                    showToast("Gia hạn thất bại!", "error");
+                }
+            });
+        });
+
+        // Pause / Resume Contest Action
+        document.querySelectorAll(".toggle-contest-status-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const id = btn.getAttribute("data-id");
+                const targetStatus = btn.getAttribute("data-target-status");
+                const actionText = targetStatus === 'ended' ? 'Dừng' : 'Tiếp tục';
+                
+                if (!confirm(`Bạn có chắc chắn muốn ${actionText} kỳ thi này không?`)) return;
+                
+                try {
+                    await api.updateContest(id, { status: targetStatus });
+                    showToast(`Đã ${actionText} kỳ thi thành công!`, "success");
+                    viewAdmin();
+                } catch {
+                    showToast(`Không thể ${actionText} kỳ thi!`, "error");
+                }
+            });
         });
 
         // Delete Contest Action
@@ -3241,6 +3307,7 @@ async function router() {
     if (hash.startsWith("#problem/")) { await viewProblemDetail(hash.split("/")[1]); return; }
     if (hash.startsWith("#discussion/")) { await viewDiscussionDetail(hash.split("/")[1]); return; }
     if (hash.startsWith("#profile/")) { await viewProfile(hash.split("/")[1]); return; }
+    if (hash.startsWith("#contest/")) { await viewContestDetail(hash.split("/")[1]); return; }
 
     const map = {
         exercises: () => viewExercises(),
@@ -3402,6 +3469,39 @@ async function viewAbout() {
     }
 }
 
+
+// Global listener for AI Problem Generation in Contest creation
+document.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".c-ai-gen-btn");
+    if (btn) {
+        const targetId = btn.getAttribute("data-target");
+        const textarea = document.getElementById(targetId);
+        if (!textarea) return;
+
+        const category = document.getElementById("c-category").value;
+        const difficulty = document.getElementById("c-difficulty").value;
+
+        btn.disabled = true;
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang sinh...`;
+
+        try {
+            const res = await api._req('POST', '/problems/generate', { category, difficulty });
+            if (res && res.content) {
+                textarea.value = res.content;
+                showToast("Đã sinh đề bằng AI thành công!", "success");
+            } else {
+                showToast("Không nhận được nội dung từ AI!", "error");
+            }
+        } catch (err) {
+            showToast("AI sinh đề thất bại!", "error");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+    }
+});
+
 // ─── 7. BOOT ──────────────────────────────────────────────────────────────────
 
 window.addEventListener("hashchange", () => router());
@@ -3459,3 +3559,201 @@ window.handlePortalMockLogin = function (e) {
         showToast("Để đồng bộ học tập, vui lòng đăng nhập bằng tài khoản Google trường cấp ở nút phía dưới! 🔑", "info");
     }
 };
+
+
+async function viewContestDetail(id) {
+    setActiveNav("contests");
+    showLoading();
+    try {
+        const contests = await api.getContests();
+        const c = contests.find(item => item._id === id);
+        if (!c) { showError("Không tìm thấy kỳ thi!"); return; }
+
+        const me = getCurrentUser();
+        const isRegistered = c.participants && c.participants.includes(me?.googleId);
+
+        // Fetch all problems linked to this contest
+        const problems = await api.getProblems();
+        const contestProblems = problems.filter(p => p.contestId === id);
+
+        // Fetch all solutions for these problems
+        const allSolutions = [];
+        for (let p of contestProblems) {
+            try {
+                const sols = await api.getSolutions({ problemId: p._id });
+                allSolutions.push(...sols);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // Fetch users to display names/school details on leaderboard
+        const users = await api.getUsers();
+        const participantUsers = users.filter(u => c.participants && c.participants.includes(u.googleId));
+
+        // Group solutions by user & calculate score
+        const leaderboardData = participantUsers.map(u => {
+            let totalPoints = 0;
+            let timeScore = 0;
+            const problemStatuses = contestProblems.map(p => {
+                const userSols = allSolutions.filter(s => s.problemId === p._id && s.authorGoogleId === u.googleId);
+                const correctSol = userSols.find(s => s.status === 'correct');
+                const pendingSol = userSols.find(s => s.status === 'pending');
+                const incorrectSol = userSols.find(s => s.status === 'incorrect');
+
+                if (correctSol) {
+                    totalPoints += p.points || 10;
+                    return { status: 'correct', sol: correctSol };
+                } else if (pendingSol) {
+                    return { status: 'pending', sol: pendingSol };
+                } else if (incorrectSol) {
+                    return { status: 'incorrect', sol: incorrectSol };
+                }
+                return { status: 'none', sol: null };
+            });
+
+            return {
+                user: u,
+                totalPoints,
+                timeScore,
+                problemStatuses
+            };
+        }).sort((a, b) => b.totalPoints - a.totalPoints);
+
+        const statusLabel = c.status === 'running' ? '🔴 Đang diễn ra' : c.status === 'upcoming' ? '⏳ Sắp bắt đầu' : '✅ Đã kết thúc';
+
+        mainContent.innerHTML = `
+            <div class="page-header" style="margin-bottom: 1.5rem;">
+                <h2 class="page-title"><i class="fa-solid fa-trophy"></i> Chi Tiết <span>Kỳ Thi</span></h2>
+                <button class="btn btn-secondary btn-sm" onclick="window.location.hash='#contests'" style="height: 38px; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-arrow-left"></i> Quay lại</button>
+            </div>
+
+            <div class="card" style="margin-bottom: 1.5rem; padding: 1.5rem; border-left: 4px solid ${c.status === 'running' ? 'var(--accent-green)' : c.status === 'upcoming' ? 'var(--accent-blue)' : 'var(--text-muted)'};">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                    <div>
+                        <h3 style="font-size: 1.3rem; font-weight:700; color:var(--text-primary); margin-bottom:0.25rem;">${c.title}</h3>
+                        <div style="font-size:0.88rem; color:var(--text-secondary); display:flex; gap:1.5rem;">
+                            <span>⏱️ <strong>Thời lượng:</strong> ${c.duration}</span>
+                            <span>📅 <strong>Bắt đầu:</strong> ${c.startTime}</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap: 0.75rem; align-items:center;">
+                        <span class="badge ${c.status === 'running' ? 'badge-calculus' : c.status === 'upcoming' ? 'badge-algebra' : 'badge-tag'}">${statusLabel}</span>
+                        ${!isRegistered && me ? `
+                            <button id="register-contest-btn" class="btn btn-primary btn-sm" style="background: linear-gradient(135deg,#4f46e5,#6366f1); border:none;"><i class="fa-solid fa-user-plus"></i> Đăng ký tham gia</button>
+                        ` : (isRegistered ? `
+                            <span class="badge badge-calculus" style="background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.25);"><i class="fa-solid fa-circle-check"></i> Đã đăng ký</span>
+                        ` : '')}
+                    </div>
+                </div>
+
+                ${c.status === 'upcoming' ? `
+                    <div class="contest-question-box" style="background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; color: var(--text-muted);">
+                        <i class="fa-solid fa-lock fa-3x" style="color: var(--accent-orange); margin-bottom: 1rem;"></i>
+                        <p style="font-size: 1rem; font-weight:600;">Nội dung đề thi được bảo mật và sẽ tự động mở khi kỳ thi chính thức bắt đầu.</p>
+                        ${!isRegistered && me ? '<p style="font-size: 0.88rem; margin-top:0.5rem;">Hãy đăng ký để tham gia và nhận email thông báo khi đề thi mở!</p>' : ''}
+                    </div>
+                ` : `
+                    <div class="contest-question-box" style="background: rgba(255,255,255,0.01); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <h4 style="font-size: 1rem; font-weight:700; color:var(--accent-blue); margin-bottom: 0.75rem;"><i class="fa-solid fa-file-invoice"></i> Đề thi chính thức:</h4>
+                        
+                        <div style="display:flex; flex-direction:column; gap:1rem; margin-bottom: 1.25rem;">
+                            ${contestProblems.map((p, idx) => `
+                                <div style="background: rgba(255,255,255,0.015); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color); border-left: 4px solid var(--accent-orange);">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                                        <span style="font-weight:700; color:var(--accent-orange);">Câu ${idx+1}</span>
+                                        ${isRegistered ? `
+                                            <a href="#problem/${p._id}" class="btn btn-secondary btn-xs" style="padding:0.25rem 0.5rem; font-size:0.75rem; border-radius:6px;"><i class="fa-solid fa-pen-to-square"></i> Làm bài này</a>
+                                        ` : '<span style="font-size:0.75rem; color:var(--text-muted);">Đăng ký để làm bài</span>'}
+                                    </div>
+                                    <div style="line-height:1.75; font-size:0.95rem;">
+                                        ${preprocessLaTeX(p.content)}
+                                    </div>
+                                </div>
+                            `).join("")}
+                        </div>
+                    </div>
+                `}
+            </div>
+
+            <!-- LEADERBOARD / BẢNG THÀNH TÍCH -->
+            <div class="card" style="margin-top: 1.5rem;">
+                <h3 style="font-size: 1.15rem; font-weight:700; border-bottom:1px solid var(--border-color); padding-bottom:0.75rem; margin-bottom: 1rem; color:var(--text-primary); display:flex; align-items:center; gap:0.5rem;">
+                    <i class="fa-solid fa-ranking-star" style="color:var(--accent-orange);"></i> Bảng Thành Tích Kỳ Thi
+                </h3>
+
+                <!-- Legend -->
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem; font-size: 0.8rem; color: var(--text-secondary); background: rgba(255,255,255,0.01); padding: 0.75rem; border-radius: 8px; border:1px solid var(--border-color);">
+                    <div style="display:flex; align-items:center; gap:0.35rem;"><span style="width:12px; height:12px; border-radius:3px; background:#10b981;"></span> Đúng (Có điểm)</div>
+                    <div style="display:flex; align-items:center; gap:0.35rem;"><span style="width:12px; height:12px; border-radius:3px; background:#fbbf24;"></span> Đang chấm (Pending)</div>
+                    <div style="display:flex; align-items:center; gap:0.35rem;"><span style="width:12px; height:12px; border-radius:3px; background:#f43f5e;"></span> Làm sai</div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); font-size: 0.82rem;">
+                                <th style="padding: 0.75rem;">STT</th>
+                                <th style="padding: 0.75rem;">Username</th>
+                                <th style="padding: 0.75rem;">Họ và tên</th>
+                                <th style="padding: 0.75rem; text-align: center;">Tổng điểm</th>
+                                ${contestProblems.map((p, idx) => `<th style="padding: 0.75rem; text-align: center;">Câu ${idx+1}</th>`).join("")}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${leaderboardData.length === 0 ? `
+                                <tr>
+                                    <td colspan="${5 + contestProblems.length}" style="text-align:center; padding: 2rem; color: var(--text-muted); font-style:italic;">
+                                        Chưa có thí sinh nào đăng ký tham gia kỳ thi này.
+                                    </td>
+                                </tr>
+                            ` : leaderboardData.map((data, idx) => `
+                                <tr style="border-bottom: 1px solid var(--border-color); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.01)'" onmouseout="this.style.background='none'">
+                                    <td style="padding: 0.75rem;">${idx + 1}</td>
+                                    <td style="padding: 0.75rem; font-weight:600; color:var(--accent-blue);">${data.user.username}</td>
+                                    <td style="padding: 0.75rem;">${data.user.name}</td>
+                                    <td style="padding: 0.75rem; text-align: center; font-weight:700; color:var(--text-primary);">${data.totalPoints}</td>
+                                    ${data.problemStatuses.map(status => {
+                                        let bg = 'none';
+                                        let color = 'inherit';
+                                        let text = '-';
+                                        if (status.status === 'correct') {
+                                            bg = '#10b981';
+                                            color = '#ffffff';
+                                            text = 'Đúng';
+                                        } else if (status.status === 'pending') {
+                                            bg = '#fbbf24';
+                                            color = '#1e293b';
+                                            text = 'Chờ';
+                                        } else if (status.status === 'incorrect') {
+                                            bg = '#f43f5e';
+                                            color = '#ffffff';
+                                            text = 'Sai';
+                                        }
+                                        return `<td style="padding: 0.75rem; text-align: center; background: ${bg}; color: ${color}; font-weight: 600; border: 1px solid var(--border-color);">${text}</td>`;
+                                    }).join("")}
+                                </tr>
+                            `).join("")}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        // Register Button click handler
+        document.getElementById("register-contest-btn")?.addEventListener("click", async () => {
+            if (!me) { showToast("Vui lòng đăng nhập để đăng ký!", "error"); return; }
+            try {
+                await api.registerContest(id, { userEmail: me.email, googleId: me.googleId });
+                showToast("Đăng ký tham gia kỳ thi thành công! Kiểm tra hộp thư của bạn 📧", "success");
+                viewContestDetail(id);
+            } catch (err) {
+                showToast("Đăng ký thất bại: " + err.message, "error");
+            }
+        });
+
+        renderLaTeX(mainContent);
+    } catch (e) {
+        showError("Không thể tải chi tiết kỳ thi!");
+    }
+}

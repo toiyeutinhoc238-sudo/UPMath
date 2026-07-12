@@ -212,6 +212,7 @@ const problemSchema = new mongoose.Schema({
     imageUrls: { type: [String], default: [] },
     likes: { type: [String], default: [] },
     dislikes: { type: [String], default: [] },
+    contestId: { type: mongoose.Schema.Types.ObjectId, ref: 'Contest' },
     createdAt: { type: Date, default: Date.now }
 });
 
@@ -292,6 +293,7 @@ const contestSchema = new mongoose.Schema({
     points: { type: Number, default: 10 },
     tags: { type: [String], default: [] },
     gradingRubric: { type: String, default: "" },
+    participants: { type: [String], default: [] },
     createdAt: { type: Date, default: Date.now }
 });
 
@@ -1421,6 +1423,27 @@ app.post('/api/contests', async (req, res) => {
     try {
         const contest = new Contest(req.body);
         await contest.save();
+
+        // Create associated Problems automatically
+        if (req.body.questions && req.body.questions.length > 0) {
+            for (let i = 0; i < req.body.questions.length; i++) {
+                const q = req.body.questions[i];
+                const problem = new Problem({
+                    title: `${contest.title} - Câu ${i + 1}`,
+                    content: q,
+                    category: req.body.category || 'calculus',
+                    tags: [...(req.body.tags || []), 'contest', contest._id.toString()],
+                    creator: 'System',
+                    creatorGoogleId: 'system',
+                    points: req.body.points || 10,
+                    gradingRubric: req.body.gradingRubric || '',
+                    difficulty: req.body.difficulty || 'medium',
+                    contestId: contest._id
+                });
+                await problem.save();
+            }
+        }
+
         res.status(201).json(contest);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -1431,7 +1454,64 @@ app.delete('/api/contests/:id', async (req, res) => {
     try {
         const c = await Contest.findByIdAndDelete(req.params.id);
         if (!c) return res.status(404).json({ error: 'Contest not found' });
-        res.json({ message: 'Contest deleted' });
+
+        // Clean associated problems and solutions
+        const problems = await Problem.find({ contestId: req.params.id });
+        const pIds = problems.map(p => p._id);
+        await Problem.deleteMany({ contestId: req.params.id });
+        await Solution.deleteMany({ problemId: { $in: pIds } });
+
+        res.json({ message: 'Contest and associated problems/solutions deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+app.put('/api/contests/:id', async (req, res) => {
+    try {
+        const updated = await Contest.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!updated) return res.status(404).json({ error: 'Contest not found' });
+        res.json(updated);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/contests/:id/register', async (req, res) => {
+    try {
+        const contest = await Contest.findById(req.params.id);
+        if (!contest) return res.status(404).json({ error: 'Contest not found' });
+
+        const { userEmail, googleId } = req.body;
+        if (!userEmail) return res.status(400).json({ error: 'Email is required' });
+
+        if (!contest.participants.includes(googleId)) {
+            contest.participants.push(googleId);
+            await contest.save();
+
+            // Send notification email
+            const subject = `[UPMath] Đăng ký tham gia thành công: ${contest.title}`;
+            const html = `
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                    <h2 style="color: #4f46e5; margin-bottom: 20px;">Đăng ký tham gia thành công!</h2>
+                    <p>Chào bạn,</p>
+                    <p>Hệ thống UPMath xác nhận bạn đã đăng ký tham gia kỳ thi: <strong>${contest.title}</strong> thành công.</p>
+                    <div style="background: #f8fafc; padding: 15px; border-radius: 6px; margin: 20px 0;">
+                        <ul style="list-style-type: none; padding: 0; margin: 0;">
+                            <li style="margin-bottom: 8px;">⏰ <strong>Thời lượng:</strong> ${contest.duration}</li>
+                            <li>📅 <strong>Thời gian bắt đầu:</strong> ${contest.startTime}</li>
+                        </ul>
+                    </div>
+                    <p>Chúc bạn làm bài thi đạt kết quả tốt nhất!</p>
+                    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+                    <p style="font-size: 0.85rem; color: #64748b;">Đây là thư tự động từ hệ thống UPMath. Vui lòng không trả lời thư này.</p>
+                </div>
+            `;
+            await sendNotificationEmail(userEmail, subject, html);
+        }
+
+        res.json(contest);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
