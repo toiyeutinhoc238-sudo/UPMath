@@ -3704,6 +3704,11 @@ async function viewContestDetail(id) {
             }
         });
 
+        // Register leaderboard modal listener
+        document.getElementById("view-contest-leaderboard-btn")?.addEventListener("click", () => {
+            showContestLeaderboardModal(leaderboardData, contestProblems);
+        });
+
         renderLaTeX(mainContent);
     } catch (e) {
         showError("Không thể tải chi tiết kỳ thi!");
