@@ -644,6 +644,9 @@ async function renderSidebars() {
 // ── HOME ──────────────────────────────────────────────────────────────────────
 async function viewHome() {
     setActiveNav("home");
+    const user = getCurrentUser();
+    const canSendAnnounce = user && ['admin', 'professor'].includes(user.role);
+
     mainContent.innerHTML = `
         <div class="card home-announcement-card">
             <div class="announcement-icon"><i class="fa-solid fa-graduation-cap"></i></div>
@@ -696,6 +699,14 @@ async function viewHome() {
                            placeholder="Nhập tin nhắn..." required autocomplete="off">
                 </div>
                 <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Gửi</button>
+                ${canSendAnnounce ? `
+                <div style="width: 100%; display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem; font-size: 0.85rem; color: var(--text-muted);">
+                    <input type="checkbox" id="shoutbox-email-notify" style="cursor:pointer;">
+                    <label for="shoutbox-email-notify" style="cursor:pointer; display: flex; align-items: center; gap: 0.25rem; user-select: none;">
+                        <i class="fa-solid fa-envelope" style="color: var(--accent-orange);"></i> Gửi thông báo quan trọng này qua Email cho tất cả thành viên
+                    </label>
+                </div>
+                ` : ''}
             </form>
         </div>
 
@@ -745,15 +756,20 @@ async function viewHome() {
                 // Create new Shout
                 const now = new Date();
                 const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} ${now.toLocaleDateString('vi-VN')}`;
+                const emailNotifyCheck = document.getElementById("shoutbox-email-notify");
+                const sendEmail = emailNotifyCheck ? emailNotifyCheck.checked : false;
+
                 await api.addShout({
                     username: user.username,
                     userPicture: user.picture,
                     authorGoogleId: user.googleId,
                     text: val,
                     time: timeStr,
-                    replyTo: replyToShout
+                    replyTo: replyToShout,
+                    sendEmail: sendEmail
                 });
                 replyToShout = null;
+                if (emailNotifyCheck) emailNotifyCheck.checked = false;
             }
             inp.value = "";
             showShoutPreview();
@@ -812,9 +828,12 @@ function renderShouts(shouts) {
         });
 
         const hasReactions = Object.keys(grouped).length > 0;
+        const announcementStyle = s.isAnnouncement 
+            ? 'style="background: rgba(251, 146, 60, 0.06); border: 1px dashed rgba(251, 146, 60, 0.4); border-left: 4px solid var(--accent-orange); padding: 0.6rem; border-radius: 8px; margin: 0.35rem 0;"' 
+            : '';
 
         return `
-        <div class="shout-msg ${isOwn ? 'is-own-msg' : ''}" id="shout-msg-${s._id}">
+        <div class="shout-msg ${isOwn ? 'is-own-msg' : ''}" id="shout-msg-${s._id}" ${announcementStyle}>
             <div class="shout-avatar">
                 <a href="#profile/${s.authorGoogleId || ''}">${avatarTag(s.userPicture, s.username, 28)}</a>
             </div>
@@ -822,6 +841,7 @@ function renderShouts(shouts) {
                 <div class="shout-meta">
                     <span class="shout-author"><a href="#profile/${s.authorGoogleId || ''}" style="color:var(--accent-blue); text-decoration:none; font-weight:700;">${s.username}</a></span>
                     <span class="shout-time">${s.time || timeSince(s.createdAt)}</span>
+                    ${s.isAnnouncement ? '<span style="background: var(--accent-orange); color: #fff; padding: 1px 6px; font-size: 0.65rem; border-radius: 4px; font-weight: 700; margin-left: 0.4rem; display: inline-flex; align-items: center; gap: 0.25rem;"><i class="fa-solid fa-bullhorn"></i> Thông báo</span>' : ''}
                     ${s.isEdited ? '<span style="font-size:0.65rem;color:var(--text-muted);font-style:italic;">(đã sửa)</span>' : ''}
                 </div>
                 

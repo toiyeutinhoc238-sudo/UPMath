@@ -278,7 +278,8 @@ const shoutSchema = new mongoose.Schema({
         parentText: String,
         parentAuthor: String
     },
-    isEdited: { type: Boolean, default: false }
+    isEdited: { type: Boolean, default: false },
+    isAnnouncement: { type: Boolean, default: false }
 });
 
 const contestSchema = new mongoose.Schema({
@@ -1173,6 +1174,45 @@ app.get('/api/shouts', async (req, res) => {
 app.post('/api/shouts', async (req, res) => {
     try {
         const shout = new Shout(req.body);
+
+        if (req.body.sendEmail) {
+            const sender = await User.findOne({ googleId: req.body.authorGoogleId });
+            if (sender && ['admin', 'professor'].includes(sender.role)) {
+                shout.isAnnouncement = true;
+
+                // Gửi email cho tất cả thành viên có địa chỉ email
+                const users = await User.find({ email: { $exists: true, $ne: "" } });
+                const subject = `[📢 UPMath Thông báo quan trọng] Từ ${sender.name || sender.username}`;
+                const emailHtml = `
+                    <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; color: #1e293b;">
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <span style="background: linear-gradient(135deg, #f59e0b, #ea580c); color: #ffffff; padding: 6px 16px; font-size: 0.85rem; font-weight: bold; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block;">📢 Thông báo quan trọng</span>
+                        </div>
+                        <h2 style="color: #0f172a; text-align: center; margin-top: 10px; font-size: 1.5rem; font-weight: 700;">Thông báo mới từ UPMath</h2>
+                        <p style="margin-top: 20px;">Chào em,</p>
+                        <p><strong>${sender.name || sender.username}</strong> (${sender.role === 'admin' ? 'Quản trị viên' : 'Giảng viên'}) vừa đăng một thông báo mới trên Shoutbox cộng đồng:</p>
+                        
+                        <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 18px; margin: 24px 0; border-radius: 8px; font-size: 1.05rem; color: #78350f; line-height: 1.7; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);">
+                            ${req.body.text}
+                        </div>
+                        
+                        <p style="margin-bottom: 25px;">Em hãy truy cập <a href="https://upmath.id.vn" style="color: #ea580c; font-weight: 600; text-decoration: none; border-bottom: 1px dashed #ea580c;">UPMath</a> để xem chi tiết và trao đổi thảo luận nhé.</p>
+                        
+                        <div style="border-top: 1px solid #e2e8f0; padding-top: 15px; margin-top: 30px; text-align: center; font-size: 0.8rem; color: #64748b;">
+                            <p style="margin: 0 0 5px 0;">Đây là email tự động gửi từ hệ thống học tập <strong>UPMath</strong>.</p>
+                            <p style="margin: 0;">Vui lòng không phản hồi trực tiếp email này.</p>
+                        </div>
+                    </div>
+                `;
+
+                for (const u of users) {
+                    if (u.email) {
+                        sendNotificationEmail(u.email, subject, emailHtml);
+                    }
+                }
+            }
+        }
+
         await shout.save();
         // Keep only 50 most recent shouts
         const total = await Shout.countDocuments();
