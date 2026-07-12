@@ -337,6 +337,16 @@ function preprocessLaTeX(text) {
     // Convert double backslashes before LaTeX commands, brackets, or parenthesis to single backslash
     text = text.replace(/\\+([a-zA-Z\[\]\(\)])/g, (m, p1) => "\\" + p1);
 
+    // Clean blank lines (double newlines) inside \[ ... \] and $$ ... $$ blocks to prevent KaTeX parsing errors
+    text = text.replace(/\\\[([\s\S]*?)\\\\]/g, (m, p1) => {
+        const cleaned = p1.split('\n').filter(line => line.trim() !== '').join('\n');
+        return `\\\[${cleaned}\\\]`;
+    });
+    text = text.replace(/\$\$([\s\S]*?)\$\$/g, (m, p1) => {
+        const cleaned = p1.split('\n').filter(line => line.trim() !== '').join('\n');
+        return `$$${cleaned}$$`;
+    });
+
     // Convert double-escaped backslash-n to actual newlines, but only if they are not part of LaTeX commands (not followed by letters)
     text = text.replace(/\\n(?![a-z])/g, "\n").replace(/\\r(?![a-z])/g, "\r");
 
