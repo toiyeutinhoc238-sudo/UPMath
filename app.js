@@ -2339,18 +2339,44 @@ async function viewContests() {
                        <p style="color:var(--text-muted);">Chưa có kỳ thi nào. Hãy theo dõi để cập nhật!</p>
                    </div>`
                 : contests.map(c => `
-                    <div class="card" style="margin-bottom:1rem;padding:1.25rem;border-left:3px solid ${c.status === 'running' ? 'var(--accent-green)' : c.status === 'upcoming' ? 'var(--accent-blue)' : 'var(--text-muted)'};">
-                        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                    <div class="card" style="margin-bottom:1.5rem;padding:1.5rem;border-left:4px solid ${c.status === 'running' ? 'var(--accent-green)' : c.status === 'upcoming' ? 'var(--accent-blue)' : 'var(--text-muted)'};">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
                             <div>
-                                <h3 style="font-size:1.05rem;margin-bottom:0.4rem;">${c.title}</h3>
-                                <div style="font-size:0.85rem;color:var(--text-muted);display:flex;gap:1rem;">
-                                    <span><i class="fa-solid fa-clock"></i> ${c.duration}</span>
-                                    <span><i class="fa-solid fa-calendar"></i> ${c.startTime}</span>
+                                <h3 style="font-size:1.15rem;margin-bottom:0.4rem;font-weight:700;color:var(--text-primary);">${c.title}</h3>
+                                <div style="font-size:0.85rem;color:var(--text-muted);display:flex;gap:1.25rem;">
+                                    <span><i class="fa-solid fa-clock"></i> <strong>Thời lượng:</strong> ${c.duration}</span>
+                                    <span><i class="fa-solid fa-calendar"></i> <strong>Bắt đầu:</strong> ${c.startTime}</span>
                                 </div>
                             </div>
                             <span class="badge ${c.status === 'running' ? 'badge-calculus' : c.status === 'upcoming' ? 'badge-algebra' : 'badge-tag'}">
                                 ${c.status === 'running' ? '🔴 Đang diễn ra' : c.status === 'upcoming' ? '⏳ Sắp diễn ra' : '✅ Đã kết thúc'}
                             </span>
+                        </div>
+                        
+                        <div class="contest-question-box" style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            ${c.status === 'upcoming' 
+                                ? `<div style="color: var(--text-muted); font-style: italic; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                                       <i class="fa-solid fa-lock" style="color: var(--accent-orange);"></i> Nội dung đề thi được bảo mật và sẽ tự động mở khi kỳ thi bắt đầu.
+                                   </div>`
+                                : `
+                                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; font-size: 0.82rem; color: var(--text-muted); border-bottom: 1px dashed var(--border-color); padding-bottom: 0.5rem;">
+                                       <span><strong>Môn học:</strong> ${c.category === 'calculus' ? 'Giải tích' : 'Đại số tuyến tính'} | <strong>Độ khó:</strong> ${c.difficulty === 'easy' ? 'Dễ' : c.difficulty === 'medium' ? 'Trung bình' : c.difficulty === 'hard' ? 'Khó' : 'Cực khó'}</span>
+                                       <span style="color: var(--accent-blue); font-weight: 700;">${c.points} Điểm</span>
+                                   </div>
+                                   <div style="line-height: 1.7; font-size: 0.95rem; word-break: break-word;">
+                                       ${preprocessLaTeX(c.content || "")}
+                                   </div>
+                                   ${c.tags && c.tags.length > 0 ? `
+                                   <div style="margin-top: 0.75rem; display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                                       ${c.tags.map(t => `<span class="tag-badge">#${t}</span>`).join("")}
+                                   </div>` : ''}
+                                   ${c.gradingRubric ? `
+                                   <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed var(--border-color); font-size: 0.85rem; color: var(--text-secondary);">
+                                       <strong style="color: var(--accent-orange);"><i class="fa-solid fa-circle-info"></i> Thang điểm chi tiết (Rubric):</strong>
+                                       <div style="margin-top: 0.25rem; white-space: pre-wrap; line-height: 1.6;">${preprocessLaTeX(c.gradingRubric)}</div>
+                                   </div>` : ''}
+                                  `
+                            }
                         </div>
                     </div>`).join("")}`;
     } catch (e) { showError("Không thể tải kỳ thi!"); }
@@ -2881,11 +2907,53 @@ async function viewAdmin() {
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="c-status">Trạng thái:</label>
-                                <select id="c-status" class="form-select" style="background:var(--bg-input); border:1px solid var(--border-color); color:inherit; padding:0.625rem; border-radius:8px;">
+                                <select id="c-status" class="form-select" style="background:var(--bg-input); border:1px solid var(--border-color); color:inherit; padding:0.625rem; border-radius:8px; width: 100%;">
                                     <option value="upcoming">Chưa bắt đầu</option>
                                     <option value="running">Đang diễn ra</option>
                                     <option value="ended">Đã kết thúc</option>
                                 </select>
+                            </div>
+                            
+                            <div style="margin: 1.5rem 0 1rem 0; border-top: 1px dashed var(--border-color); padding-top: 1rem;">
+                                <h4 style="color: var(--accent-blue); font-size: 0.95rem; margin-bottom: 0.75rem;"><i class="fa-solid fa-file-pen"></i> Nội dung câu hỏi kỳ thi</h4>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="c-content">Đề bài (LaTeX và văn bản):</label>
+                                <textarea id="c-content" class="form-textarea" style="min-height:120px;" required
+                                    placeholder="Nhập nội dung đề bài thi. Ví dụ:&#10;Tính tích phân:&#10;$I = \int_0^1 x^2 e^x dx$"></textarea>
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                                <div class="form-group">
+                                    <label class="form-label" for="c-category">Môn học:</label>
+                                    <select id="c-category" class="form-select" style="background:var(--bg-input); border:1px solid var(--border-color); color:inherit; padding:0.625rem; border-radius:8px; width:100%;">
+                                        <option value="calculus">Giải tích</option>
+                                        <option value="algebra">Đại số tuyến tính</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="c-difficulty">Độ khó:</label>
+                                    <select id="c-difficulty" class="form-select" style="background:var(--bg-input); border:1px solid var(--border-color); color:inherit; padding:0.625rem; border-radius:8px; width:100%;">
+                                        <option value="easy">Dễ</option>
+                                        <option value="medium" selected>Trung bình</option>
+                                        <option value="hard">Khó</option>
+                                        <option value="extreme">Cực khó</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                                <div class="form-group">
+                                    <label class="form-label" for="c-points">Điểm số:</label>
+                                    <input type="number" id="c-points" class="form-input" value="10" required style="background:var(--bg-input); border:1px solid var(--border-color); color:inherit; padding:0.625rem; border-radius:8px; width:100%;">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="c-tags">Thẻ (Tags - cách nhau bởi dấu phẩy):</label>
+                                    <input type="text" id="c-tags" class="form-input" placeholder="Ví dụ: tichphan, gioi_han" style="background:var(--bg-input); border:1px solid var(--border-color); color:inherit; padding:0.625rem; border-radius:8px; width:100%;">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="c-rubric">Thang điểm chi tiết (Rubric):</label>
+                                <textarea id="c-rubric" class="form-textarea" style="min-height:80px;"
+                                    placeholder="Nhập thang điểm chi tiết để hướng dẫn chấm thi (không bắt buộc)..."></textarea>
                             </div>
                             <button type="submit" class="btn btn-primary" style="margin-top: 1rem; width: 100%;"><i class="fa-solid fa-plus"></i> Tạo kỳ thi</button>
                         </form>
@@ -3010,6 +3078,14 @@ async function viewAdmin() {
             const status = document.getElementById("c-status").value;
             const statusLabel = status === 'upcoming' ? 'Chưa bắt đầu' : status === 'running' ? 'Đang diễn ra' : 'Đã kết thúc';
 
+            const content = document.getElementById("c-content").value.trim();
+            const category = document.getElementById("c-category").value;
+            const difficulty = document.getElementById("c-difficulty").value;
+            const points = parseInt(document.getElementById("c-points").value) || 10;
+            const tagsRaw = document.getElementById("c-tags").value;
+            const tags = tagsRaw ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : [];
+            const gradingRubric = document.getElementById("c-rubric").value.trim();
+
             const confirmMsg = `Bạn có chắc chắn muốn tạo kỳ thi này với thông tin sau?\n\n` +
                                `- Tiêu đề: ${title}\n` +
                                `- Thời lượng: ${duration}\n` +
@@ -3019,7 +3095,7 @@ async function viewAdmin() {
             if (!confirm(confirmMsg)) return;
 
             try {
-                await api.addContest({ title, duration, startTime, status });
+                await api.addContest({ title, duration, startTime, status, content, category, difficulty, points, tags, gradingRubric });
                 showToast("Tạo kỳ thi thành công!", "success");
                 viewAdmin();
             } catch (err) {
