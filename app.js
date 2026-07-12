@@ -3008,6 +3008,15 @@ async function viewAdmin() {
             }
             
             const status = document.getElementById("c-status").value;
+            const statusLabel = status === 'upcoming' ? 'Chưa bắt đầu' : status === 'running' ? 'Đang diễn ra' : 'Đã kết thúc';
+
+            const confirmMsg = `Bạn có chắc chắn muốn tạo kỳ thi này với thông tin sau?\n\n` +
+                               `- Tiêu đề: ${title}\n` +
+                               `- Thời lượng: ${duration}\n` +
+                               `- Bắt đầu lúc: ${startTime}\n` +
+                               `- Trạng thái: ${statusLabel}`;
+
+            if (!confirm(confirmMsg)) return;
 
             try {
                 await api.addContest({ title, duration, startTime, status });
