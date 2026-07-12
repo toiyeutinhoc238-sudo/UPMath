@@ -2948,6 +2948,20 @@ input, textarea, select, button {
     }
 }
 
+/* Invert calendar picker indicator icon in dark mode for datetime-local/date inputs */
+.dark-theme input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+.dark-theme input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.dark-theme input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
+.dark-theme input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
 
 
 
