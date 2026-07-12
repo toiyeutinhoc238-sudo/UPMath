@@ -3074,9 +3074,9 @@ async function viewAdmin() {
             if (!confirm(confirmMsg)) return;
 
             try {
-                await api.addContest({ title, duration, startTime, status });
-                showToast("Tạo kỳ thi thành công!", "success");
-                viewAdmin();
+                const newContest = await api.addContest({ title, duration, startTime, status });
+                showToast("Thông tin kỳ thi đã tạo! Vui lòng soạn đề thi bên dưới.", "success");
+                viewEditContestQuestions(newContest._id);
             } catch (err) {
                 showToast("Tạo kỳ thi thất bại!", "error");
             }
@@ -3768,7 +3768,7 @@ async function viewEditContestQuestions(contestId) {
 
             try {
                 await api.updateContest(contestId, { questions, category, difficulty });
-                showToast("Đã lưu đề thi và đồng bộ câu hỏi thành công!", "success");
+                showToast("Tạo kỳ thi thành công!", "success");
                 viewAdmin();
             } catch (err) {
                 showToast("Không thể lưu đề thi: " + err.message, "error");
