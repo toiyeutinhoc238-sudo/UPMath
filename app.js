@@ -314,7 +314,12 @@ function showToast(msg, type = "info") {
 function renderLaTeX(el) {
     if (window.renderMathInElement && el) {
         renderMathInElement(el, {
-            delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }],
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\[', right: '\\]', display: true },
+                { left: '\\(', right: '\\)', display: false }
+            ],
             throwOnError: false
         });
     }
