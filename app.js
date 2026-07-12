@@ -3506,19 +3506,11 @@ function openContestLeaderboardWindow(leaderboardData, contestProblems, contestT
                 }
                 .header {
                     display: flex;
+                    justify-content: space-between;
                     align-items: center;
-                    gap: 0.75rem;
                     border-bottom: 1px solid #1f2937;
-                    padding-bottom: 1rem;
+                    padding-bottom: 1.25rem;
                     margin-bottom: 1.5rem;
-                }
-                .header h1 {
-                    margin: 0;
-                    font-size: 1.5rem;
-                    font-weight: 700;
-                    background: linear-gradient(135deg, #f59e0b, #d97706);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
                 }
                 .legend {
                     display: flex;
@@ -3561,8 +3553,14 @@ function openContestLeaderboardWindow(leaderboardData, contestProblems, contestT
         <body>
             <div class="container">
                 <div class="header">
-                    <i class="fa-solid fa-ranking-star" style="color: #f59e0b; font-size: 1.5rem;"></i>
-                    <h1>Bảng Thành Tích Kỳ Thi: ${contestTitle}</h1>
+                    <div style="display: flex; align-items: center; gap: 0.6rem;">
+                        <img src="logo.png" style="height: 32px;" />
+                        <span style="font-weight: 800; font-size: 1.45rem; color: #ffffff; letter-spacing: -0.5px; font-family: 'Outfit', sans-serif;">UP<span style="color: #6366f1;">Math</span></span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; color: #9ca3af; font-weight: 500; font-size: 0.95rem; background: rgba(255,255,255,0.03); padding: 0.4rem 0.85rem; border-radius: 20px; border: 1px solid #1f2937;">
+                        <i class="fa-solid fa-ranking-star" style="color: #f59e0b;"></i>
+                        <span>${contestTitle}</span>
+                    </div>
                 </div>
 
                 <div class="legend">
