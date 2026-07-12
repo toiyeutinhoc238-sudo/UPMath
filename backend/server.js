@@ -109,6 +109,64 @@ async function callGeminiWithRetry(apiKey, body, maxRetries = 4) {
     return lastResponse;
 }
 
+
+function cleanAndParseFeedback(textResult) {
+    if (!textResult) return { isCorrect: false, feedback: "" };
+    let cleanedText = textResult.trim();
+    if (cleanedText.startsWith("```json")) {
+        cleanedText = cleanedText.substring(7);
+    }
+    if (cleanedText.endsWith("```")) {
+        cleanedText = cleanedText.substring(0, cleanedText.length - 3);
+    }
+    cleanedText = cleanedText.trim();
+
+    try {
+        // Attempt 1: Standard JSON parse
+        return JSON.parse(cleanedText);
+    } catch (parseErr) {
+        try {
+            // Attempt 2: Repair LaTeX backslashes and parse
+            const repaired = cleanedText
+                .replace(/\\(?!["\\/bfnrtu]|u[0-9a-fA-F]{4})/g, '\\\\')
+                .replace(/\\([nrtfb])([a-z])/g, '\\\\$1$2');
+            return JSON.parse(repaired);
+        } catch (e2) {
+            // Attempt 3: Regex fallback extraction
+            console.warn("Failed standard and repaired JSON parse, using regex fallback...", parseErr);
+            const isCorrectMatch = cleanedText.match(/"isCorrect"\s*:\s*(true|false)/);
+            const feedbackMatch = cleanedText.match(/"feedback"\s*:\s*"([\s\S]*)"\s*}/);
+            
+            let isCorrect = false;
+            if (isCorrectMatch) {
+                isCorrect = (isCorrectMatch[1] === 'true');
+            } else {
+                isCorrect = cleanedText.toLowerCase().includes('"iscorrect": true');
+            }
+
+            let feedback = "";
+            if (feedbackMatch) {
+                feedback = feedbackMatch[1];
+                // Clean trailing quotes if matched incorrectly
+                if (feedback.endsWith('"') && !feedback.endsWith('\\TrimmedQuoteDummyCheck')) {
+                    if (!feedback.endsWith('\\"')) {
+                        feedback = feedback.substring(0, feedback.length - 1);
+                    }
+                }
+                feedback = feedback
+                    .replace(/\\"/g, '"')
+                    .replace(/\\\\/g, '\\')
+                    .replace(/\\n(?![a-z])/g, '\n')
+                    .replace(/\\r(?![a-z])/g, '\r')
+                    .replace(/\\t(?![a-z])/g, '\t');
+            } else {
+                feedback = cleanedText;
+            }
+            return { isCorrect, feedback };
+        }
+    }
+}
+
 // ─── MONGODB CONNECTION ───────────────────────────────────────────────────────
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('✅ Connected to MongoDB Atlas — UPMath DB'))
@@ -619,32 +677,9 @@ Hãy chấm điểm lời giải này và trả về kết quả ở định d�
                         }
                         cleanedText = cleanedText.trim();
 
-                        try {
-                            const parsed = JSON.parse(cleanedText);
-                            solution.status = parsed.isCorrect ? 'correct' : 'incorrect';
-                            solution.aiFeedback = parsed.feedback || "";
-                        } catch (parseErr) {
-                            console.warn("Failed standard JSON parse, attempting regex extraction...", parseErr);
-                            const isCorrectMatch = cleanedText.match(/"isCorrect"\s*:\s*(true|false)/);
-                            const feedbackMatch = cleanedText.match(/"feedback"\s*:\s*"([\s\S]*)"\s*}/);
-
-                            if (isCorrectMatch) {
-                                solution.status = (isCorrectMatch[1] === 'true') ? 'correct' : 'incorrect';
-                            } else {
-                                solution.status = cleanedText.toLowerCase().includes('"iscorrect": true') ? 'correct' : 'incorrect';
-                            }
-
-                            if (feedbackMatch) {
-                                solution.aiFeedback = feedbackMatch[1]
-                                    .replace(/\\"/g, '"')
-                                    .replace(/\\\\/g, '\\')
-                                    .replace(/\\n(?![a-zA-Z])/g, '\n')
-                                    .replace(/\\r(?![a-zA-Z])/g, '\r')
-                                    .replace(/\\t(?![a-zA-Z])/g, '\t');
-                            } else {
-                                solution.aiFeedback = cleanedText;
-                            }
-                        }
+                        const parsed = cleanAndParseFeedback(textResult);
+                        solution.status = parsed.isCorrect ? 'correct' : 'incorrect';
+                        solution.aiFeedback = parsed.feedback || "";
                     }
                 } else {
                     const errText = await apiResponse.text();
@@ -774,32 +809,9 @@ Hãy chấm điểm lời giải này và trả về kết quả ở định d�
                             }
                             cleanedText = cleanedText.trim();
 
-                            try {
-                                const parsed = JSON.parse(cleanedText);
-                                sol.status = parsed.isCorrect ? 'correct' : 'incorrect';
-                                sol.aiFeedback = parsed.feedback || "";
-                            } catch (parseErr) {
-                                console.warn("Failed standard JSON parse, attempting regex extraction...", parseErr);
-                                const isCorrectMatch = cleanedText.match(/"isCorrect"\s*:\s*(true|false)/);
-                                const feedbackMatch = cleanedText.match(/"feedback"\s*:\s*"([\s\S]*)"\s*}/);
-
-                                if (isCorrectMatch) {
-                                    sol.status = (isCorrectMatch[1] === 'true') ? 'correct' : 'incorrect';
-                                } else {
-                                    sol.status = cleanedText.toLowerCase().includes('"iscorrect": true') ? 'correct' : 'incorrect';
-                                }
-
-                                if (feedbackMatch) {
-                                    sol.aiFeedback = feedbackMatch[1]
-                                        .replace(/\\"/g, '"')
-                                        .replace(/\\\\/g, '\\')
-                                        .replace(/\\n(?![a-zA-Z])/g, '\n')
-                                        .replace(/\\r(?![a-zA-Z])/g, '\r')
-                                        .replace(/\\t(?![a-zA-Z])/g, '\t');
-                                } else {
-                                    sol.aiFeedback = cleanedText;
-                                }
-                            }
+                            const parsed = cleanAndParseFeedback(textResult);
+                            sol.status = parsed.isCorrect ? 'correct' : 'incorrect';
+                            sol.aiFeedback = parsed.feedback || "";
                         }
                     } else {
                         sol.status = 'pending';

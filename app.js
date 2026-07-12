@@ -147,7 +147,12 @@ function renderLoginMath() {
 
     if (window.renderMathInElement) {
         renderMathInElement(bg, {
-            delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }],
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\[', right: '\\]', display: true },
+                { left: '\\(', right: '\\)', display: false }
+            ],
             throwOnError: false
         });
     }
@@ -317,10 +322,10 @@ function preprocessLaTeX(text) {
     if (!text) return "";
 
     // Convert double backslashes before LaTeX commands to single backslash (e.g. \\frac -> \frac)
-    text = text.replace(/\\\\([a-zA-Z]+)/g, "\\$1");
+    text = text.replace(/\\+([a-zA-Z]+)/g, (m, p1) => "\\" + p1);
 
     // Convert double-escaped backslash-n to actual newlines, but only if they are not part of LaTeX commands (not followed by letters)
-    text = text.replace(/\\n(?![a-zA-Z])/g, "\n").replace(/\\r(?![a-zA-Z])/g, "\r");
+    text = text.replace(/\\n(?![a-z])/g, "\n").replace(/\\r(?![a-z])/g, "\r");
 
     // Convert markdown-style headings (## Heading) from AI responses
     text = text.replace(/^###\s+(.+)$/gm, '<h4 style="margin: 0.85rem 0 0.4rem; font-size: 1rem; color: var(--accent-blue); font-weight:700;">$1</h4>');
@@ -381,7 +386,7 @@ function preprocessLaTeX(text) {
     text = text.replace(/<li>\\s*<\/li>/g, "");
 
     // 6. Convert newlines / double backslashes while respecting math delimiters
-    let segs = text.split(/(\$\$[\s\S]*?\$\$|\$[^$\n]+?\$)/);
+    let segs = text.split(/(\$\$[\s\S]*?\$\$|\$[^$\n]+?\$|\\\\\[[\s\S]*?\\\\]|\\\\\([\s\S]*?\\\\\))/);
     for (let i = 0; i < segs.length; i++) {
         // Even-indexed segments are outside math
         if (i % 2 === 0) {
