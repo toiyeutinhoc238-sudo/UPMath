@@ -2363,8 +2363,16 @@ async function viewContests() {
                                        <span><strong>Môn học:</strong> ${c.category === 'calculus' ? 'Giải tích' : 'Đại số tuyến tính'} | <strong>Độ khó:</strong> ${c.difficulty === 'easy' ? 'Dễ' : c.difficulty === 'medium' ? 'Trung bình' : c.difficulty === 'hard' ? 'Khó' : 'Cực khó'}</span>
                                        <span style="color: var(--accent-blue); font-weight: 700;">${c.points} Điểm</span>
                                    </div>
-                                   <div style="line-height: 1.7; font-size: 0.95rem; word-break: break-word;">
-                                       ${preprocessLaTeX(c.content || "")}
+                                   <div style="line-height: 1.7; font-size: 0.95rem; word-break: break-word; display: flex; flex-direction: column; gap: 0.85rem;">
+                                       ${c.questions && c.questions.length > 0 
+                                           ? c.questions.map((q, idx) => `
+                                               <div style="background: rgba(255,255,255,0.015); padding: 0.85rem; border-radius: 6px; border-left: 3px solid var(--accent-orange); border-top: 1px solid var(--border-color); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
+                                                   <strong style="color: var(--accent-orange); display: block; margin-bottom: 0.35rem; font-size: 0.9rem;">Câu ${idx + 1}:</strong>
+                                                   <div style="line-height: 1.65;">${preprocessLaTeX(q)}</div>
+                                               </div>
+                                             `).join("")
+                                           : `<div>${preprocessLaTeX(c.content || "")}</div>`
+                                       }
                                    </div>
                                    ${c.tags && c.tags.length > 0 ? `
                                    <div style="margin-top: 0.75rem; display: flex; gap: 0.4rem; flex-wrap: wrap;">
@@ -2915,13 +2923,21 @@ async function viewAdmin() {
                             </div>
                             
                             <div style="margin: 1.5rem 0 1rem 0; border-top: 1px dashed var(--border-color); padding-top: 1rem;">
-                                <h4 style="color: var(--accent-blue); font-size: 0.95rem; margin-bottom: 0.75rem;"><i class="fa-solid fa-file-pen"></i> Nội dung câu hỏi kỳ thi</h4>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="c-content">Đề bài (LaTeX và văn bản):</label>
-                                <textarea id="c-content" class="form-textarea" style="min-height:120px;" required
-                                    placeholder="Nhập nội dung đề bài thi. Ví dụ:&#10;Tính tích phân:&#10;$I = \int_0^1 x^2 e^x dx$"></textarea>
-                            </div>
+                                 <h4 style="color: var(--accent-blue); font-size: 0.95rem; margin-bottom: 0.75rem;"><i class="fa-solid fa-file-pen"></i> Nội dung câu hỏi kỳ thi</h4>
+                             </div>
+                             
+                             <div id="c-questions-container">
+                                 <div class="form-group c-question-item" data-index="1">
+                                     <label class="form-label" style="font-weight: 600; color: var(--accent-orange);">Câu 1:</label>
+                                     <textarea class="form-textarea c-question-content" style="min-height:90px;" required
+                                         placeholder="Nhập nội dung đề bài cho Câu 1..."></textarea>
+                                 </div>
+                             </div>
+                             
+                             <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; margin-top: 0.5rem;">
+                                 <button type="button" id="c-add-question-btn" class="btn btn-secondary btn-sm" style="flex: 1; padding: 0.5rem;"><i class="fa-solid fa-plus"></i> Thêm câu hỏi (Câu tiếp theo)</button>
+                                 <button type="button" id="c-remove-question-btn" class="btn btn-secondary btn-sm" style="flex: 1; padding: 0.5rem; color: var(--accent-red); display: none;"><i class="fa-solid fa-trash-can"></i> Xóa câu cuối</button>
+                             </div>
                             <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
                                 <div class="form-group">
                                     <label class="form-label" for="c-category">Môn học:</label>
@@ -3061,6 +3077,35 @@ async function viewAdmin() {
             });
         });
 
+        // Initialize dynamic question count
+        let questionCount = 1;
+        document.getElementById("c-add-question-btn")?.addEventListener("click", () => {
+            questionCount++;
+            const container = document.getElementById("c-questions-container");
+            const div = document.createElement("div");
+            div.className = "form-group c-question-item";
+            div.setAttribute("data-index", questionCount);
+            div.style.marginTop = "1rem";
+            div.innerHTML = `
+                <label class="form-label" style="font-weight: 600; color: var(--accent-orange);">Câu ${questionCount}:</label>
+                <textarea class="form-textarea c-question-content" style="min-height:90px;" required
+                    placeholder="Nhập nội dung đề bài cho Câu ${questionCount}..."></textarea>
+            `;
+            container.appendChild(div);
+            document.getElementById("c-remove-question-btn").style.display = "block";
+        });
+
+        document.getElementById("c-remove-question-btn")?.addEventListener("click", () => {
+            if (questionCount > 1) {
+                const container = document.getElementById("c-questions-container");
+                container.lastElementChild.remove();
+                questionCount--;
+                if (questionCount === 1) {
+                    document.getElementById("c-remove-question-btn").style.display = "none";
+                }
+            }
+        });
+
         // Add Contest submission
         document.getElementById("create-contest-form")?.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -3078,7 +3123,6 @@ async function viewAdmin() {
             const status = document.getElementById("c-status").value;
             const statusLabel = status === 'upcoming' ? 'Chưa bắt đầu' : status === 'running' ? 'Đang diễn ra' : 'Đã kết thúc';
 
-            const content = document.getElementById("c-content").value.trim();
             const category = document.getElementById("c-category").value;
             const difficulty = document.getElementById("c-difficulty").value;
             const points = parseInt(document.getElementById("c-points").value) || 10;
@@ -3086,16 +3130,33 @@ async function viewAdmin() {
             const tags = tagsRaw ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : [];
             const gradingRubric = document.getElementById("c-rubric").value.trim();
 
+            // Collect questions
+            const questionTextareas = document.querySelectorAll(".c-question-content");
+            const questions = Array.from(questionTextareas).map(ta => ta.value.trim()).filter(Boolean);
+
             const confirmMsg = `Bạn có chắc chắn muốn tạo kỳ thi này với thông tin sau?\n\n` +
                                `- Tiêu đề: ${title}\n` +
                                `- Thời lượng: ${duration}\n` +
                                `- Bắt đầu lúc: ${startTime}\n` +
-                               `- Trạng thái: ${statusLabel}`;
+                               `- Trạng thái: ${statusLabel}\n` +
+                               `- Tổng số câu hỏi: ${questions.length} câu`;
 
             if (!confirm(confirmMsg)) return;
 
             try {
-                await api.addContest({ title, duration, startTime, status, content, category, difficulty, points, tags, gradingRubric });
+                await api.addContest({ 
+                    title, 
+                    duration, 
+                    startTime, 
+                    status, 
+                    content: questions[0] || "", 
+                    questions, 
+                    category, 
+                    difficulty, 
+                    points, 
+                    tags, 
+                    gradingRubric 
+                });
                 showToast("Tạo kỳ thi thành công!", "success");
                 viewAdmin();
             } catch (err) {

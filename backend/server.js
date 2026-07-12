@@ -286,6 +286,7 @@ const contestSchema = new mongoose.Schema({
     startTime: String,
     status: { type: String, enum: ['upcoming', 'running', 'ended'], default: 'upcoming' },
     content: { type: String, default: "" },
+    questions: { type: [String], default: [] },
     category: { type: String, default: "calculus" },
     difficulty: { type: String, default: "medium" },
     points: { type: Number, default: 10 },
