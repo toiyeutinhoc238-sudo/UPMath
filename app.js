@@ -2396,8 +2396,11 @@ async function viewLeaderboard() {
         const me = getCurrentUser();
         const medals = ['🥇', '🥈', '🥉'];
         mainContent.innerHTML = `
-            <div class="page-header">
-                <h2 class="page-title"><i class="fa-solid fa-chart-simple"></i> Bảng Xếp Hạng <span>Cộng Đồng</span></h2>
+            <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+                <h2 class="page-title" style="margin:0;"><i class="fa-solid fa-chart-simple"></i> Bảng Xếp Hạng <span>Cộng Đồng</span></h2>
+                <button onclick="window.print()" class="btn btn-secondary btn-print" style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.5rem 1rem; border-radius:8px; font-size:0.9rem; font-weight:600; cursor:pointer;">
+                    <i class="fa-solid fa-file-pdf"></i> Xuất PDF / In
+                </button>
             </div>
             ${users.length === 0
                 ? `<div class="card" style="text-align:center;padding:3rem;">
@@ -3568,14 +3571,19 @@ async function viewStandaloneLeaderboard(contestId) {
         }).join("");
 
         document.getElementById("standalone-leaderboard-container").innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1f2937; padding-bottom: 1.25rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1f2937; padding-bottom: 1.25rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
                 <div style="display: flex; align-items: center; gap: 0.6rem;">
                     <img src="logo.png" style="height: 32px;" />
                     <span style="font-weight: 800; font-size: 1.45rem; color: #ffffff; letter-spacing: -0.5px; font-family: 'Be Vietnam Pro', sans-serif;">UP<span style="color: #6366f1;">Math</span></span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; color: #9ca3af; font-weight: 500; font-size: 0.95rem; background: rgba(255,255,255,0.03); padding: 0.4rem 0.85rem; border-radius: 20px; border: 1px solid #1f2937;">
-                    <i class="fa-solid fa-ranking-star" style="color: #f59e0b;"></i>
-                    <span>${c.title}</span>
+                <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                    <button onclick="window.print()" class="btn-print" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #374151; color: #ffffff; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#4b5563'" onmouseout="this.style.background='#374151'">
+                        <i class="fa-solid fa-file-pdf"></i> Xuất PDF / In
+                    </button>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; color: #9ca3af; font-weight: 500; font-size: 0.95rem; background: rgba(255,255,255,0.03); padding: 0.4rem 0.85rem; border-radius: 20px; border: 1px solid #1f2937;">
+                        <i class="fa-solid fa-ranking-star" style="color: #f59e0b;"></i>
+                        <span>${c.title}</span>
+                    </div>
                 </div>
             </div>
 

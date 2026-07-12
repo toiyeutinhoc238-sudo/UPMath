@@ -2962,6 +2962,166 @@ input, textarea, select, button {
     opacity: 1;
 }
 
+/* ==========================================================================
+   PRINT STYLES - Optimize Leaderboards & Core Content for PDF / Printing
+   ========================================================================== */
+@media print {
+    /* Set page settings to color but with light/printer-friendly tones */
+    html, body {
+        background: #ffffff !important;
+        color: #0d1117 !important;
+        font-family: 'Be Vietnam Pro', Arial, sans-serif !important;
+        font-size: 11pt !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Hide website UI elements completely on print */
+    .app-header,
+    .sidebar-left,
+    .sidebar-right,
+    .app-footer,
+    .btn-print,
+    .btn-secondary,
+    #theme-toggle,
+    .user-profile-menu,
+    .toast-container,
+    .lightbox-modal,
+    button {
+        display: none !important;
+    }
+
+    /* Expand main wrapper to full width */
+    .main-wrapper {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .main-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    /* Format card containers for paper */
+    .card {
+        background: #ffffff !important;
+        color: #0d1117 !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Table printing optimizations */
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        page-break-inside: auto !important;
+    }
+    
+    tr {
+        page-break-inside: avoid !important;
+        page-break-after: auto !important;
+    }
+
+    thead {
+        display: table-header-group !important;
+    }
+
+    th {
+        background-color: #f3f4f6 !important;
+        color: #1f2937 !important;
+        border-bottom: 2px solid #e5e7eb !important;
+        font-weight: 700 !important;
+        padding: 8px !important;
+    }
+
+    td {
+        border-bottom: 1px solid #e5e7eb !important;
+        padding: 8px !important;
+        color: #1f2937 !important;
+    }
+
+    /* Make text/links black and remove standard colors in print mode */
+    a {
+        color: #0d1117 !important;
+        text-decoration: none !important;
+    }
+
+    .badge {
+        border: 1px solid #9ca3af !important;
+        background: transparent !important;
+        color: #1f2937 !important;
+        box-shadow: none !important;
+    }
+
+    /* Override colors inside general leaderboard rows */
+    tr[style*="background"] {
+        background: transparent !important;
+    }
+    
+    tr:nth-child(even) {
+        background-color: #f9fafb !important;
+    }
+
+    /* Standalone Contest Leaderboard printing overrides */
+    div[style*="background:#0b0f19"],
+    div[style*="background:#111827"] {
+        background: #ffffff !important;
+        color: #0d1117 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        min-height: auto !important;
+    }
+
+    #standalone-leaderboard-container {
+        background: #ffffff !important;
+        color: #0d1117 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    #standalone-leaderboard-container * {
+        color: #0d1117 !important;
+        border-color: #e5e7eb !important;
+    }
+
+    #standalone-leaderboard-container th {
+        background-color: #f3f4f6 !important;
+        color: #1f2937 !important;
+    }
+
+    /* Print badges for problem statuses cleanly */
+    span[style*="background:#10b981"] {
+        background: #d1fae5 !important;
+        color: #065f46 !important;
+        border: 1px solid #10b981 !important;
+    }
+
+    span[style*="background:#fbbf24"] {
+        background: #fef3c7 !important;
+        color: #92400e !important;
+        border: 1px solid #fbbf24 !important;
+    }
+
+    span[style*="background:#f43f5e"] {
+        background: #ffe4e6 !important;
+        color: #9f1239 !important;
+        border: 1px solid #f43f5e !important;
+    }
+}
+
 
 
 
