@@ -3400,6 +3400,58 @@ document.addEventListener("click", async (e) => {
     }
 });
 
+
+// Global listener for contest question mode switching
+document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".q-mode-btn");
+    if (btn) {
+        const mode = btn.getAttribute("data-mode");
+        const idx = btn.getAttribute("data-index");
+        const modesContainer = btn.closest(".q-modes");
+        
+        // Toggle active button
+        modesContainer.querySelectorAll(".q-mode-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        
+        // Toggle containers
+        document.querySelectorAll(`.q-mode-container[data-index="${idx}"]`).forEach(c => {
+            c.style.display = "none";
+        });
+        
+        if (mode === "latex") {
+            document.getElementById(`q-latex-container-${idx}`).style.display = "block";
+        } else if (mode === "word") {
+            document.getElementById(`q-word-container-${idx}`).style.display = "block";
+            // Lazy init Quill if not initialized
+            const quillId = `c-question-quill-${idx}`;
+            window.contestQuills = window.contestQuills || {};
+            if (!window.contestQuills[idx]) {
+                window.contestQuills[idx] = new Quill(`#${quillId}`, { theme: 'snow' });
+            }
+        } else if (mode === "image") {
+            document.getElementById(`q-image-container-${idx}`).style.display = "block";
+        }
+    }
+});
+
+// Image handler for contest questions
+window.handleContestQuestionImage = function(input, index) {
+    const file = input.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64 = e.target.result;
+            window.contestImages = window.contestImages || {};
+            window.contestImages[index] = base64;
+            
+            const preview = document.getElementById(`c-question-img-preview-${index}`);
+            preview.style.display = "block";
+            preview.innerHTML = `<img src="${base64}" style="max-height: 100px; border-radius: 6px; margin-top: 10px;" />`;
+        };
+        reader.readAsDataURL(file);
+    }
+};
+
 // ─── 7. BOOT ──────────────────────────────────────────────────────────────────
 
 window.addEventListener("hashchange", () => router());
@@ -3657,6 +3709,64 @@ async function viewContestDetail(id) {
 }
 
 
+
+// Helper to render question row with three input modes
+function renderQuestionInputRow(idx, prefilledValue = "") {
+    const isImage = prefilledValue.startsWith("data:image/") || prefilledValue.startsWith("<img");
+    const isWord = prefilledValue.includes("<p>") || prefilledValue.includes("<br>") || prefilledValue.includes("<strong>");
+    const initialMode = isImage ? "image" : (isWord ? "word" : "latex");
+    
+    // Store image base64 if prefilled
+    if (isImage) {
+        window.contestImages = window.contestImages || {};
+        if (prefilledValue.startsWith("<img")) {
+            // extract base64 from src
+            const match = prefilledValue.match(/src="([^"]+)"/);
+            if (match) window.contestImages[idx] = match[1];
+        } else {
+            window.contestImages[idx] = prefilledValue;
+        }
+    }
+
+    return `
+        <div class="form-group c-question-item" data-index="${idx}" style="margin-top: ${idx > 1 ? '1rem' : '0'}; border: 1px solid var(--border-color); padding: 1.25rem; border-radius: 8px; background: rgba(255,255,255,0.015);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
+                <label class="form-label" style="font-weight: 600; color: var(--accent-orange); margin-bottom: 0;">Câu ${idx}:</label>
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <div class="input-modes q-modes" data-index="${idx}" style="margin-bottom:0; display:flex; gap:0.25rem;">
+                        <button type="button" class="btn btn-secondary btn-xs q-mode-btn ${initialMode === 'latex' ? 'active' : ''}" data-mode="latex" data-index="${idx}">LaTeX</button>
+                        <button type="button" class="btn btn-secondary btn-xs q-mode-btn ${initialMode === 'word' ? 'active' : ''}" data-mode="word" data-index="${idx}">Word</button>
+                        <button type="button" class="btn btn-secondary btn-xs q-mode-btn ${initialMode === 'image' ? 'active' : ''}" data-mode="image" data-index="${idx}">Ảnh</button>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-xs c-ai-gen-btn" data-target="c-question-textarea-${idx}" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 6px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Sinh ngẫu nhiên</button>
+                </div>
+            </div>
+            
+            <!-- LaTeX Mode Container -->
+            <div id="q-latex-container-${idx}" class="q-mode-container" data-index="${idx}" style="display: ${initialMode === 'latex' ? 'block' : 'none'};">
+                <textarea class="form-textarea c-question-content-latex" id="c-question-textarea-${idx}" style="min-height:90px;" placeholder="Nhập nội dung đề bài (LaTeX)...">${initialMode === 'latex' ? prefilledValue : ''}</textarea>
+            </div>
+
+            <!-- Word Mode Container -->
+            <div id="q-word-container-${idx}" class="q-mode-container" data-index="${idx}" style="display: ${initialMode === 'word' ? 'block' : 'none'};">
+                <div id="c-question-quill-${idx}" style="min-height:120px; background:var(--bg-input); border:1px solid var(--border-color); border-radius:8px; color:inherit;">${initialMode === 'word' ? prefilledValue : ''}</div>
+            </div>
+
+            <!-- Image Mode Container -->
+            <div id="q-image-container-${idx}" class="q-mode-container" data-index="${idx}" style="display: ${initialMode === 'image' ? 'block' : 'none'};">
+                <div class="image-upload-zone" style="padding: 1rem; cursor: pointer; text-align: center; border: 2px dashed var(--border-color); border-radius: 8px;" onclick="document.getElementById('c-question-file-${idx}').click()">
+                    <i class="fa-solid fa-cloud-arrow-up fa-2x" style="color:var(--accent-blue); margin-bottom:0.5rem;"></i>
+                    <p style="font-size:0.85rem; margin:0;">Click để chọn ảnh đề bài</p>
+                    <input type="file" id="c-question-file-${idx}" accept="image/*" style="display:none;" onchange="handleContestQuestionImage(this, ${idx})">
+                    <div id="c-question-img-preview-${idx}" style="margin-top:0.5rem; ${isImage ? 'display:block;' : 'display:none;'}">
+                        ${isImage ? `<img src="${window.contestImages[idx]}" style="max-height: 100px; border-radius: 6px; margin-top: 10px;" />` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 async function viewEditContestQuestions(contestId) {
     setActiveNav("admin");
     showLoading();
@@ -3664,6 +3774,10 @@ async function viewEditContestQuestions(contestId) {
         const contests = await api.getContests();
         const c = contests.find(item => item._id === contestId);
         if (!c) { showError("Không tìm thấy kỳ thi!"); return; }
+
+        // Clear previous session states
+        window.contestQuills = {};
+        window.contestImages = {};
 
         const savedQuestions = c.questions || [];
         let questionCount = Math.max(1, savedQuestions.length);
@@ -3696,23 +3810,7 @@ async function viewEditContestQuestions(contestId) {
                     </div>
 
                     <div id="c-questions-container">
-                        ${savedQuestions.length === 0 ? `
-                            <div class="form-group c-question-item" data-index="1">
-                                <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <label class="form-label" style="font-weight: 600; color: var(--accent-orange); margin-bottom: 0.25rem;">Câu 1:</label>
-                                    <button type="button" class="btn btn-secondary btn-xs c-ai-gen-btn" data-target="c-question-textarea-1" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 6px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Sinh ngẫu nhiên</button>
-                                </div>
-                                <textarea class="form-textarea c-question-content" id="c-question-textarea-1" style="min-height:90px;" required placeholder="Nhập nội dung đề bài cho Câu 1..."></textarea>
-                            </div>
-                        ` : savedQuestions.map((q, idx) => `
-                            <div class="form-group c-question-item" data-index="${idx + 1}" style="margin-top: ${idx > 0 ? '1rem' : '0'};">
-                                <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <label class="form-label" style="font-weight: 600; color: var(--accent-orange); margin-bottom: 0.25rem;">Câu ${idx + 1}:</label>
-                                    <button type="button" class="btn btn-secondary btn-xs c-ai-gen-btn" data-target="c-question-textarea-${idx + 1}" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 6px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Sinh ngẫu nhiên</button>
-                                </div>
-                                <textarea class="form-textarea c-question-content" id="c-question-textarea-${idx + 1}" style="min-height:90px;" required placeholder="Nhập nội dung đề bài cho Câu ${idx + 1}...">${q}</textarea>
-                            </div>
-                        `).join("")}
+                        ${savedQuestions.length === 0 ? renderQuestionInputRow(1) : savedQuestions.map((q, idx) => renderQuestionInputRow(idx + 1, q)).join("")}
                     </div>
 
                     <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; margin-top: 1rem;">
@@ -3725,22 +3823,23 @@ async function viewEditContestQuestions(contestId) {
             </div>
         `;
 
+        // Lazy initialize Quill editors for prefilled "word" modes
+        savedQuestions.forEach((q, idx) => {
+            const isWord = q.includes("<p>") || q.includes("<br>") || q.includes("<strong>");
+            if (isWord) {
+                const quillId = `c-question-quill-${idx + 1}`;
+                window.contestQuills[idx + 1] = new Quill(`#${quillId}`, { theme: 'snow' });
+            }
+        });
+
         // Listeners for dynamic add/remove inside edit form
         document.getElementById("c-add-question-btn")?.addEventListener("click", () => {
             questionCount++;
             const container = document.getElementById("c-questions-container");
             const div = document.createElement("div");
-            div.className = "form-group c-question-item";
-            div.setAttribute("data-index", questionCount);
-            div.style.marginTop = "1rem";
-            div.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <label class="form-label" style="font-weight: 600; color: var(--accent-orange); margin-bottom: 0.25rem;">Câu ${questionCount}:</label>
-                    <button type="button" class="btn btn-secondary btn-xs c-ai-gen-btn" data-target="c-question-textarea-${questionCount}" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 6px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Sinh ngẫu nhiên</button>
-                </div>
-                <textarea class="form-textarea c-question-content" id="c-question-textarea-${questionCount}" style="min-height:90px;" required placeholder="Nhập nội dung đề bài cho Câu ${questionCount}..."></textarea>
-            `;
-            container.appendChild(div);
+            // Wrap in div container to avoid replacing it directly
+            div.innerHTML = renderQuestionInputRow(questionCount);
+            container.appendChild(div.firstElementChild);
             document.getElementById("c-remove-question-btn").style.display = "block";
         });
 
@@ -3761,8 +3860,28 @@ async function viewEditContestQuestions(contestId) {
             const category = document.getElementById("c-category").value;
             const difficulty = document.getElementById("c-difficulty").value;
 
-            const questionTextareas = document.querySelectorAll(".c-question-content");
-            const questions = Array.from(questionTextareas).map(ta => ta.value.trim()).filter(Boolean);
+            // Collect questions depending on active mode
+            const questions = [];
+            for (let i = 1; i <= questionCount; i++) {
+                const activeBtn = document.querySelector(`.q-modes[data-index="${i}"] .q-mode-btn.active`);
+                const mode = activeBtn ? activeBtn.getAttribute("data-mode") : "latex";
+                
+                let content = "";
+                if (mode === "latex") {
+                    content = document.getElementById(`c-question-textarea-${i}`).value.trim();
+                } else if (mode === "word") {
+                    content = window.contestQuills[i] ? window.contestQuills[i].root.innerHTML.trim() : "";
+                    if (content === "<p><br></p>") content = "";
+                } else if (mode === "image") {
+                    const base64 = window.contestImages[i];
+                    if (base64) {
+                        content = `<img src="${base64}" style="max-width:100%; border-radius:8px; display:block; margin: 10px 0;" />`;
+                    }
+                }
+                if (content) {
+                    questions.push(content);
+                }
+            }
 
             if (!confirm(`Lưu đề thi gồm ${questions.length} câu hỏi?`)) return;
 
