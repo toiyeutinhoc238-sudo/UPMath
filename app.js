@@ -3666,7 +3666,7 @@ async function viewContestDetail(id) {
                             ` : leaderboardData.map((data, idx) => `
                                 <tr style="border-bottom: 1px solid var(--border-color); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.01)'" onmouseout="this.style.background='none'">
                                     <td style="padding: 0.75rem;">${idx + 1}</td>
-                                    <td style="padding: 0.75rem; font-weight:600; color:var(--accent-blue);">${data.user.username}</td>
+                                    <td style="padding: 0.75rem; font-weight:600; color:var(--accent-blue);">${data.user.mssv || (data.user.email ? data.user.email.split('@')[0] : 'N/A')}</td>
                                     <td style="padding: 0.75rem;">${data.user.name}</td>
                                     <td style="padding: 0.75rem; text-align: center; font-weight:700; color:var(--text-primary);">${data.totalPoints}</td>
                                     ${data.problemStatuses.map(status => {
