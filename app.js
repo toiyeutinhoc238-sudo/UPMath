@@ -145,16 +145,8 @@ function renderLoginMath() {
         bg.appendChild(item);
     }
 
-    if (window.renderMathInElement) {
-        renderMathInElement(bg, {
-            delimiters: [
-                { left: '$$', right: '$$', display: true },
-                { left: '$', right: '$', display: false },
-                { left: '\\[', right: '\\]', display: true },
-                { left: '\\(', right: '\\)', display: false }
-            ],
-            throwOnError: false
-        });
+    if (window.MathJax) {
+        MathJax.typesetPromise([bg]).catch((err) => console.log("MathJax bg error:", err));
     }
 }
 
@@ -312,16 +304,13 @@ function showToast(msg, type = "info") {
 }
 
 function renderLaTeX(el) {
-    if (window.renderMathInElement && el) {
-        renderMathInElement(el, {
-            delimiters: [
-                { left: '$$', right: '$$', display: true },
-                { left: '$', right: '$', display: false },
-                { left: '\\[', right: '\\]', display: true },
-                { left: '\\(', right: '\\)', display: false }
-            ],
-            throwOnError: false
-        });
+    if (window.MathJax && el) {
+        try {
+            MathJax.typesetClear([el]);
+            MathJax.typesetPromise([el]).catch((err) => console.log("MathJax error:", err));
+        } catch (e) {
+            MathJax.typesetPromise([el]).catch((err) => console.log("MathJax error:", err));
+        }
     }
 }
 
