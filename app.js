@@ -321,6 +321,12 @@ function renderLaTeX(el) {
 function preprocessLaTeX(text) {
     if (!text) return "";
 
+    // Clean trailing quote from AI response formatting errors
+    text = text.trim();
+    if (text.endsWith('"') && !text.endsWith('\\\"')) {
+        text = text.slice(0, -1).trim();
+    }
+
     // Convert double backslashes before LaTeX commands to single backslash (e.g. \\frac -> \frac)
     text = text.replace(/\\+([a-zA-Z]+)/g, (m, p1) => "\\" + p1);
 
