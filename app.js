@@ -334,6 +334,9 @@ function preprocessLaTeX(text) {
         text = text.slice(0, -1).trim();
     }
 
+    // Convert double-escaped backslash-n to actual newlines, but only if they are not part of LaTeX commands (not followed by letters)
+    text = text.replace(/\\n(?![a-z])/g, "\n").replace(/\\r(?![a-z])/g, "\r");
+
     // Convert double backslashes before LaTeX commands, brackets, or parenthesis to single backslash
     text = text.replace(/\\+([a-zA-Z\[\]\(\)])/g, (m, p1) => "\\" + p1);
 
@@ -346,9 +349,6 @@ function preprocessLaTeX(text) {
         const cleaned = p1.split('\n').filter(line => line.trim() !== '').join('\n');
         return `$$${cleaned}$$`;
     });
-
-    // Convert double-escaped backslash-n to actual newlines, but only if they are not part of LaTeX commands (not followed by letters)
-    text = text.replace(/\\n(?![a-z])/g, "\n").replace(/\\r(?![a-z])/g, "\r");
 
     // Convert markdown-style headings (## Heading) from AI responses
     text = text.replace(/^###\s+(.+)$/gm, '<h4 style="margin: 0.85rem 0 0.4rem; font-size: 1rem; color: var(--accent-blue); font-weight:700;">$1</h4>');
