@@ -316,6 +316,9 @@ function renderLaTeX(el) {
 function preprocessLaTeX(text) {
     if (!text) return "";
 
+    // Convert double backslashes before LaTeX commands to single backslash (e.g. \\frac -> \frac)
+    text = text.replace(/\\\\([a-zA-Z]+)/g, "\\$1");
+
     // Convert double-escaped backslash-n to actual newlines, but only if they are not part of LaTeX commands (not followed by letters)
     text = text.replace(/\\n(?![a-zA-Z])/g, "\n").replace(/\\r(?![a-zA-Z])/g, "\r");
 
