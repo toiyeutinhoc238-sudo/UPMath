@@ -341,9 +341,9 @@ function preprocessLaTeX(text) {
     text = text.replace(/\\+([a-zA-Z\[\]\(\)])/g, (m, p1) => "\\" + p1);
 
     // Clean blank lines (double newlines) inside \[ ... \] and $$ ... $$ blocks to prevent KaTeX parsing errors
-    text = text.replace(/\\\[([\s\S]*?)\\\\]/g, (m, p1) => {
+    text = text.replace(/\\\[([\s\S]*?)\\\]/g, (m, p1) => {
         const cleaned = p1.split('\n').filter(line => line.trim() !== '').join('\n');
-        return `\\\[${cleaned}\\\]`;
+        return `\\[${cleaned}\\]`;
     });
     text = text.replace(/\$\$([\s\S]*?)\$\$/g, (m, p1) => {
         const cleaned = p1.split('\n').filter(line => line.trim() !== '').join('\n');
