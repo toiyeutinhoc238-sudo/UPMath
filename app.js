@@ -3587,7 +3587,7 @@ async function viewStandaloneLeaderboard(contestId) {
                 </div>
             </div>
 
-            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; font-size: 0.85rem; color: #9ca3af; background: #1f2937; padding: 0.75rem 1rem; border-radius: 8px;">
+            <div class="leaderboard-legend" style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; font-size: 0.85rem; color: #9ca3af; background: #1f2937; padding: 0.75rem 1rem; border-radius: 8px;">
                 <div style="display:flex; align-items:center; gap:0.35rem;"><span style="width:12px; height:12px; border-radius:3px; background:#10b981;"></span> Đúng (Có điểm)</div>
                 <div style="display:flex; align-items:center; gap:0.35rem;"><span style="width:12px; height:12px; border-radius:3px; background:#fbbf24;"></span> Đang chấm (Pending)</div>
                 <div style="display:flex; align-items:center; gap:0.35rem;"><span style="width:12px; height:12px; border-radius:3px; background:#f43f5e;"></span> Làm sai</div>
