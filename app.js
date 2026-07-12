@@ -3429,80 +3429,171 @@ window.handleContestQuestionImage = function(input, index) {
 };
 
 
-function showContestLeaderboardModal(leaderboardData, contestProblems) {
-    const modal = document.createElement("div");
-    modal.id = "leaderboard-modal";
-    modal.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 10, 12, 0.85); display: flex; justify-content: center; align-items: center; z-index: 10000; padding: 2rem; backdrop-filter: blur(8px);";
-    
-    modal.innerHTML = `
-        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 100%; max-width: 900px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); padding: 2.25rem 2rem 2rem 2rem; position: relative;">
-            <!-- Close button -->
-            <button onclick="document.getElementById('leaderboard-modal').remove()" style="position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-red)'" onmouseout="this.style.color='var(--text-muted)'"><i class="fa-solid fa-xmark"></i></button>
-            
-            <h3 style="font-size: 1.3rem; font-weight:700; border-bottom:1px solid var(--border-color); padding-bottom:1rem; margin-bottom: 1.25rem; color:var(--text-primary); display:flex; align-items:center; gap:0.5rem;">
-                <i class="fa-solid fa-ranking-star" style="color:var(--accent-orange);"></i> Bảng Thành Tích Kỳ Thi
-            </h3>
+function openContestLeaderboardWindow(leaderboardData, contestProblems, contestTitle) {
+    const newWindow = window.open("", "_blank");
+    if (!newWindow) {
+        showToast("Vui lòng cho phép trình duyệt mở popup để xem bảng thành tích!", "error");
+        return;
+    }
 
-            <!-- Legend -->
-            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem; font-size: 0.8rem; color: var(--text-secondary); background: rgba(255,255,255,0.01); padding: 0.75rem; border-radius: 8px; border:1px solid var(--border-color);">
-                <div style="display:flex; align-items:center; gap:0.35rem;"><span style="width:12px; height:12px; border-radius:3px; background:#10b981;"></span> Đúng (Có điểm)</div>
-                <div style="display:flex; align-items:center; gap:0.35rem;"><span style="width:12px; height:12px; border-radius:3px; background:#fbbf24;"></span> Đang chấm (Pending)</div>
-                <div style="display:flex; align-items:center; gap:0.35rem;"><span style="width:12px; height:12px; border-radius:3px; background:#f43f5e;"></span> Làm sai</div>
-            </div>
+    const problemHeaders = contestProblems.map((p, idx) => `<th style="padding: 12px; text-align: center; border-bottom: 1px solid #1f2937;">Câu ${idx+1}</th>`).join("");
 
-            <div style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
-                    <thead>
-                        <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); font-size: 0.82rem;">
-                            <th style="padding: 0.75rem;">STT</th>
-                            <th style="padding: 0.75rem;">Username</th>
-                            <th style="padding: 0.75rem;">Họ và tên</th>
-                            <th style="padding: 0.75rem; text-align: center;">Tổng điểm</th>
-                            ${contestProblems.map((p, idx) => `<th style="padding: 0.75rem; text-align: center;">Câu ${idx+1}</th>`).join("")}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${leaderboardData.length === 0 ? `
+    const rows = leaderboardData.length === 0 ? `
+        <tr>
+            <td colspan="${4 + contestProblems.length}" style="text-align:center; padding: 32px; color:#9ca3af; font-style:italic;">
+                Chưa có thí sinh nào đăng ký tham gia kỳ thi này.
+            </td>
+        </tr>
+    ` : leaderboardData.map((data, idx) => {
+        const username = data.user.mssv || (data.user.email ? data.user.email.split('@')[0] : 'N/A');
+        const cells = data.problemStatuses.map(status => {
+            let bg = 'transparent';
+            let color = '#e2e8f0';
+            let text = '-';
+            if (status.status === 'correct') {
+                bg = '#10b981';
+                color = '#ffffff';
+                text = 'Đúng';
+            } else if (status.status === 'pending') {
+                bg = '#fbbf24';
+                color = '#1e293b';
+                text = 'Chờ';
+            } else if (status.status === 'incorrect') {
+                bg = '#f43f5e';
+                color = '#ffffff';
+                text = 'Sai';
+            }
+            return `<td style="padding: 12px; text-align: center; border-bottom: 1px solid #1f2937;">
+                ${text !== '-' ? `<span style="background:${bg}; color:${color}; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">${text}</span>` : '-'}
+            </td>`;
+        }).join("");
+
+        return `
+            <tr style="border-bottom: 1px solid #1f2937; transition: background 0.2s;">
+                <td style="padding: 12px; border-bottom: 1px solid #1f2937; color:#e2e8f0;">${idx + 1}</td>
+                <td style="padding: 12px; font-weight: 600; color: #6366f1; border-bottom: 1px solid #1f2937;">${username}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #1f2937; color: #e2e8f0;">${data.user.name}</td>
+                <td style="padding: 12px; text-align: center; font-weight: 700; color: #f59e0b; border-bottom: 1px solid #1f2937;">${data.totalPoints}</td>
+                ${cells}
+            </tr>
+        `;
+    }).join("");
+
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="vi">
+        <head>
+            <meta charset="UTF-8">
+            <title>Bảng Thành Tích - ${contestTitle}</title>
+            <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+            <style>
+                body {
+                    margin: 0;
+                    padding: 2rem;
+                    background-color: #0b0f19;
+                    color: #f8fafc;
+                    font-family: 'Outfit', sans-serif;
+                }
+                .container {
+                    max-width: 1000px;
+                    margin: 0 auto;
+                    background: #111827;
+                    border: 1px solid #1f2937;
+                    border-radius: 16px;
+                    padding: 2rem;
+                    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+                }
+                .header {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    border-bottom: 1px solid #1f2937;
+                    padding-bottom: 1rem;
+                    margin-bottom: 1.5rem;
+                }
+                .header h1 {
+                    margin: 0;
+                    font-size: 1.5rem;
+                    font-weight: 700;
+                    background: linear-gradient(135deg, #f59e0b, #d97706);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                }
+                .legend {
+                    display: flex;
+                    gap: 1rem;
+                    flex-wrap: wrap;
+                    margin-bottom: 1.5rem;
+                    font-size: 0.85rem;
+                    color: #9ca3af;
+                    background: #1f2937;
+                    padding: 0.75rem 1rem;
+                    border-radius: 8px;
+                }
+                .legend-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                }
+                .dot {
+                    width: 12px;
+                    height: 12px;
+                    border-radius: 3px;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    text-align: left;
+                    font-size: 0.95rem;
+                }
+                th {
+                    color: #9ca3af;
+                    font-weight: 600;
+                    font-size: 0.85rem;
+                    text-transform: uppercase;
+                }
+                tr:hover {
+                    background: rgba(255, 255, 255, 0.02);
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <i class="fa-solid fa-ranking-star" style="color: #f59e0b; font-size: 1.5rem;"></i>
+                    <h1>Bảng Thành Tích Kỳ Thi: ${contestTitle}</h1>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item"><span class="dot" style="background:#10b981;"></span> Đúng (Có điểm)</div>
+                    <div class="legend-item"><span class="dot" style="background:#fbbf24;"></span> Đang chấm (Pending)</div>
+                    <div class="legend-item"><span class="dot" style="background:#f43f5e;"></span> Làm sai</div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
                             <tr>
-                                <td colspan="${4 + contestProblems.length}" style="text-align:center; padding: 2rem; color: var(--text-muted); font-style:italic;">
-                                    Chưa có thí sinh nào đăng ký tham gia kỳ thi này.
-                                </td>
+                                <th style="padding: 12px; border-bottom: 1px solid #1f2937;">STT</th>
+                                <th style="padding: 12px; border-bottom: 1px solid #1f2937;">Username</th>
+                                <th style="padding: 12px; border-bottom: 1px solid #1f2937;">Họ và tên</th>
+                                <th style="padding: 12px; text-align: center; border-bottom: 1px solid #1f2937;">Tổng điểm</th>
+                                ${problemHeaders}
                             </tr>
-                        ` : leaderboardData.map((data, idx) => `
-                            <tr style="border-bottom: 1px solid var(--border-color); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.01)'" onmouseout="this.style.background='none'">
-                                <td style="padding: 0.75rem;">${idx + 1}</td>
-                                <td style="padding: 0.75rem; font-weight:600; color:var(--accent-blue);">${data.user.mssv || (data.user.email ? data.user.email.split('@')[0] : 'N/A')}</td>
-                                <td style="padding: 0.75rem;">${data.user.name}</td>
-                                <td style="padding: 0.75rem; text-align: center; font-weight:700; color:var(--text-primary);">${data.totalPoints}</td>
-                                ${data.problemStatuses.map(status => {
-                                    let bg = 'none';
-                                    let color = 'inherit';
-                                    let text = '-';
-                                    if (status.status === 'correct') {
-                                        bg = '#10b981';
-                                        color = '#ffffff';
-                                        text = 'Đúng';
-                                    } else if (status.status === 'pending') {
-                                        bg = '#fbbf24';
-                                        color = '#1e293b';
-                                        text = 'Chờ';
-                                    } else if (status.status === 'incorrect') {
-                                        bg = '#f43f5e';
-                                        color = '#ffffff';
-                                        text = 'Sai';
-                                    }
-                                    return `<td style="padding: 0.75rem; text-align: center;">
-                                        ${text !== '-' ? `<span style="background:${bg}; color:${color}; padding:0.25rem 0.5rem; border-radius:4px; font-size:0.75rem; font-weight:600;">${text}</span>` : '-'}
-                                    </td>`;
-                                }).join("")}
-                            </tr>
-                        `).join("")}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            ${rows}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
+        </body>
+        </html>
     `;
-    document.body.appendChild(modal);
+
+    newWindow.document.write(htmlContent);
+    newWindow.document.close();
 }
 
 // ─── 7. BOOT ──────────────────────────────────────────────────────────────────
@@ -3706,7 +3797,7 @@ async function viewContestDetail(id) {
 
         // Register leaderboard modal listener
         document.getElementById("view-contest-leaderboard-btn")?.addEventListener("click", () => {
-            showContestLeaderboardModal(leaderboardData, contestProblems);
+            openContestLeaderboardWindow(leaderboardData, contestProblems, c.title);
         });
 
         renderLaTeX(mainContent);
