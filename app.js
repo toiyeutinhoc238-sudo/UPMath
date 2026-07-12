@@ -2939,58 +2939,7 @@ async function viewAdmin() {
                                 </select>
                             </div>
                             
-                            <div style="margin: 1.5rem 0 1rem 0; border-top: 1px dashed var(--border-color); padding-top: 1rem;">
-                                 <h4 style="color: var(--accent-blue); font-size: 0.95rem; margin-bottom: 0.75rem;"><i class="fa-solid fa-file-pen"></i> Nội dung câu hỏi kỳ thi</h4>
-                             </div>
-                             
-                             <div id="c-questions-container">
-                                 <div class="form-group c-question-item" data-index="1">
-                                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                                         <label class="form-label" style="font-weight: 600; color: var(--accent-orange); margin-bottom: 0.25rem;">Câu 1:</label>
-                                         <button type="button" class="btn btn-secondary btn-xs c-ai-gen-btn" data-target="c-question-textarea-1" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 6px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Sinh ngẫu nhiên</button>
-                                     </div>
-                                     <textarea class="form-textarea c-question-content" id="c-question-textarea-1" style="min-height:90px;" required
-                                         placeholder="Nhập nội dung đề bài cho Câu 1..."></textarea>
-                                 </div>
-                             </div>
-                             
-                             <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; margin-top: 0.5rem;">
-                                 <button type="button" id="c-add-question-btn" class="btn btn-secondary btn-sm" style="flex: 1; padding: 0.5rem;"><i class="fa-solid fa-plus"></i> Thêm câu hỏi (Câu tiếp theo)</button>
-                                 <button type="button" id="c-remove-question-btn" class="btn btn-secondary btn-sm" style="flex: 1; padding: 0.5rem; color: var(--accent-red); display: none;"><i class="fa-solid fa-trash-can"></i> Xóa câu cuối</button>
-                             </div>
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-                                <div class="form-group">
-                                    <label class="form-label" for="c-category">Môn học:</label>
-                                    <select id="c-category" class="form-select" style="background:var(--bg-input); border:1px solid var(--border-color); color:inherit; padding:0.625rem; border-radius:8px; width:100%;">
-                                        <option value="calculus">Giải tích</option>
-                                        <option value="algebra">Đại số tuyến tính</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label" for="c-difficulty">Độ khó:</label>
-                                    <select id="c-difficulty" class="form-select" style="background:var(--bg-input); border:1px solid var(--border-color); color:inherit; padding:0.625rem; border-radius:8px; width:100%;">
-                                        <option value="easy">Dễ</option>
-                                        <option value="medium" selected>Trung bình</option>
-                                        <option value="hard">Khó</option>
-                                        <option value="extreme">Cực khó</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-                                <div class="form-group">
-                                    <label class="form-label" for="c-points">Điểm số:</label>
-                                    <input type="number" id="c-points" class="form-input" value="10" required style="background:var(--bg-input); border:1px solid var(--border-color); color:inherit; padding:0.625rem; border-radius:8px; width:100%;">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label" for="c-tags">Thẻ (Tags - cách nhau bởi dấu phẩy):</label>
-                                    <input type="text" id="c-tags" class="form-input" placeholder="Ví dụ: tichphan, gioi_han" style="background:var(--bg-input); border:1px solid var(--border-color); color:inherit; padding:0.625rem; border-radius:8px; width:100%;">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="c-rubric">Thang điểm chi tiết (Rubric):</label>
-                                <textarea id="c-rubric" class="form-textarea" style="min-height:80px;"
-                                    placeholder="Nhập thang điểm chi tiết để hướng dẫn chấm thi (không bắt buộc)..."></textarea>
-                            </div>
+                            
                             <button type="submit" class="btn btn-primary" style="margin-top: 1rem; width: 100%;"><i class="fa-solid fa-plus"></i> Tạo kỳ thi</button>
                         </form>
                     </div>
