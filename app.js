@@ -3506,7 +3506,7 @@ async function viewContestDetail(id) {
         const allSolutions = [];
         for (let p of contestProblems) {
             try {
-                const sols = await api.getSolutions({ problemId: p._id });
+                const sols = await api.getSolutions(p._id);
                 allSolutions.push(...sols);
             } catch (err) {
                 console.error(err);
