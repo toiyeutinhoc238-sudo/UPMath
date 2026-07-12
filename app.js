@@ -3460,7 +3460,7 @@ window.handleContestQuestionImage = function(input, index) {
 async function viewStandaloneLeaderboard(contestId) {
     // Overwrite page HTML structure to render ONLY the leaderboard cleanly
     document.body.innerHTML = `
-        <div style="display:flex; justify-content:center; align-items:center; min-height:100vh; background:#0b0f19; color:#f8fafc; font-family:'Outfit',sans-serif; padding:2rem;">
+        <div style="display:flex; justify-content:center; align-items:center; min-height:100vh; background:#0b0f19; color:#f8fafc; font-family:'Be Vietnam Pro',sans-serif; padding:2rem;">
             <div id="standalone-leaderboard-container" style="width:100%; max-width:1000px; background:#111827; border:1px solid #1f2937; border-radius:16px; padding:2rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);">
                 <div style="text-align:center; padding:3rem;">
                     <i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--accent-orange);"></i>
@@ -3571,7 +3571,7 @@ async function viewStandaloneLeaderboard(contestId) {
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1f2937; padding-bottom: 1.25rem; margin-bottom: 1.5rem;">
                 <div style="display: flex; align-items: center; gap: 0.6rem;">
                     <img src="logo.png" style="height: 32px;" />
-                    <span style="font-weight: 800; font-size: 1.45rem; color: #ffffff; letter-spacing: -0.5px; font-family: 'Outfit', sans-serif;">UP<span style="color: #6366f1;">Math</span></span>
+                    <span style="font-weight: 800; font-size: 1.45rem; color: #ffffff; letter-spacing: -0.5px; font-family: 'Be Vietnam Pro', sans-serif;">UP<span style="color: #6366f1;">Math</span></span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.5rem; color: #9ca3af; font-weight: 500; font-size: 0.95rem; background: rgba(255,255,255,0.03); padding: 0.4rem 0.85rem; border-radius: 20px; border: 1px solid #1f2937;">
                     <i class="fa-solid fa-ranking-star" style="color: #f59e0b;"></i>
