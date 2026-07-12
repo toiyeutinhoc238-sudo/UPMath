@@ -2944,7 +2944,7 @@ async function viewAdmin() {
                                  <div class="form-group c-question-item" data-index="1">
                                      <div style="display:flex; justify-content:space-between; align-items:center;">
                                          <label class="form-label" style="font-weight: 600; color: var(--accent-orange); margin-bottom: 0.25rem;">Câu 1:</label>
-                                         <button type="button" class="btn btn-secondary btn-xs c-ai-gen-btn" data-target="c-question-textarea-1" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 6px;"><i class="fa-solid fa-wand-magic-sparkles"></i> AI sinh đề</button>
+                                         <button type="button" class="btn btn-secondary btn-xs c-ai-gen-btn" data-target="c-question-textarea-1" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 6px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Sinh ngẫu nhiên</button>
                                      </div>
                                      <textarea class="form-textarea c-question-content" id="c-question-textarea-1" style="min-height:90px;" required
                                          placeholder="Nhập nội dung đề bài cho Câu 1..."></textarea>
@@ -3106,7 +3106,7 @@ async function viewAdmin() {
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <label class="form-label" style="font-weight: 600; color: var(--accent-orange); margin-bottom: 0.25rem;">Câu ${questionCount}:</label>
-                    <button type="button" class="btn btn-secondary btn-xs c-ai-gen-btn" data-target="c-question-textarea-${questionCount}" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 6px;"><i class="fa-solid fa-wand-magic-sparkles"></i> AI sinh đề</button>
+                    <button type="button" class="btn btn-secondary btn-xs c-ai-gen-btn" data-target="c-question-textarea-${questionCount}" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 6px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Sinh ngẫu nhiên</button>
                 </div>
                 <textarea class="form-textarea c-question-content" id="c-question-textarea-${questionCount}" style="min-height:90px;" required
                     placeholder="Nhập nội dung đề bài cho Câu ${questionCount}..."></textarea>
@@ -3489,12 +3489,12 @@ document.addEventListener("click", async (e) => {
             const res = await api._req('POST', '/problems/generate', { category, difficulty });
             if (res && res.content) {
                 textarea.value = res.content;
-                showToast("Đã sinh đề bằng AI thành công!", "success");
+                showToast("Đã sinh đề ngẫu nhiên thành công!", "success");
             } else {
                 showToast("Không nhận được nội dung từ AI!", "error");
             }
         } catch (err) {
-            showToast("AI sinh đề thất bại!", "error");
+            showToast("Sinh đề ngẫu nhiên thất bại!", "error");
         } finally {
             btn.disabled = false;
             btn.innerHTML = originalHtml;
