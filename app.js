@@ -2866,11 +2866,18 @@ async function viewAdmin() {
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="c-duration">Thời lượng:</label>
-                                <input type="text" id="c-duration" class="form-input" required placeholder="Ví dụ: 90 phút">
+                                <select id="c-duration" class="form-select" style="background:var(--bg-input); border:1px solid var(--border-color); color:inherit; padding:0.625rem; border-radius:8px; width: 100%;">
+                                    <option value="45 phút">45 phút</option>
+                                    <option value="60 phút">60 phút</option>
+                                    <option value="90 phút" selected>90 phút</option>
+                                    <option value="120 phút">120 phút</option>
+                                    <option value="150 phút">150 phút</option>
+                                    <option value="180 phút">180 phút</option>
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="c-start">Thời gian bắt đầu:</label>
-                                <input type="text" id="c-start" class="form-input" required placeholder="Ví dụ: 08:00 20/12/2026">
+                                <input type="datetime-local" id="c-start" class="form-input" required style="background:var(--bg-input); border:1px solid var(--border-color); color:inherit; padding:0.625rem; border-radius:8px; width: 100%;">
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="c-status">Trạng thái:</label>
@@ -2990,8 +2997,16 @@ async function viewAdmin() {
         document.getElementById("create-contest-form")?.addEventListener("submit", async (e) => {
             e.preventDefault();
             const title = document.getElementById("c-title").value.trim();
-            const duration = document.getElementById("c-duration").value.trim();
-            const startTime = document.getElementById("c-start").value.trim();
+            const duration = document.getElementById("c-duration").value;
+            const startInputVal = document.getElementById("c-start").value;
+            
+            let startTime = "";
+            if (startInputVal) {
+                const [datePart, timePart] = startInputVal.split('T');
+                const [year, month, day] = datePart.split('-');
+                startTime = `${timePart} ${day}/${month}/${year}`;
+            }
+            
             const status = document.getElementById("c-status").value;
 
             try {
