@@ -3671,7 +3671,15 @@ async function viewStandaloneLeaderboard(contestId) {
 // ─── 7. BOOT ──────────────────────────────────────────────────────────────────
 
 window.addEventListener("hashchange", () => router());
-window.addEventListener("load", checkAuthAndBoot);
+window.addEventListener("load", () => {
+    checkAuthAndBoot();
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js')
+            .then((reg) => console.log('Service Worker registered successfully!', reg.scope))
+            .catch((err) => console.error('Service worker registration failed:', err));
+    }
+});
 
 // Sidebar left filter delegation
 document.addEventListener("click", (e) => {
