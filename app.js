@@ -86,6 +86,35 @@ function updateHeaderWithGoogle(u) {
     }
 }
 
+async function refreshCurrentUser() {
+    const user = getCurrentUser();
+    if (!user) return;
+    try {
+        const freshUser = await api.getUser(user.googleId);
+        const merged = { ...user, points: freshUser.points, rank: freshUser.rank, role: freshUser.role };
+        localStorage.setItem(GOOGLE_USER_KEY, JSON.stringify(merged));
+        updateHeaderWithGoogle(merged);
+
+        // Immediately update profile sidebar and banner elements if visible on the screen
+        const sidebarPoints = document.getElementById("sidebar-points");
+        if (sidebarPoints) sidebarPoints.textContent = (freshUser.points || 0).toLocaleString();
+
+        const sidebarRank = document.getElementById("sidebar-rank");
+        if (sidebarRank) sidebarRank.textContent = freshUser.rank || "Đồng";
+
+        const bannerRank = document.getElementById("banner-rank");
+        if (bannerRank) bannerRank.textContent = freshUser.rank || "Đồng";
+
+        const sidebarNextInfo = document.getElementById("sidebar-nextInfo");
+        if (sidebarNextInfo && typeof getNextRankInfo === 'function') {
+            const nextInfo = getNextRankInfo(freshUser.points || 0);
+            sidebarNextInfo.innerHTML = nextInfo.nextName === 'Tối đa' ? 'Tối đa' : `<span style="color:#a855f7;font-weight:600;">${nextInfo.nextName}</span><br><span style="font-size:0.75rem;color:var(--text-muted);">thiếu <strong>${nextInfo.diff}</strong> điểm</span>`;
+        }
+    } catch (err) {
+        console.error("Failed to refresh user stats:", err);
+    }
+}
+
 function toggleUserDropdown() {
     document.getElementById("user-dropdown")?.classList.toggle("open");
 }
@@ -222,6 +251,7 @@ const api = {
     // Users
     getUsers: () => api._req('GET', '/users'),
     syncUser: (data) => api._req('POST', '/users/sync', data),
+    getUser: (gid) => api._req('GET', `/users/${gid}`),
     addPoints: (gid, amt) => api._req('PUT', `/users/${gid}/points`, { amount: amt }),
     getUserProblems: (gid) => api._req('GET', `/users/${gid}/problems`),
     getUserSolutions: (gid) => api._req('GET', `/users/${gid}/solutions`),
@@ -1760,6 +1790,7 @@ async function viewProblemDetail(id) {
                 if (isGrading) {
                     if (solution.status === 'correct') {
                         showToast(`AI chấm: Lời giải chính xác! Bạn được cộng +${problem.points} điểm 🎉`, "success");
+                        await refreshCurrentUser();
                     } else if (solution.status === 'incorrect') {
                         showToast("AI chấm: Lời giải chưa chính xác! Hãy đọc kỹ nhận xét.", "warning");
                     } else {
@@ -1787,6 +1818,7 @@ async function viewProblemDetail(id) {
             try {
                 await api.addComment({ targetType: 'problem', targetId: id, author: user.username, authorPicture: user.picture, authorGoogleId: user.googleId, content });
                 showToast("Đã bình luận! +2 điểm", "success");
+                await refreshCurrentUser();
                 viewProblemDetail(id);
             } catch { showToast("Bình luận thất bại!", "error"); }
         });
@@ -2274,6 +2306,7 @@ async function viewDiscussions() {
                     creator: user.username, creatorPicture: user.picture, creatorGoogleId: user.googleId
                 });
                 showToast("Đã tạo chủ đề! +5 điểm", "success");
+                await refreshCurrentUser();
                 viewDiscussions();
             } catch { showToast("Tạo thảo luận thất bại!", "error"); }
         });
@@ -2343,6 +2376,7 @@ async function viewDiscussionDetail(id) {
             try {
                 await api.addComment({ targetType: 'discussion', targetId: id, author: user.username, authorPicture: user.picture, authorGoogleId: user.googleId, content });
                 showToast("Đã gửi phản hồi! +2 điểm", "success");
+                await refreshCurrentUser();
                 viewDiscussionDetail(id);
             } catch { showToast("Gửi phản hồi thất bại!", "error"); }
         });

@@ -392,6 +392,17 @@ app.get('/api/users', async (req, res) => {
     }
 });
 
+// Get a single user by Google ID
+app.get('/api/users/:googleId', async (req, res) => {
+    try {
+        const user = await User.findOne({ googleId: req.params.googleId });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Add points to a user
 app.put('/api/users/:googleId/points', async (req, res) => {
     try {
