@@ -188,6 +188,7 @@ function checkAuthAndBoot() {
     const stored = localStorage.getItem(GOOGLE_USER_KEY);
     if (stored) {
         showApp(JSON.parse(stored));
+        refreshCurrentUser(); // Sync points and rank in background
     } else {
         document.getElementById("login-overlay").style.display = "flex";
         document.getElementById("app-container").style.display = "none";
@@ -2548,6 +2549,10 @@ async function viewProfile(targetGoogleId) {
                 return;
             }
             freshMe = users.find(u => u.googleId === me.googleId) || me;
+            // Update localstorage and header with the fresh data
+            const merged = { ...me, ...freshMe };
+            localStorage.setItem(GOOGLE_USER_KEY, JSON.stringify(merged));
+            updateHeaderWithGoogle(merged);
         } else {
             freshMe = users.find(u => u.googleId === targetGoogleId);
             if (!freshMe) {
