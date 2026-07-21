@@ -2087,11 +2087,25 @@ input, textarea, select, button {
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 0.5rem;
     overflow-x: auto;
-    scrollbar-width: none;
+    scrollbar-width: thin;
+    scrollbar-color: #374151 transparent;
 }
 
 .profile-tabs::-webkit-scrollbar {
-    display: none;
+    height: 4px;
+}
+
+.profile-tabs::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.profile-tabs::-webkit-scrollbar-thumb {
+    background: #374151;
+    border-radius: 2px;
+}
+
+.profile-tabs::-webkit-scrollbar-thumb:hover {
+    background: #4b5563;
 }
 
 .profile-tab-btn {
