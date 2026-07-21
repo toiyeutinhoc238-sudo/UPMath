@@ -201,6 +201,81 @@ const _fadeStyle = document.createElement("style");
 _fadeStyle.textContent = "@keyframes fadeOut { from{opacity:1} to{opacity:0} }";
 document.head.appendChild(_fadeStyle);
 
+// ─── 0.1 MATH INPUT ASSISTANT TOOLBAR ─────────────────────────────────────────
+
+function attachMathAssistant(targetInput) {
+    const targetEl = (targetInput && targetInput.container) ? targetInput.container : targetInput;
+    if (!targetEl || !targetEl.parentNode) return;
+
+    // Check if assistant is already attached
+    if (targetEl.previousElementSibling && targetEl.previousElementSibling.classList.contains('math-assistant-bar')) return;
+
+    const bar = document.createElement('div');
+    bar.className = 'math-assistant-bar';
+
+    const symbols = [
+        { label: 'x/y', latex: '\\frac{}{}' },
+        { label: '√x', latex: '\\sqrt{}' },
+        { label: 'x²', latex: '^{2}' },
+        { label: 'xⁿ', latex: '^{}' },
+        { label: '∫', latex: '\\int_{}^{}  \\,dx' },
+        { label: '∑', latex: '\\sum_{}^{}' },
+        { label: 'lim', latex: '\\lim_{x \\to }' },
+        { label: 'dy/dx', latex: '\\frac{d}{dx}' },
+        { label: 'π', latex: '\\pi' },
+        { label: '∞', latex: '\\infty' },
+        { label: 'α', latex: '\\alpha' },
+        { label: 'β', latex: '\\beta' },
+        { label: 'λ', latex: '\\lambda' },
+        { label: 'θ', latex: '\\theta' },
+        { label: 'Δ', latex: '\\Delta' },
+        { label: '≈', latex: '\\approx' },
+        { label: '≠', latex: '\\neq' },
+        { label: '≤', latex: '\\le' },
+        { label: '≥', latex: '\\ge' },
+        { label: 'Matrix', latex: '\\begin{pmatrix}  &  \\\\  &  \\end{pmatrix}' }
+    ];
+
+    symbols.forEach(sym => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'math-btn';
+        btn.textContent = sym.label;
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            insertAtCursor(targetInput, sym.latex);
+        });
+        bar.appendChild(btn);
+    });
+
+    targetEl.parentNode.insertBefore(bar, targetEl);
+}
+
+function insertAtCursor(target, text) {
+    // If it is a Quill instance
+    if (target && typeof target.getSelection === 'function') {
+        const range = target.getSelection(true);
+        if (range) {
+            target.insertText(range.index, text, 'user');
+            target.setSelection(range.index + text.length);
+        } else {
+            target.insertText(0, text, 'user');
+        }
+        target.focus();
+    } 
+    // If it is a Textarea/Input
+    else if (target && typeof target.selectionStart === 'number') {
+        const start = target.selectionStart;
+        const end = target.selectionEnd;
+        const oldVal = target.value;
+        target.value = oldVal.substring(0, start) + text + oldVal.substring(end);
+        target.selectionStart = target.selectionEnd = start + text.length;
+        target.focus();
+        // Trigger input event to update preview if listening
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+}
+
 // ─── 1. MONGODB API CLIENT ────────────────────────────────────────────────────
 
 const API_BASE = window.location.origin.includes("localhost") || window.location.origin.includes("127.0.0.1")
@@ -1416,6 +1491,12 @@ async function viewProblemDetail(id) {
                 theme: 'snow',
                 placeholder: 'Soạn thảo lời giải của bạn tại đây...'
             });
+            attachMathAssistant(sQuill);
+        }
+
+        const solContentEl = document.getElementById('sol-content');
+        if (solContentEl) {
+            attachMathAssistant(solContentEl);
         }
 
         // --- AI Tutor conversational logic state ---
@@ -2106,6 +2187,12 @@ function viewCreateProblem() {
             theme: 'snow',
             placeholder: 'Soạn thảo nội dung đề bài giống Word...'
         });
+        attachMathAssistant(pQuill);
+    }
+
+    const pContentEl = document.getElementById('p-content');
+    if (pContentEl) {
+        attachMathAssistant(pContentEl);
     }
 
     // AI Generate Problem Button Event Listener
@@ -3465,6 +3552,8 @@ document.addEventListener("click", (e) => {
         
         if (mode === "latex") {
             document.getElementById(`q-latex-container-${idx}`).style.display = "block";
+            const textarea = document.getElementById(`c-question-textarea-${idx}`);
+            if (textarea) attachMathAssistant(textarea);
         } else if (mode === "word") {
             document.getElementById(`q-word-container-${idx}`).style.display = "block";
             // Lazy init Quill if not initialized
@@ -3473,6 +3562,7 @@ document.addEventListener("click", (e) => {
             if (!window.contestQuills[idx]) {
                 window.contestQuills[idx] = new Quill(`#${quillId}`, { theme: 'snow' });
             }
+            attachMathAssistant(window.contestQuills[idx]);
         } else if (mode === "image") {
             document.getElementById(`q-image-container-${idx}`).style.display = "block";
         }
@@ -4001,14 +4091,23 @@ async function viewEditContestQuestions(contestId) {
             </div>
         `;
 
-        // Lazy initialize Quill editors for prefilled "word" modes
+        // Lazy initialize Quill editors and attach assistants
         savedQuestions.forEach((q, idx) => {
             const isWord = q.includes("<p>") || q.includes("<br>") || q.includes("<strong>");
+            const isImage = q.startsWith("data:image/") || q.startsWith("<img");
             if (isWord) {
                 const quillId = `c-question-quill-${idx + 1}`;
                 window.contestQuills[idx + 1] = new Quill(`#${quillId}`, { theme: 'snow' });
+                attachMathAssistant(window.contestQuills[idx + 1]);
+            } else if (!isImage) {
+                const textarea = document.getElementById(`c-question-textarea-${idx + 1}`);
+                if (textarea) attachMathAssistant(textarea);
             }
         });
+        if (savedQuestions.length === 0) {
+            const textarea = document.getElementById(`c-question-textarea-1`);
+            if (textarea) attachMathAssistant(textarea);
+        }
 
         // Listeners for dynamic add/remove inside edit form
         document.getElementById("c-add-question-btn")?.addEventListener("click", () => {
@@ -4019,6 +4118,8 @@ async function viewEditContestQuestions(contestId) {
             div.innerHTML = renderQuestionInputRow(questionCount);
             container.appendChild(div.firstElementChild);
             document.getElementById("c-remove-question-btn").style.display = "block";
+            const textarea = document.getElementById(`c-question-textarea-${questionCount}`);
+            if (textarea) attachMathAssistant(textarea);
         });
 
         document.getElementById("c-remove-question-btn")?.addEventListener("click", () => {

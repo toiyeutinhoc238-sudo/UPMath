@@ -34,7 +34,7 @@ self.addEventListener('activate', (e) => {
 // Fetch Event
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
-  
+
   // Do not cache API calls or external auth requests
   if (url.pathname.includes('/api/') || url.hostname.includes('accounts.google.com')) {
     return;
