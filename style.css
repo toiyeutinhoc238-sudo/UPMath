@@ -2028,6 +2028,7 @@ input, textarea, select, button {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    min-width: 0;
 }
 
 .profile-header-banner {
@@ -3016,7 +3017,7 @@ input, textarea, select, button {
 /* Learning Analytics Styles */
 .analytics-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1.25rem;
     margin-top: 1rem;
 }
