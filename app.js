@@ -2924,9 +2924,9 @@ async function viewProfile(targetGoogleId) {
                     <div class="recommendation-list" style="display:flex; flex-direction:column; gap:0.75rem; margin-top:0.5rem;">
                         ${recommendations.map(r => `
                             <div class="recommendation-item" style="display:flex; justify-content:space-between; align-items:center; gap:1rem; background:var(--bg-card); border:1px solid var(--border-color); padding:0.75rem 1rem; border-radius:8px; transition:transform 0.2s;">
-                                <div style="flex:1; min-width:0; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                                <div style="flex:1; min-width:0; display:flex; align-items:center; gap:0.5rem;">
                                     <span class="badge badge-tag" style="background:rgba(99,102,241,0.15); color:#818cf8; border:1px solid rgba(99,102,241,0.25); flex-shrink:0;">${r.topicLabel}</span>
-                                    <strong style="color:var(--text-primary); font-size:0.95rem; word-break:break-word;">${preprocessLaTeX(r.problem.title)}</strong>
+                                    <strong style="color:var(--text-primary); font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;" title="${r.problem.title.replace(/"/g, '&quot;')}">${preprocessLaTeX(r.problem.title)}</strong>
                                 </div>
                                 <a href="#problem/${r.problem._id}" class="btn btn-primary btn-sm" style="padding:0.4rem 0.85rem; font-size:0.8rem; font-weight:600; white-space:nowrap; flex-shrink:0;"><i class="fa-solid fa-pen-to-square"></i> Làm bài ngay</a>
                             </div>
