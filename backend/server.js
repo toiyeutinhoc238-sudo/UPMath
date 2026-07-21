@@ -8,6 +8,24 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 const nodemailer = require('nodemailer');
+const webpush = require('web-push');
+
+// ─── PWA WEB PUSH CONFIGURATION ───────────────────────────────────────────────
+let vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
+let vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+
+if (!vapidPublicKey || !vapidPrivateKey) {
+    const keys = webpush.generateVAPIDKeys();
+    vapidPublicKey = keys.publicKey;
+    vapidPrivateKey = keys.privateKey;
+    console.log("Generated dynamic VAPID keys for PWA notifications.");
+}
+
+webpush.setVapidDetails(
+    'mailto:support@upmath.app',
+    vapidPublicKey,
+    vapidPrivateKey
+);
 
 // ─── SENDGRID EMAIL API CONFIGURATION ─────────────────────────────────────────
 /**
@@ -306,6 +324,41 @@ const Comment = mongoose.model('Comment', commentSchema);
 const Shout = mongoose.model('Shout', shoutSchema);
 const Contest = mongoose.model('Contest', contestSchema);
 
+// ─── PWA WEB PUSH DB SCHEMA & SENDER ──────────────────────────────────────────
+const pushSubscriptionSchema = new mongoose.Schema({
+    googleId: { type: String, required: true },
+    subscription: {
+        endpoint: { type: String, required: true },
+        keys: {
+            p256dh: { type: String, required: true },
+            auth: { type: String, required: true }
+        }
+    },
+    createdAt: { type: Date, default: Date.now }
+});
+const PushSubscription = mongoose.model('PushSubscription', pushSubscriptionSchema);
+
+async function sendPushNotification(googleId, title, body, url = '') {
+    try {
+        const subscriptions = await PushSubscription.find({ googleId });
+        for (let sub of subscriptions) {
+            const payload = JSON.stringify({ title, body, url });
+            try {
+                await webpush.sendNotification(sub.subscription, payload);
+            } catch (err) {
+                if (err.statusCode === 404 || err.statusCode === 410) {
+                    await PushSubscription.deleteOne({ _id: sub._id });
+                    console.log(`[Push Notification] Removed expired subscription for: ${googleId}`);
+                } else {
+                    console.error("[Push Notification Error] Failed to send:", err.message);
+                }
+            }
+        }
+    } catch (err) {
+        console.error("[Push Notification Error] Database query error:", err.message);
+    }
+}
+
 function getContestStatus(c) {
     if (c.status === 'ended') return 'ended';
     if (!c.startTime) return c.status;
@@ -377,6 +430,33 @@ app.post('/api/users/sync', async (req, res) => {
             { new: true, upsert: true, setDefaultsOnInsert: true }
         );
         res.json(user);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get VAPID Public Key for PWA Push notifications
+app.get('/api/push/key', (req, res) => {
+    res.json({ publicKey: vapidPublicKey });
+});
+
+// Save client Push Subscription
+app.post('/api/push/subscribe', async (req, res) => {
+    try {
+        const { googleId, subscription } = req.body;
+        if (!googleId || !subscription || !subscription.endpoint) {
+            return res.status(400).json({ error: "Missing required parameters" });
+        }
+        
+        // Remove existing same subscription for this user to avoid duplicates
+        await PushSubscription.deleteOne({ 
+            googleId, 
+            'subscription.endpoint': subscription.endpoint 
+        });
+
+        const newSub = new PushSubscription({ googleId, subscription });
+        await newSub.save();
+        res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -763,6 +843,15 @@ Hãy chấm điểm lời giải này và trả về kết quả ở định d�
             }
         }
 
+        // Send Push Notification for AI grading results
+        if (req.body.action === 'grade' && solution.authorGoogleId) {
+            const statusText = solution.status === 'correct' ? 'ĐÚNG (Chính xác) 🎉' : 'SAI (Cần cải thiện) ❌';
+            const title = `Kết quả chấm bài tự động AI 🤖`;
+            const body = `Bài giải cho "${problem.title}" của bạn đạt trạng thái: ${statusText}`;
+            const url = `#problem/${problem._id}`;
+            sendPushNotification(solution.authorGoogleId, title, body, url);
+        }
+
         res.status(201).json(solution);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -1097,6 +1186,34 @@ app.post('/api/comments', async (req, res) => {
             const u = await User.findOne({ googleId: req.body.authorGoogleId });
             if (u) { u.points += 2; u.rank = calcRank(u.points); await u.save(); }
         }
+
+        // Send Push Notification for Comment
+        try {
+            if (req.body.targetType === 'problem') {
+                const problem = await Problem.findById(req.body.targetId);
+                if (problem && problem.authorGoogleId && problem.authorGoogleId !== req.body.authorGoogleId) {
+                    sendPushNotification(
+                        problem.authorGoogleId,
+                        `Bình luận mới về đề bài của bạn 💬`,
+                        `"${req.body.author}" đã bình luận: "${req.body.content.substring(0, 50)}..."`,
+                        `#problem/${problem._id}`
+                    );
+                }
+            } else if (req.body.targetType === 'discussion') {
+                const disc = await Discussion.findById(req.body.targetId);
+                if (disc && disc.authorGoogleId && disc.authorGoogleId !== req.body.authorGoogleId) {
+                    sendPushNotification(
+                        disc.authorGoogleId,
+                        `Phản hồi mới trong thảo luận của bạn 💬`,
+                        `"${req.body.author}" đã phản hồi: "${req.body.content.substring(0, 50)}..."`,
+                        `#discussions`
+                    );
+                }
+            }
+        } catch (pushErr) {
+            console.error("[Push Notification Error] Comment trigger failed:", pushErr.message);
+        }
+
         res.status(201).json(comment);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -1777,6 +1894,45 @@ app.get('*', (req, res) => {
         res.sendFile(path.join(__dirname, '..', 'index.html'));
     }
 });
+
+// ─── PWA CONTEST REMINDER SCHEDULER ───────────────────────────────────────────
+// Check every 5 minutes for contests starting in less than 15 minutes
+setInterval(async () => {
+    try {
+        const now = new Date();
+        const contests = await Contest.find({ status: 'upcoming' });
+        for (let c of contests) {
+            if (!c.startTime) continue;
+            try {
+                const [timePart, datePart] = c.startTime.split(' ');
+                const [hour, min] = timePart.split(':');
+                const [day, month, year] = datePart.split('/');
+                const formatPart = (str) => str.trim().padStart(2, '0');
+                const startISO = `${year}-${formatPart(month)}-${formatPart(day)}T${formatPart(hour)}:${formatPart(min)}:00+07:00`;
+                const startTimeDate = new Date(startISO);
+                
+                const timeDiffMs = startTimeDate.getTime() - now.getTime();
+                const timeDiffMins = timeDiffMs / (1000 * 60);
+
+                // Remind if starting in 10-15 minutes
+                if (timeDiffMins > 0 && timeDiffMins <= 15) {
+                    for (let participantId of c.participants) {
+                        sendPushNotification(
+                            participantId,
+                            `Kỳ thi "${c.title}" sắp bắt đầu! 🏆`,
+                            `Kỳ thi sẽ diễn ra sau 15 phút nữa vào lúc ${c.startTime}. Hãy sẵn sàng!`,
+                            `#contest/${c._id}`
+                        );
+                    }
+                }
+            } catch (err) {
+                // Ignore parse errors
+            }
+        }
+    } catch (err) {
+        console.error("[Scheduler Error] Failed to run contest reminder:", err.message);
+    }
+}, 5 * 60 * 1000);
 
 // ─── START ────────────────────────────────────────────────────────────────────
 

@@ -63,6 +63,15 @@ function showApp(googleUser) {
     if (appContainer) { appContainer.style.display = ""; appContainer.style.animation = "fadeIn 0.4s ease"; }
     updateHeaderWithGoogle(googleUser);
     router();
+
+    // Request push notifications registration if SW is ready
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((reg) => {
+            if (typeof setupPushNotifications === 'function') {
+                setupPushNotifications(reg);
+            }
+        });
+    }
 }
 
 function updateHeaderWithGoogle(u) {
@@ -3760,13 +3769,92 @@ async function viewStandaloneLeaderboard(contestId) {
 
 // ─── 7. BOOT ──────────────────────────────────────────────────────────────────
 
+// ─── PWA PUSH NOTIFICATIONS REGISTRATION ─────────────────────────────────────
+function setupPushNotifications(reg) {
+    if (!('PushManager' in window)) {
+        console.warn('Push messaging is not supported in this browser.');
+        return;
+    }
+
+    // Request permissions and subscribe
+    Notification.requestPermission().then((permission) => {
+        if (permission !== 'granted') {
+            console.warn('Permission for notifications was denied');
+            return;
+        }
+
+        // Fetch VAPID public key from server
+        fetch('/api/push/key')
+            .then(res => res.json())
+            .then(data => {
+                const publicKey = data.publicKey;
+                if (!publicKey) return;
+
+                const subscribeOptions = {
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(publicKey)
+                };
+
+                return reg.pushManager.subscribe(subscribeOptions);
+            })
+            .then((subscription) => {
+                if (!subscription) return;
+                
+                // Get current user and send subscription to server
+                const user = getCurrentUser();
+                if (user && user.googleId) {
+                    fetch('/api/push/subscribe', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            googleId: user.googleId,
+                            subscription: subscription
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(res => {
+                        console.log('Successfully subscribed to PWA Push Notifications!', res);
+                    })
+                    .catch(err => console.error('Failed to sync push subscription:', err));
+                }
+            })
+            .catch((err) => {
+                console.error('Failed to subscribe to push:', err);
+            });
+    });
+}
+
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+        .replace(/\-/g, '+')
+        .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
 window.addEventListener("hashchange", () => router());
 window.addEventListener("load", () => {
     checkAuthAndBoot();
     // Register Service Worker for PWA
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
-            .then((reg) => console.log('Service Worker registered successfully!', reg.scope))
+            .then((reg) => {
+                console.log('Service Worker registered successfully!', reg.scope);
+                // Try setup push immediately on load if logged in
+                const user = getCurrentUser();
+                if (user) {
+                    setupPushNotifications(reg);
+                }
+            })
             .catch((err) => console.error('Service worker registration failed:', err));
     }
 });

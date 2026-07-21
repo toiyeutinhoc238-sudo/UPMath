@@ -56,3 +56,50 @@ self.addEventListener('fetch', (e) => {
       .catch(() => caches.match(e.request))
   );
 });
+
+// Push Notification Event
+self.addEventListener('push', (e) => {
+  let data = { title: 'Thông báo từ UPMath', body: 'Bạn có thông báo mới!' };
+  if (e.data) {
+    try {
+      data = e.data.json();
+    } catch (err) {
+      data = { title: 'Thông báo từ UPMath', body: e.data.text() };
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: 'logo.png',
+    badge: 'logo.png',
+    vibrate: [100, 50, 100],
+    data: {
+      url: data.url || '/'
+    }
+  };
+
+  e.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
+// Notification Click Event
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const urlToOpen = new URL(e.notification.data.url, self.location.origin).href;
+
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // Check if there is already a window open with this app
+      for (let client of windowClients) {
+        if (client.url === urlToOpen && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // If not, open a new window
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});
