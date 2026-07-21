@@ -3519,7 +3519,10 @@ async function viewStandaloneLeaderboard(contestId) {
             document.getElementById("standalone-leaderboard-container").innerHTML = `
                 <div style="text-align:center; padding:2rem; color:#f43f5e;">
                     <i class="fa-solid fa-circle-exclamation fa-2x"></i>
-                    <p style="margin-top:1rem;">Không tìm thấy kỳ thi!</p>
+                    <p style="margin-top:1rem; margin-bottom:1.5rem;">Không tìm thấy kỳ thi!</p>
+                    <button onclick="window.opener ? window.close() : window.location.href = '#home'" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #374151; color: #ffffff; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#4b5563'" onmouseout="this.style.background='#374151'">
+                        <i class="fa-solid fa-house"></i> Quay lại
+                    </button>
                 </div>`;
             return;
         }
@@ -3616,6 +3619,9 @@ async function viewStandaloneLeaderboard(contestId) {
                     <span style="font-weight: 800; font-size: 1.45rem; color: #ffffff; letter-spacing: -0.5px; font-family: 'Be Vietnam Pro', sans-serif;">UP<span style="color: #6366f1;">Math</span></span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                    <button onclick="window.opener ? window.close() : window.location.href = '#home'" class="btn-back-home" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #4f46e5; color: #ffffff; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
+                        <i class="fa-solid fa-house"></i> Quay lại màn hình chính
+                    </button>
                     <button onclick="window.print()" class="btn-print" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #374151; color: #ffffff; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#4b5563'" onmouseout="this.style.background='#374151'">
                         <i class="fa-solid fa-file-pdf"></i> Xuất PDF / In
                     </button>
@@ -3653,7 +3659,10 @@ async function viewStandaloneLeaderboard(contestId) {
         document.getElementById("standalone-leaderboard-container").innerHTML = `
             <div style="text-align:center; padding:2rem; color:#f43f5e;">
                 <i class="fa-solid fa-circle-exclamation fa-2x"></i>
-                <p style="margin-top:1rem;">Lỗi tải dữ liệu!</p>
+                <p style="margin-top:1rem; margin-bottom:1.5rem;">Lỗi tải dữ liệu!</p>
+                <button onclick="window.opener ? window.close() : window.location.href = '#home'" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #374151; color: #ffffff; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#4b5563'" onmouseout="this.style.background='#374151'">
+                    <i class="fa-solid fa-house"></i> Quay lại
+                </button>
             </div>`;
     }
 }
