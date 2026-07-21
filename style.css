@@ -3013,6 +3013,97 @@ input, textarea, select, button {
     transform: translateY(0);
 }
 
+/* Learning Analytics Styles */
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1rem;
+}
+.analytics-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.analytics-card-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0;
+}
+.analytics-progress-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.analytics-progress-bar {
+    flex-grow: 1;
+    height: 8px;
+    background: #1f2937;
+    border-radius: 4px;
+    overflow: hidden;
+}
+.analytics-progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.progress-red { background: #f43f5e; }
+.progress-yellow { background: #eab308; }
+.progress-green { background: #10b981; }
+
+.analytics-percentage {
+    font-size: 1.1rem;
+    font-weight: 700;
+    min-width: 48px;
+    text-align: right;
+}
+.analytics-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+.recommendation-box {
+    background: rgba(99, 102, 241, 0.05);
+    border: 1px dashed rgba(99, 102, 241, 0.25);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-top: 1.5rem;
+}
+.recommendation-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #818cf8;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.recommendation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.recommendation-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    transition: transform 0.2s;
+}
+.recommendation-item:hover {
+    transform: translateX(4px);
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
 /* ==========================================================================
    PRINT STYLES - Optimize Leaderboards & Core Content for PDF / Printing
    ========================================================================== */

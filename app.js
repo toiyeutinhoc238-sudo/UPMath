@@ -2746,6 +2746,7 @@ async function viewProfile(targetGoogleId) {
                         <div class="profile-tabs">
                             <button class="profile-tab-btn active" data-tab="correct"><i class="fa-solid fa-circle-check" style="color:var(--accent-green);"></i> Bài làm đúng</button>
                             <button class="profile-tab-btn" data-tab="incorrect"><i class="fa-solid fa-circle-xmark" style="color:var(--accent-red);"></i> Bài làm sai</button>
+                            <button class="profile-tab-btn" data-tab="analytics"><i class="fa-solid fa-chart-line" style="color:var(--accent-blue);"></i> Tiến độ học tập</button>
                             ${isOwnProfile ? `
                                 <button class="profile-tab-btn" data-tab="settings"><i class="fa-solid fa-user-gear"></i> Cài đặt</button>
                                 <button class="profile-tab-btn" data-tab="avatar"><i class="fa-solid fa-image"></i> Đổi hình đại diện</button>
@@ -2830,6 +2831,125 @@ async function viewProfile(targetGoogleId) {
                 });
 
                 // Render KaTeX for titles containing LaTeX
+                renderLaTeX(container);
+
+            } else if (activeTab === 'analytics') {
+                // 1. Classify topics (No English annotations in parentheses)
+                const topics = [
+                    { id: 'gioi_han', label: 'Giới hạn', keywords: ['giới hạn', 'gioi han', 'lim'], category: 'calculus', total: 0, solved: 0, attempted: 0, problems: [] },
+                    { id: 'dao_ham', label: 'Đạo hàm', keywords: ['đạo hàm', 'dao ham', 'vi phân', 'vi phan', 'tiếp tuyến', 'tiep tuyen'], category: 'calculus', total: 0, solved: 0, attempted: 0, problems: [] },
+                    { id: 'tich_phan', label: 'Tích phân', keywords: ['tích phân', 'tich phan', 'nguyên hàm', 'nguyen ham'], category: 'calculus', total: 0, solved: 0, attempted: 0, problems: [] },
+                    { id: 'ma_tran', label: 'Ma trận & Định thức', keywords: ['ma trận', 'ma tran', 'định thức', 'dinh thuc', 'det', 'nghịch đảo', 'nghich dao'], category: 'algebra', total: 0, solved: 0, attempted: 0, problems: [] },
+                    { id: 'he_phuong_trinh', label: 'Hệ phương trình', keywords: ['hệ phương trình', 'he phuong trinh', 'cramer', 'gauss', 'hệ tuyến tính', 'he tuyen tinh'], category: 'algebra', total: 0, solved: 0, attempted: 0, problems: [] }
+                ];
+
+                allProblems.forEach(p => {
+                    const text = ((p.title || "") + " " + (p.content || "") + " " + (p.tags ? p.tags.join(" ") : "")).toLowerCase();
+                    let classified = false;
+                    for (let topic of topics) {
+                        const matchesKeyword = topic.keywords.some(kw => text.includes(kw));
+                        if (matchesKeyword) {
+                            topic.total++;
+                            topic.problems.push(p);
+                            classified = true;
+                        }
+                    }
+                    if (!classified) {
+                        if (p.category === 'calculus') {
+                            const topic = topics.find(t => t.id === 'gioi_han');
+                            topic.total++;
+                            topic.problems.push(p);
+                        } else if (p.category === 'algebra') {
+                            const topic = topics.find(t => t.id === 'ma_tran');
+                            topic.total++;
+                            topic.problems.push(p);
+                        }
+                    }
+                });
+
+                topics.forEach(topic => {
+                    topic.problems.forEach(p => {
+                        if (solvedSet.has(p._id)) {
+                            topic.solved++;
+                            topic.attempted++;
+                        } else if (wrongSet.has(p._id)) {
+                            topic.attempted++;
+                        }
+                    });
+                });
+
+                // Calculate progress percentages
+                const cardsHTML = topics.map(t => {
+                    const pct = t.total > 0 ? Math.round((t.solved / t.total) * 100) : 0;
+                    const colorClass = pct < 40 ? 'progress-red' : (pct < 80 ? 'progress-yellow' : 'progress-green');
+                    return `
+                        <div class="analytics-card">
+                            <h4 class="analytics-card-title" style="font-weight:600; font-size:1.02rem; color:var(--text-primary);">${t.label}</h4>
+                            <div class="analytics-progress-wrapper" style="display:flex; align-items:center; gap:0.75rem; margin-top:0.25rem;">
+                                <div class="analytics-progress-bar" style="flex-grow:1; height:8px; background:#1f2937; border-radius:4px; overflow:hidden;">
+                                    <div class="analytics-progress-fill ${colorClass}" style="height:100%; border-radius:4px; width: ${pct}%"></div>
+                                </div>
+                                <span class="analytics-percentage" style="font-weight:700; font-size:1.05rem; min-width:40px; text-align:right;">${pct}%</span>
+                            </div>
+                            <div class="analytics-stats" style="display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-muted); margin-top:0.25rem;">
+                                <span>Đã giải đúng: <strong>${t.solved}</strong> / ${t.total} bài</span>
+                                <span>Đã làm: <strong>${t.attempted}</strong> bài</span>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+
+                // 2. Generate Recommendations
+                const recommendations = [];
+                const weakTopics = [...topics].sort((a, b) => {
+                    const pctA = a.total ? (a.solved / a.total) : 0;
+                    const pctB = b.total ? (b.solved / b.total) : 0;
+                    return pctA - pctB;
+                });
+
+                for (let topic of weakTopics) {
+                    if (recommendations.length >= 3) break;
+                    const unsolvedInTopic = topic.problems.filter(p => !solvedSet.has(p._id));
+                    for (let p of unsolvedInTopic) {
+                        if (recommendations.length >= 3) break;
+                        if (!recommendations.some(r => r.problem._id === p._id)) {
+                            recommendations.push({ problem: p, topicLabel: topic.label });
+                        }
+                    }
+                }
+
+                const recsHTML = recommendations.length === 0 ? `
+                    <p style="color:var(--text-muted); font-size:0.9rem; font-style:italic; margin:0;">Tuyệt vời! Bạn đã hoàn thành tất cả các bài tập hiện có hoặc không có gợi ý phù hợp.</p>
+                ` : `
+                    <div class="recommendation-list" style="display:flex; flex-direction:column; gap:0.75rem; margin-top:0.5rem;">
+                        ${recommendations.map(r => `
+                            <div class="recommendation-item" style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-card); border:1px solid var(--border-color); padding:0.75rem 1rem; border-radius:8px; transition:transform 0.2s;">
+                                <div>
+                                    <span class="badge badge-tag" style="margin-right:0.5rem; background:rgba(99,102,241,0.15); color:#818cf8; border:1px solid rgba(99,102,241,0.25);">${r.topicLabel}</span>
+                                    <strong style="color:var(--text-primary); font-size:0.95rem;">${preprocessLaTeX(r.problem.title)}</strong>
+                                </div>
+                                <a href="#problem/${r.problem._id}" class="btn btn-primary btn-sm" style="padding:0.4rem 0.85rem; font-size:0.8rem; font-weight:600;"><i class="fa-solid fa-pen-to-square"></i> Làm bài ngay</a>
+                            </div>
+                        `).join("")}
+                    </div>
+                `;
+
+                container.innerHTML = `
+                    <h3 style="margin-bottom:0.5rem; font-weight:700;"><i class="fa-solid fa-chart-simple"></i> Thống kê Tiến độ Chuyên đề</h3>
+                    <p style="color:var(--text-muted); font-size:0.88rem; margin-bottom:1.5rem;">Số liệu phân tích tỉ lệ giải đúng của bạn đối với các phần kiến thức chính trong chương trình học.</p>
+                    
+                    <div class="analytics-grid">
+                        ${cardsHTML}
+                    </div>
+
+                    <div class="recommendation-box" style="background:rgba(99,102,241,0.04); border:1px dashed rgba(99,102,241,0.25); border-radius:12px; padding:1.25rem; margin-top:1.5rem;">
+                        <div class="recommendation-title" style="font-size:1.05rem; font-weight:700; color:#818cf8; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+                            <i class="fa-solid fa-bullseye"></i> Gợi ý ôn tập dành cho bạn 🎯
+                        </div>
+                        <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:0.75rem;">Dựa trên kết quả học tập, đây là các bài tập bạn nên làm tiếp theo để củng cố các phần kiến thức còn yếu:</p>
+                        ${recsHTML}
+                    </div>
+                `;
                 renderLaTeX(container);
 
             } else if (activeTab === 'settings') {
